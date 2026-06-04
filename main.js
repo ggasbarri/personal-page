@@ -172,6 +172,48 @@
       "<span>answer</span><span class='sep'>·</span><span>" + escapeHtml(label) + "</span>");
   }
 
+  /* ----------------------------------------------- story choreography */
+  // The thread is a narrative (Phillips arc). Each beat shifts the room's
+  // mood, advances the progress bar, and ends with a cliffhanger "continue".
+  var progressFill = document.getElementById("progressFill");
+  var storyReached = {};
+
+  function getPrompt(id) {
+    return data.prompts.filter(function (p) { return p.id === id; })[0];
+  }
+  function setMood(mood) {
+    if (mood) document.body.setAttribute("data-mood", mood);
+  }
+  function markStory(id) {
+    var story = data.story || [];
+    if (story.indexOf(id) === -1) return;
+    storyReached[id] = true;
+    var done = story.filter(function (s) { return storyReached[s]; }).length;
+    if (progressFill) progressFill.style.transform = "scaleX(" + (done / story.length) + ")";
+  }
+  function chapterLabel(prompt) {
+    var story = data.story || [];
+    var n = story.indexOf(prompt.id);
+    if (!prompt.kicker || n === -1) return null;
+    return escapeHtml(prompt.kicker) + " <span class='kicker__n'>" + (n + 1) + " / " + story.length + "</span>";
+  }
+  // The dopamine pull: closes this loop, opens the next.
+  function appendNextCTA(container, nextId, hook) {
+    var np = getPrompt(nextId);
+    if (!np || asked[nextId]) return;
+    var cta = el("button", "next-cta",
+      escapeHtml(hook) + "<span class='next-cta__go' aria-hidden='true'>→</span>");
+    cta.type = "button";
+    cta.addEventListener("click", function () {
+      cta.disabled = true;
+      markChip(nextId);
+      var chip = suggestEl.querySelector('[data-id="' + nextId + '"]');
+      if (chip) chip.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+      ask(np);
+    });
+    container.appendChild(cta);
+  }
+
   // Ask a prompt: append user bubble, typing indicator, then stream the answer.
   function ask(prompt) {
     if (asked[prompt.id]) {
@@ -183,6 +225,8 @@
     busy = true;
     asked[prompt.id] = true;
     markChip(prompt.id);
+    setMood(prompt.mood);
+    markStory(prompt.id);
 
     var userMsg = makeUserMsg(prompt.question);
     thread.appendChild(userMsg);
@@ -198,9 +242,12 @@
     return delay(640).then(function () {
       var bubble = el("div", "bubble bubble--in", prompt.html);
       inWrap.replaceChild(bubble, typing);
+      var kick = chapterLabel(prompt);
+      if (kick) inWrap.insertBefore(el("span", "kicker", kick), bubble);
       return streamText(bubble, inWrap);
     }).then(function () {
       inWrap.appendChild(answerMeta("from his work"));
+      if (prompt.next && prompt.hook) appendNextCTA(inWrap, prompt.next, prompt.hook);
       busy = false;
     });
   }
@@ -256,6 +303,9 @@
     if (REDUCED) {
       observe(hero); observe(facts);
       Array.prototype.slice.call(thread.children, 2).forEach(observe);
+      setMood("hook");
+      markStory("hero");
+      if (data.heroNext) appendNextCTA(facts, data.heroNext.next, data.heroNext.hook);
       return;
     }
 
@@ -287,6 +337,11 @@
         .then(function () {
           facts.style.display = "";
           observe(facts);
+          setMood("hook");
+          markStory("hero");
+          setTimeout(function () {
+            if (data.heroNext) appendNextCTA(facts, data.heroNext.next, data.heroNext.hook);
+          }, 700);
         });
     }, 500);
   }

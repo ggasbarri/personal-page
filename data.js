@@ -1,52 +1,65 @@
-/* Content for "Ask Gianfranco". Each entry is a suggested prompt that, when
-   asked, streams a short answer into the thread and then "pops" in its visual
-   modules (badges, tiles, flows) with a staggered reveal.
+/* Content for "Ask Gianfranco".
 
-   Convention: keep prose minimal and bold the words that matter. Anything
-   marked class="pop" is held back during the text stream and revealed as a
-   unit afterward, so each answer lands with a payoff instead of a wall of
-   text. Authored, trusted HTML only (see security note in main.js). */
+   The thread is sequenced as a story (David JP Phillips structure): a hook,
+   the challenge, the development, an honest setback, then the payoff. Each
+   story beat carries:
+     kicker  chapter label shown atop the answer
+     mood    drives the ambient temperature of the whole app
+     next    id of the next beat
+     hook    cliffhanger label for the "continue" button (opens the next loop)
+   Beats flagged extra:true (toolkit, timeline) sit off the story rail.
+
+   Voice: accurate and understated. He collaborates, aligns, and makes
+   decisions across teams; he does not "own" the Flutter migration, he helps
+   shape its plan and align the people behind it. No job titles. Let the scope
+   of the work imply the level. Keep prose short; bold the words that matter.
+   Authored, trusted HTML only (see security note in main.js). */
 
 window.ASK_DATA = {
-  // The question that auto-asks itself on first load (hero is already in the DOM).
   hero: "who is gianfranco gasbarri?",
+
+  story: ["hero", "challenge", "build", "ai", "setback", "conclusion"],
+
+  heroNext: { next: "challenge", hook: "So what was the problem?" },
 
   prompts: [
     {
-      id: "ai",
-      chip: "How does he work with AI?",
-      question: "how does he work with ai?",
+      id: "challenge",
+      chip: "What's the hard problem?",
+      question: "what's the hard problem?",
+      kicker: "the challenge",
+      mood: "challenge",
+      next: "build",
+      hook: "So what does he do about it?",
       html: `
-        <p class="answer-lead">He doesn't just <strong>use</strong> AI tools. He decides how a <strong>whole mobile org</strong> ships with them.</p>
-        <div class="badges pop" role="list" aria-label="AI tools">
-          <span class="badge badge--lead" role="listitem"><span class="badge__dot"></span>Claude Code</span>
-          <span class="badge" role="listitem">Cursor</span>
-          <span class="badge" role="listitem">Copilot</span>
-          <span class="badge badge--ghost" role="listitem">context engineering</span>
-        </div>
-        <div class="agentviz pop" aria-label="Coding agents operating safely across a multi-module Flutter codebase">
-          <span class="agentviz__agent">agent</span>
-          <span class="agentviz__beam"></span>
-          <div class="agentviz__mods">
-            <span class="mod">auth</span><span class="mod mod--hot">listings</span><span class="mod">chat</span><span class="mod">media</span><span class="mod">core</span>
+        <p class="answer-lead">The Motors apps run on a hybrid native-and-Flutter setup across Europe. It works, but it <strong>costs</strong>.</p>
+        <div class="forces pop">
+          <div class="force">
+            <span class="force__k">the cost</span>
+            <p>Reliability and performance hits, a split developer experience, native-and-Flutter dependencies that slow everyone down.</p>
           </div>
-          <span class="agentviz__cap">safe on a <strong>multi-module Flutter</strong> codebase</span>
+          <span class="forces__plus" aria-hidden="true">+</span>
+          <div class="force">
+            <span class="force__k">the shift</span>
+            <p>AI starting to <strong>rewire</strong> how mobile teams build, fast.</p>
+          </div>
         </div>
-        <div class="punch pop">
-          <span class="punch__k">interview</span>
-          <p>Co-led the <strong>AI-augmented mobile interview</strong>. Now the <strong>standard format</strong>.</p>
-        </div>`
+        <p class="stakes pop">Unifying it isn't a coding task. It's getting many teams to <strong>commit to one direction</strong>, without breaking what <strong>3M+</strong> people open daily.</p>`
     },
     {
       id: "build",
-      chip: "What does he build?",
-      question: "what does he actually build?",
+      chip: "What does he work on?",
+      question: "so what does he do about it?",
+      kicker: "development",
+      mood: "build",
+      next: "ai",
+      hook: "The bigger shift: how they build",
       html: `
-        <p class="answer-lead">Apps a lot of people open, and the architecture under them.</p>
+        <p class="answer-lead">He works on the parts that make a big change actually <strong>happen</strong>.</p>
         <article class="tile pop">
-          <header class="tile__head"><span class="tile__org">OLX · Motors</span><span class="tile__when">2021 → now</span></header>
-          <h3 class="tile__title">One <strong>Flutter</strong> codebase, many markets</h3>
-          <p class="tile__sub">Co-leading the move to consolidate the Motors apps across Europe.</p>
+          <header class="tile__head"><span class="tile__org">OLX · Motors</span><span class="tile__when">in progress</span></header>
+          <h3 class="tile__title">A path to <strong>one</strong> Flutter codebase</h3>
+          <p class="tile__sub">Co-writing the migration's execution plan with the EM and PM, scope, effort, risks, and aligning the teams who have to commit to it.</p>
         </article>
         <article class="tile tile--flow pop">
           <header class="tile__head"><span class="tile__org">OLX · GenAI</span><span class="tile__when">shipped</span></header>
@@ -57,73 +70,75 @@ window.ASK_DATA = {
             <span class="flow__arrow">→</span>
             <span class="flow__step flow__step--out">finished ad</span>
           </div>
-          <p class="tile__sub">A listing built for pro sellers from a phone camera. Then he set the <strong>platform architecture</strong> behind it.</p>
-        </article>
-        <article class="tile pop">
-          <header class="tile__head"><span class="tile__org">Altice Labs</span><span class="tile__when">2020 → 21</span></header>
-          <h3 class="tile__title"><strong>Android + iOS</strong> from one core</h3>
-          <p class="tile__sub">A Kotlin Multiplatform initiative sharing networking and WiFi logic across platforms.</p>
+          <p class="tile__sub">Shipped with the team. He wrote the <strong>long-term architecture vision</strong>, turning a fast trade-off into a documented direction.</p>
         </article>`
     },
     {
-      id: "stack",
-      chip: "What's his toolkit?",
-      question: "what's in his toolkit?",
+      id: "ai",
+      chip: "How does he work with AI?",
+      question: "how did he change how the team builds?",
+      kicker: "development",
+      mood: "peak",
+      next: "setback",
+      hook: "But did any of it come easy?",
       html: `
-        <div class="kit">
-          <div class="kit__row kit__row--lead pop">
-            <span class="kit__k">ai</span>
-            <span class="chips"><span class="badge badge--lead"><span class="badge__dot"></span>Claude Code</span><span class="badge">Cursor</span><span class="badge">Copilot</span><span class="badge badge--ghost">agents on multi-module code</span></span>
+        <p class="answer-lead">The higher-leverage bet: how a <strong>whole mobile org</strong> works with AI.</p>
+        <div class="badges pop" role="list" aria-label="AI tools">
+          <span class="badge badge--lead" role="listitem"><span class="badge__dot"></span>Claude Code</span>
+          <span class="badge" role="listitem">Cursor</span>
+          <span class="badge" role="listitem">Copilot</span>
+        </div>
+        <div class="agentviz pop" aria-label="Agents.md context keeps coding agents architecturally correct across a multi-module Flutter codebase">
+          <span class="agentviz__agent">agent</span>
+          <span class="agentviz__beam"></span>
+          <div class="agentviz__mods">
+            <span class="mod">auth</span><span class="mod mod--hot">listings</span><span class="mod">chat</span><span class="mod">media</span><span class="mod">core</span>
           </div>
-          <div class="kit__row pop">
-            <span class="kit__k">mobile</span>
-            <span class="chips"><span class="badge">Flutter</span><span class="badge">Kotlin</span><span class="badge">Compose</span><span class="badge">Swift</span><span class="badge">KMP</span></span>
-          </div>
-          <div class="kit__row pop">
-            <span class="kit__k">practice</span>
-            <span class="chips"><span class="badge">DDD</span><span class="badge">RFCs &amp; ADRs</span><span class="badge">A/B testing</span><span class="badge">rollouts</span><span class="badge">monitoring</span></span>
-          </div>
-          <div class="kit__row pop">
-            <span class="kit__k">speaks</span>
-            <span class="chips"><span class="badge badge--flag">🇪🇸 Spanish</span><span class="badge badge--flag">🇵🇹 Português</span><span class="badge badge--flag">🇬🇧 English</span></span>
-          </div>
+          <span class="agentviz__cap"><strong>Agents.md</strong> context, so agents stay architecturally right across modules</span>
+        </div>
+        <div class="punch pop">
+          <span class="punch__k">interview</span>
+          <p>Co-redesigned the <strong>AI-era mobile interview</strong>. Adopted as the standard, then a reference for a wider effort.</p>
         </div>`
     },
     {
-      id: "teams",
-      chip: "How does he scale across teams?",
-      question: "how does he work across teams?",
+      id: "setback",
+      chip: "Did it come easy?",
+      question: "did any of it come easy?",
+      kicker: "the honest part",
+      mood: "setback",
+      next: "conclusion",
+      hook: "So where does it land?",
       html: `
-        <p class="answer-lead">His scope stopped being a single app a while ago.</p>
-        <div class="punch pop">
-          <span class="punch__k">standards</span>
-          <p>Authored cross-team standards for <strong>architecture</strong>, <strong>native/web interop</strong>, and <strong>monitoring</strong>, adopted across product teams.</p>
+        <p class="answer-lead">Honestly? The hard part isn't the code. It's the <strong>alignment</strong>.</p>
+        <div class="setback-block pop">
+          <p>Writing the plan, mapping the trade-offs, getting teams who each have their own way (and good reasons) to agree on one direction: it's <strong>slow</strong>.</p>
+          <p>It rarely demos well. The payoff shows up quietly, in other people's work, months later.</p>
         </div>
-        <div class="punch pop">
-          <span class="punch__k">decisions</span>
-          <p>Works in <strong>RFCs &amp; ADRs</strong>: written down and arguable, not tribal.</p>
-        </div>
-        <div class="punch pop">
-          <span class="punch__k">people</span>
-          <p><strong>Mentor</strong> in the formal programme and <strong>system-design interviewer</strong> for mobile hiring.</p>
-        </div>`
+        <p class="aside-quiet pop">So he's learned to close those conversations: gather the input, then <strong>own the recommendation</strong>.</p>`
     },
     {
-      id: "path",
-      chip: "Where has he been?",
-      question: "what's the path so far?",
+      id: "conclusion",
+      chip: "So where does it land?",
+      question: "so where does it all land?",
+      kicker: "how it lands",
+      mood: "payoff",
+      next: "contact",
+      hook: "Want him on your problem?",
       html: `
-        <ol class="timeline">
-          <li class="timeline__item pop"><span class="timeline__when">2021 — now</span><span class="timeline__what"><strong>Senior Mobile Engineer</strong>, OLX Group · Motors</span></li>
-          <li class="timeline__item pop"><span class="timeline__when">2020 — 21</span><span class="timeline__what"><strong>Mobile Engineer</strong>, GFI / Altice Labs</span></li>
-          <li class="timeline__item pop"><span class="timeline__when">2017 — 20</span><span class="timeline__what"><strong>Flutter &amp; Node</strong> at Nemobile · Android at Grupo Nepuntobiz</span></li>
-          <li class="timeline__item timeline__item--edu pop"><span class="timeline__when">2018</span><span class="timeline__what">Associate Android Developer, <strong>Google</strong></span></li>
-        </ol>`
+        <p class="answer-lead">Where it counts: in <strong>other people's</strong> work.</p>
+        <div class="payoff pop" role="list">
+          <span class="payoff__chip" role="listitem">guidelines and standards other teams build on</span>
+          <span class="payoff__chip" role="listitem">an AI-era interview, now a shared reference</span>
+          <span class="payoff__chip" role="listitem">mentees who now drive their own initiatives</span>
+        </div>
+        <p class="punchline pop">The throughline: he makes cross-team decisions <strong>legible</strong>, and moves them forward.</p>`
     },
     {
       id: "contact",
       chip: "How do I reach him?",
       question: "how do i reach him?",
+      mood: "warm",
       html: `
         <p class="answer-lead">Easy. Pick a channel:</p>
         <div class="contact">
@@ -138,6 +153,44 @@ window.ASK_DATA = {
             <span class="cta__go" aria-hidden="true">→</span>
           </a>
         </div>`
+    },
+    {
+      id: "stack",
+      chip: "His toolkit",
+      question: "what's in his toolkit?",
+      extra: true,
+      html: `
+        <div class="kit">
+          <div class="kit__row kit__row--lead pop">
+            <span class="kit__k">ai</span>
+            <span class="chips"><span class="badge badge--lead"><span class="badge__dot"></span>Claude Code</span><span class="badge">Cursor</span><span class="badge">Copilot</span><span class="badge badge--ghost">Agents.md context</span></span>
+          </div>
+          <div class="kit__row pop">
+            <span class="kit__k">mobile</span>
+            <span class="chips"><span class="badge">Flutter</span><span class="badge">Kotlin</span><span class="badge">Compose</span><span class="badge">Swift</span><span class="badge">KMP</span></span>
+          </div>
+          <div class="kit__row pop">
+            <span class="kit__k">how he works</span>
+            <span class="chips"><span class="badge">RFCs &amp; ADRs</span><span class="badge">DDD</span><span class="badge">stakeholder alignment</span><span class="badge">A/B &amp; rollouts</span><span class="badge">monitoring</span></span>
+          </div>
+          <div class="kit__row pop">
+            <span class="kit__k">speaks</span>
+            <span class="chips"><span class="badge badge--flag">🇪🇸 Spanish</span><span class="badge badge--flag">🇵🇹 Português</span><span class="badge badge--flag">🇬🇧 English</span></span>
+          </div>
+        </div>`
+    },
+    {
+      id: "path",
+      chip: "The timeline",
+      question: "what's the path so far?",
+      extra: true,
+      html: `
+        <ol class="timeline">
+          <li class="timeline__item pop"><span class="timeline__when">2021 — now</span><span class="timeline__what"><strong>Mobile &amp; cross-team architecture</strong>, OLX Group · Motors</span></li>
+          <li class="timeline__item pop"><span class="timeline__when">2020 — 21</span><span class="timeline__what"><strong>Mobile engineer</strong>, GFI / Altice Labs</span></li>
+          <li class="timeline__item pop"><span class="timeline__when">2017 — 20</span><span class="timeline__what"><strong>Flutter &amp; Node</strong> at Nemobile · Android at Grupo Nepuntobiz</span></li>
+          <li class="timeline__item timeline__item--edu pop"><span class="timeline__when">2018</span><span class="timeline__what">Associate Android Developer, <strong>Google</strong></span></li>
+        </ol>`
     }
   ]
 };

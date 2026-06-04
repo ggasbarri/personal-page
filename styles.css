@@ -72,6 +72,48 @@ a { color: inherit; }
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
 }
 
+/* -------------------------------------- story mood: emotional temperature */
+/* Overlays crossfade per story beat to shift the room's mood (Phillips arc).
+   Opacity-only transitions keep it cheap. */
+.mood { position: fixed; inset: 0; pointer-events: none; z-index: 0; opacity: 0; }
+.mood-cool {
+  background: radial-gradient(58vw 52vw at 50% -6%, oklch(0.6 0.08 248 / 0.22), transparent 62%);
+  transition: opacity 1.2s var(--ease);
+}
+.mood-dim {
+  background: radial-gradient(130vw 100vh at 50% 42%, transparent 24%, oklch(0.09 0.012 55 / 0.72) 100%);
+  transition: opacity 1.3s var(--ease);
+}
+.mood-bloom {
+  background:
+    radial-gradient(62vw 56vw at 50% -4%, oklch(0.74 0.175 52 / 0.26), transparent 60%),
+    radial-gradient(80vw 50vw at 50% 118%, oklch(0.7 0.2 48 / 0.18), transparent 64%);
+  transition: opacity 1.2s var(--ease);
+}
+/* stage warm glow also responds to the arc */
+.stage-glow { transition: opacity 1.2s var(--ease); }
+
+body[data-mood="challenge"] .mood-cool { opacity: 1; }
+body[data-mood="challenge"] .stage-glow { opacity: 0.5; }
+body[data-mood="peak"] .mood-bloom { opacity: 0.5; }
+body[data-mood="setback"] .mood-dim { opacity: 1; }
+body[data-mood="setback"] .mood-cool { opacity: 0.35; }
+body[data-mood="setback"] .stage-glow { opacity: 0.4; }
+body[data-mood="payoff"] .mood-bloom { opacity: 1; animation: bloom 1.6s var(--ease); }
+body[data-mood="payoff"] .stage-glow { opacity: 1; }
+
+@keyframes bloom {
+  0% { opacity: 0; transform: scale(0.96); }
+  45% { opacity: 1; }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* the device surface also takes the temperature, so mood reads on mobile */
+.device { transition: background-color 1.3s var(--ease); }
+body[data-mood="challenge"] .device { background: oklch(0.19 0.011 66); }
+body[data-mood="setback"] .device { background: oklch(0.165 0.012 56); }
+body[data-mood="payoff"] .device { background: oklch(0.215 0.017 54); }
+
 .stage-aside {
   top: 50%;
   transform: translateY(-50%);
@@ -148,6 +190,25 @@ a { color: inherit; }
   white-space: nowrap;
 }
 .statusbar__sys { justify-self: end; display: inline-flex; align-items: center; gap: 0.4rem; fill: var(--text); }
+
+/* story progress: a hairline that fills as the narrative advances */
+.story-progress {
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+.story-progress__fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, var(--accent-strong), var(--accent));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.9s var(--ease);
+  box-shadow: 0 0 0.6rem var(--accent);
+}
 
 .dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; display: inline-block; }
 .dot--live {
@@ -389,6 +450,141 @@ strong { font-weight: 600; color: var(--text); }
   transform: none;
   transition: opacity 0.45s var(--ease), transform 0.55s var(--ease);
 }
+
+/* ============================================================ storytelling */
+
+/* chapter kicker: a small label that opens each story beat */
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.7rem;
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.kicker::before {
+  content: "";
+  width: 1.3rem;
+  height: 1px;
+  background: var(--accent-line);
+}
+.kicker__n { color: var(--text-faint); letter-spacing: 0.04em; }
+
+/* hero cliffhanger tail */
+.hook-tail { margin-top: 0.7rem; color: var(--text-muted); }
+.hook-tail strong { color: var(--accent); font-weight: 600; }
+
+/* open-loop tail lines inside an answer */
+.tail { margin-top: 0.8rem; color: var(--text-faint); font-size: 0.92rem; }
+.aside-quiet { margin-top: 0.75rem; color: var(--text-faint); font-size: 0.92rem; font-style: italic; }
+
+/* the cliffhanger "continue" button: the dopamine pull to the next beat */
+.next-cta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  width: 100%;
+  margin-top: 0.9rem;
+  padding: 0.85rem 1.1rem;
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: left;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: none;
+  border-radius: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 0.7rem 1.8rem -0.6rem var(--accent-strong);
+  transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), background 0.25s var(--ease);
+}
+.next-cta:hover { transform: translateY(-0.14rem); background: var(--accent-strong); box-shadow: 0 1rem 2.2rem -0.6rem var(--accent-strong); }
+.next-cta:active { transform: translateY(0); }
+.next-cta__go {
+  flex: 0 0 auto;
+  font-size: 1.2rem;
+  font-weight: 700;
+  transition: transform 0.3s var(--ease);
+}
+.next-cta:hover .next-cta__go { transform: translateX(0.3rem); }
+.next-cta--out { background: var(--surface-3); color: var(--text); box-shadow: none; border: 1px solid var(--accent-line); }
+.next-cta--out:hover { background: var(--surface-2); }
+
+/* challenge: two forces in tension */
+.forces { display: flex; flex-direction: column; gap: 0.55rem; margin-top: 0.7rem; }
+.force {
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 1rem;
+  padding: 0.8rem 0.9rem;
+}
+.force__k {
+  font-family: var(--font-mono);
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+.force p { margin-top: 0.2rem; font-size: 0.95rem; color: var(--text-muted); }
+.force strong { color: var(--text); }
+.forces__plus {
+  align-self: center;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.3rem;
+  color: var(--accent);
+  line-height: 0.6;
+}
+.stakes { margin-top: 0.8rem; font-size: 1.02rem; color: var(--text); }
+.stakes strong { color: var(--accent); font-weight: 700; }
+
+/* setback: the quiet, honest dip (oxytocin) */
+.setback-block {
+  margin-top: 0.7rem;
+  padding: 0.95rem 1rem;
+  background: var(--stage);
+  border: 1px solid var(--line-soft);
+  border-radius: 1rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+.setback-block p + p { margin-top: 0.6rem; }
+.setback-block strong { color: var(--text); font-weight: 600; }
+
+/* conclusion: the warm payoff */
+.payoff { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.7rem; }
+.payoff__chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  border-radius: 0.8rem;
+}
+.payoff__chip::before {
+  content: "✓";
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.punchline {
+  margin-top: 0.85rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.18rem;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.punchline strong { color: var(--accent); }
 
 /* --------------------------------------------------------------- badges */
 
