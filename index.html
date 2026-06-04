@@ -72,7 +72,9 @@
         <div class="bubble bubble--in bubble--panel">
           <div class="profile">
             <span class="profile__ava">
-              <img src="assets/gianfranco.jpg" alt="Gianfranco Gasbarri, smiling in sunglasses and a white shirt" width="800" height="800" loading="lazy" />
+              <span class="profile__avaframe">
+                <img src="assets/gianfranco.jpg" alt="Gianfranco Gasbarri, smiling in sunglasses and a white shirt" width="800" height="800" loading="lazy" />
+              </span>
               <span class="dot dot--live" aria-hidden="true"></span>
             </span>
             <div class="profile__id">
@@ -84,14 +86,19 @@
               </a>
             </div>
           </div>
-          <p class="panel__title">at a glance</p>
-          <dl class="panel">
-            <div class="panel__row"><dt>now</dt><dd>Senior Mobile Engineer, OLX Group · Motors</dd></div>
-            <div class="panel__row"><dt>based</dt><dd>Aveiro, Portugal</dd></div>
-            <div class="panel__row"><dt>scale</dt><dd><span class="num" data-count="30000" data-suffix="k+ DAU" data-divide="1000">30k+ DAU</span> · <span class="num" data-count="3000000" data-suffix="M+ launches/day" data-divide="1000000">3M+ launches/day</span></dd></div>
-            <div class="panel__row"><dt>builds with</dt><dd>Flutter · Kotlin · Swift · Kotlin Multiplatform</dd></div>
-            <div class="panel__row"><dt>works in</dt><dd>Spanish · Portuguese · English</dd></div>
-          </dl>
+          <div class="glance">
+            <div class="glance__scale">
+              <span class="bignum" data-count="3000000" data-suffix="M+" data-divide="1000000">3M+</span>
+              <span class="bignum__label">daily app <strong>launches</strong></span>
+            </div>
+            <dl class="panel">
+              <div class="panel__row"><dt>now</dt><dd><strong>Senior Mobile Engineer</strong>, OLX · Motors</dd></div>
+              <div class="panel__row"><dt>ai</dt><dd><strong>Claude Code</strong> · Cursor · Copilot</dd></div>
+              <div class="panel__row"><dt>based</dt><dd>Aveiro, Portugal</dd></div>
+              <div class="panel__row panel__row--bg"><dt>background</dt><dd>Flutter · Kotlin · Swift · KMP</dd></div>
+              <div class="panel__row"><dt>speaks</dt><dd><span class="flags">🇪🇸 🇵🇹 🇬🇧</span></dd></div>
+            </dl>
+          </div>
         </div>
       </section>
     </div>

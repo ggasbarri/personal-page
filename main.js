@@ -98,13 +98,25 @@
   // block cursor. Markup (citations, highlights, cards) stays intact.
   function streamText(rootEl, anchor) {
     return new Promise(function (resolve) {
+      // Visual modules marked .pop are held back during the text stream, then
+      // revealed as whole units afterward for a staggered payoff.
+      var pops = Array.prototype.slice.call(rootEl.querySelectorAll(".pop"));
+
+      function finish() {
+        revealPops(pops, anchor || rootEl);
+        resolve();
+      }
+
       if (REDUCED) {
         rootEl.querySelectorAll("[data-count]").forEach(animateCount);
+        pops.forEach(function (p) { p.classList.add("in"); });
         resolve(); return;
       }
+
       var nodes = [];
       (function walk(n) {
         for (var c = n.firstChild; c; c = c.nextSibling) {
+          if (c.nodeType === 1 && c.classList && c.classList.contains("pop")) continue; // skip pop subtrees
           if (c.nodeType === 3 && c.nodeValue.trim() !== "") nodes.push(c);
           else if (c.nodeType === 1) walk(c);
         }
@@ -121,7 +133,7 @@
         if (i >= nodes.length) {
           cursor.remove();
           rootEl.querySelectorAll("[data-count]").forEach(animateCount);
-          resolve();
+          finish();
           return;
         }
         var s = full[i], end = Math.min(pos + 3, s.length);
@@ -131,6 +143,17 @@
         scrollInto(anchor || rootEl);
         setTimeout(function () { requestAnimationFrame(step); }, 13);
       })();
+    });
+  }
+
+  // Stagger-reveal the visual modules of an answer, counting up any numbers.
+  function revealPops(pops, anchor) {
+    pops.forEach(function (p, idx) {
+      setTimeout(function () {
+        p.classList.add("in");
+        p.querySelectorAll("[data-count]").forEach(animateCount);
+        scrollInto(anchor);
+      }, REDUCED ? 0 : 90 + idx * 110);
     });
   }
 
