@@ -207,15 +207,20 @@
     cta.addEventListener("click", function () {
       cta.disabled = true;
       markChip(nextId);
-      var chip = suggestEl.querySelector('[data-id="' + nextId + '"]');
-      if (chip) chip.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-      ask(np);
+      // The button becomes the question: morph it into the user bubble.
+      ask(np, cta);
     });
     container.appendChild(cta);
   }
 
-  // Ask a prompt: append user bubble, typing indicator, then stream the answer.
-  function ask(prompt) {
+  function canMorph() {
+    return !REDUCED && typeof document.startViewTransition === "function";
+  }
+
+  // Ask a prompt. If fromCTA is given, the continue button morphs into the
+  // user's question bubble (View Transitions), so it reads as one gesture
+  // instead of a button plus a near-identical repeated bubble.
+  function ask(prompt, fromCTA) {
     if (asked[prompt.id]) {
       var existing = document.getElementById("ans-" + prompt.id);
       if (existing) existing.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -229,27 +234,46 @@
     markStory(prompt.id);
 
     var userMsg = makeUserMsg(prompt.question);
+
+    // Stream the typing indicator, then the answer, then the next hook.
+    function deliver() {
+      var inWrap = el("div", "msg msg--in");
+      inWrap.id = "ans-" + prompt.id;
+      var typing = typingBubble();
+      inWrap.appendChild(typing);
+      thread.appendChild(inWrap);
+      scrollInto(inWrap);
+
+      return delay(640).then(function () {
+        var bubble = el("div", "bubble bubble--in", prompt.html);
+        inWrap.replaceChild(bubble, typing);
+        var kick = chapterLabel(prompt);
+        if (kick) inWrap.insertBefore(el("span", "kicker", kick), bubble);
+        return streamText(bubble, inWrap);
+      }).then(function () {
+        inWrap.appendChild(answerMeta("from his work"));
+        if (prompt.next && prompt.hook) appendNextCTA(inWrap, prompt.next, prompt.hook);
+        busy = false;
+      });
+    }
+
+    if (fromCTA && canMorph()) {
+      var bub = userMsg.querySelector(".bubble");
+      fromCTA.style.viewTransitionName = "q-morph";
+      bub.style.viewTransitionName = "q-morph";
+      var vt = document.startViewTransition(function () {
+        fromCTA.remove();
+        thread.appendChild(userMsg);
+      });
+      vt.ready.catch(function () {}).then(function () { deliver(); });
+      vt.finished.catch(function () {}).then(function () { bub.style.viewTransitionName = ""; });
+      return Promise.resolve();
+    }
+
+    if (fromCTA) fromCTA.remove();
     thread.appendChild(userMsg);
     scrollInto(userMsg);
-
-    var inWrap = el("div", "msg msg--in");
-    inWrap.id = "ans-" + prompt.id;
-    var typing = typingBubble();
-    inWrap.appendChild(typing);
-    thread.appendChild(inWrap);
-    scrollInto(inWrap);
-
-    return delay(640).then(function () {
-      var bubble = el("div", "bubble bubble--in", prompt.html);
-      inWrap.replaceChild(bubble, typing);
-      var kick = chapterLabel(prompt);
-      if (kick) inWrap.insertBefore(el("span", "kicker", kick), bubble);
-      return streamText(bubble, inWrap);
-    }).then(function () {
-      inWrap.appendChild(answerMeta("from his work"));
-      if (prompt.next && prompt.hook) appendNextCTA(inWrap, prompt.next, prompt.hook);
-      busy = false;
-    });
+    return deliver();
   }
 
   /* ----------------------------------------------------------- the chips */
