@@ -1,0 +1,6 @@
+# agent / preview tooling, not part of the published site
+.claude/
+
+# os / editor cruft
+.DS_Store
+*.log
