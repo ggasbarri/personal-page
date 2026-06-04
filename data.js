@@ -103,14 +103,10 @@ window.ASK_DATA = {
           <a class="contact__link" href="mailto:hey@ggasbarri.com">
             <span class="contact__k">email</span><span class="contact__v">hey@ggasbarri.com</span>
           </a>
-          <a class="contact__link" href="https://www.linkedin.com/in/ggasbarri" target="_blank" rel="noopener">
+          <a class="contact__link" href="https://www.linkedin.com/in/ggasbarri/" target="_blank" rel="noopener">
             <span class="contact__k">linkedin</span><span class="contact__v">in/ggasbarri</span>
           </a>
-          <span class="contact__link contact__link--static">
-            <span class="contact__k">based in</span><span class="contact__v">Aveiro, Portugal</span>
-          </span>
-        </div>
-        <p class="answer-aside">He reads Spanish, Portuguese, and English, so say hi in whichever is easiest.</p>`
+        </div>`
     }
   ]
 };
