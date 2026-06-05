@@ -220,7 +220,7 @@
   // Ask a prompt. If fromCTA is given, the continue button morphs into the
   // user's question bubble (View Transitions), so it reads as one gesture
   // instead of a button plus a near-identical repeated bubble.
-  function ask(prompt, fromCTA) {
+  function ask(prompt, fromCTA, overrideQuestion) {
     if (asked[prompt.id]) {
       var existing = document.getElementById("ans-" + prompt.id);
       if (existing) existing.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -233,7 +233,7 @@
     setMood(prompt.mood);
     markStory(prompt.id);
 
-    var userMsg = makeUserMsg(prompt.question);
+    var userMsg = makeUserMsg(overrideQuestion || prompt.question);
 
     // Stream the typing indicator, then the answer, then the next hook.
     function deliver() {
@@ -296,14 +296,45 @@
     });
   }
 
-  /* ----------------------- the input "asks" the next unanswered prompt --- */
+  /* ----------------- the input routes a free question to a real topic --- */
+  // Extra keywords per topic so a typed question lands on the right answer.
+  var ALIASES = {
+    challenge: "problem hard why migration migrate sprawl",
+    build:     "build builds work works project projects ship shipped flutter app apps video ad made do",
+    ai:        "ai agent agents claude cursor copilot genai gen llm tooling automation",
+    setback:   "setback hard easy difficult struggle honest fail mistake weakness",
+    conclusion:"impact result results land landed outcome achievements proud",
+    contact:   "contact reach email hire hiring linkedin talk connect message available",
+    stack:     "stack tool tools toolkit tech kotlin swift kmp compose dart skill skills language languages speak",
+    path:      "path timeline career history experience background past journey where when"
+  };
+  function bestMatch(q) {
+    var tokens = q.toLowerCase().split(/[^a-z0-9]+/).filter(function (t) { return t.length > 2; });
+    if (!tokens.length) return null;
+    var best = null, bestScore = 0;
+    data.prompts.forEach(function (p) {
+      var corpus = (p.chip + " " + p.question + " " + p.id + " " + (ALIASES[p.id] || "")).toLowerCase();
+      var score = 0;
+      tokens.forEach(function (t) { if (corpus.indexOf(t) > -1) score++; });
+      if (score > bestScore) { bestScore = score; best = p; }
+    });
+    return bestScore > 0 ? best : null;
+  }
+
   form.addEventListener("submit", function (e) {
     e.preventDefault();
-    var next = data.prompts.find(function (p) { return !asked[p.id]; });
-    if (!next) return;
-    var chip = suggestEl.querySelector('[data-id="' + next.id + '"]');
+    var q = field.value.trim();
+    field.value = "";
+    field.blur();
+    // a typed question routes to its closest topic; otherwise continue the story
+    var matched = q ? bestMatch(q) : null;
+    var target = matched ||
+                 data.prompts.find(function (p) { return !asked[p.id]; }) ||
+                 getPrompt("contact");
+    if (!target) return;
+    var chip = suggestEl.querySelector('[data-id="' + target.id + '"]');
     if (chip) chip.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-    ask(next);
+    ask(target, null, matched ? q : null);
   });
 
   /* -------------------------------------------------------- hero opener */
