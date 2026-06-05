@@ -1,8 +1,10 @@
 # Ask Gianfranco
 
-The personal page of **Gianfranco Gasbarri**, Senior Mobile Engineer (OLX Group · Motors), framed as a personal AI app: ask a question, an answer streams back, suggested prompts walk you through his work.
+The personal page of **Gianfranco Gasbarri** — mobile engineering, cross-team architecture, and AI-augmented engineering at OLX Motors — framed as a personal AI app: ask a question, an answer streams back, and a guided story walks you through his work.
 
 A hand-authored static site. No build step, no dependencies, no framework.
+
+> **Before editing any copy, read the Positioning rules in [PRODUCT.md](PRODUCT.md):** accuracy over impressiveness (no overstating; he collaborates on and aligns the Flutter migration, he does not own it), no job title and never the word "Staff" on the page, staff-level implied only through scope, and keep text short.
 
 ## Run locally
 
@@ -28,18 +30,23 @@ Opening `index.html` directly works too, but a server is closer to production.
 
 ## Editing content
 
-Open `data.js`. Each suggested prompt is one object:
+Open `data.js`. The thread is a sequenced story (`ASK_DATA.story` lists the beat order). Each prompt is one object:
 
 ```js
 {
-  id: "build",                       // unique, also used as the anchor id
-  chip: "What does he actually build?",  // text on the suggestion chip
-  question: "what does he actually build?", // the user bubble when asked
-  html: `…authored answer markup…`   // streamed into the thread
+  id: "build",                 // unique; also the answer's anchor id
+  chip: "What does he work on?",            // label on the suggestion chip
+  question: "so what does he do about it?", // the visitor's bubble when asked
+  kicker: "development",       // chapter label shown atop the answer
+  mood: "build",               // shifts the page's temperature for this beat
+  next: "ai",                  // the next story beat
+  hook: "The bigger shift: how they build", // cliffhanger on the continue button
+  html: `…authored answer markup…`          // streamed in; elements with
+                                            // class="pop" reveal staggered
 }
 ```
 
-The opening bio lives in `index.html` (`#hero-answer`) so it renders even with JavaScript disabled.
+Beats flagged `extra: true` (toolkit, timeline) sit off the story rail as ask-anything extras. The opening bio lives in `index.html` (`#hero-answer`) so it renders even with JavaScript disabled. The bottom input routes a typed question to its closest topic, or to contact if nothing matches.
 
 ## Deploy
 

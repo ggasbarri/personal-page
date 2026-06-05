@@ -14,31 +14,42 @@
 
 ## Who Gianfranco is
 
-Senior Mobile Engineer at OLX Group (Motors), based in Aveiro, Portugal. 8 years across Flutter and native Android. Operates across a large org: aligns engineering, product, and platform teams, authors cross-team standards, mentors, and interviews. Early adopter of AI tooling inside the engineering practice (Claude Code, Cursor, Copilot, context engineering for agents on multi-module codebases). Multilingual: Spanish (native), Portuguese (fluent), English (professional).
+Officially a Senior Mobile Engineer at OLX Group (Motors), based in Aveiro, Portugal (8 years across Flutter and native Android). This is internal context for writing the page; the title itself is **not** printed on the page (see Positioning rules). His work increasingly sits across a large org: he aligns engineering, product, and platform teams, makes architecture trade-offs legible, authors cross-team standards, mentors, and interviews. Early, deliberate adopter of AI tooling in the engineering practice (Claude Code, Cursor, Copilot, Agents.md context for agents on multi-module codebases). Multilingual: Spanish (native), Portuguese (fluent), English (professional).
 
-Signature work:
-- Co-leading the strategy/roadmap to consolidate OLX Motors apps onto Flutter across European markets (30k+ DAU, 3M+ daily app launches).
-- Shipped a GenAI listing-creation feature for professional sellers (video to structured ad), then defined the long-term architecture direction adopted by the platform team.
-- Drove AI coding-agent adoption: designed how agents operate safely against a multi-module Flutter codebase; co-led the redesign of the mobile engineering interview for AI-augmented candidates (now the standard format).
-- Authored cross-team technical standards (architecture, native/web interop, production monitoring).
-- Led a Kotlin Multiplatform code-sharing initiative across native Android and iOS (Altice Smart WiFi).
+Signature work, **stated accurately** (see Positioning rules; prefer his honest self-assessment over his inflated promotion docs):
+- The **Flutter migration** of the Motors apps (3M+ daily launches across Europe): he does **not** own or "lead" it. He co-writes the execution plan with the EM and PM (scope, effort, risks such as the Auth0 deadline) and aligns the teams who have to commit to it.
+- **Video2Ad** (GenAI: video to a car listing): a team delivery. His specific contribution is the long-term **architecture vision** document that gave the platform team a concrete direction to evolve it.
+- **AI-tooling adoption:** Agents.md context so coding agents stay architecturally correct on a multi-module codebase; co-redesigned the mobile interview for the AI era (adopted as the standard, then a wider reference).
+- **Cross-team standards:** co-authored the Webview guidelines for the failure-prone web/native boundary (presented at the Frontend Guild); represented Motors in cross-CU Chat SDK dependency alignment.
+- Earlier: a **Kotlin Multiplatform** code-sharing initiative across native Android and iOS (Altice Smart WiFi).
+
+## Positioning rules (stated directly by Gianfranco, treat as hard constraints)
+
+- **Accuracy over impressiveness. Never overstate, never lie, never sound arrogant.** No claim he wouldn't make to a colleague's face. He collaborates, aligns, and makes decisions over time; he does not single-handedly own big initiatives. The Flutter migration is the canonical example: he helps shape and align it, he did not decide or lead it. Sell the *collaboration, strategic thinking, and the decisions* he was able to make.
+- **His own promotion / performance docs overstate and can be cringe.** They say "Staff", "led the migration", "secured executive sign-off", "10+ teams". Treat them as raw material, not truth. Prefer his honest FY26 self-assessment for facts.
+- **Subtle staff-level signaling, never stated.** He is currently a Senior Mobile Engineer and wants visitors to come away feeling he *deserves staff*. So: **do not print any job title on the page**, and **never use the word "Staff"** (cringe, do not shout it). Let the scope of the work imply the level: cross-team collaboration, architecture trade-offs made legible, prioritizing initiatives by business value, force-multiplying through standards and an interview format others adopt, mentoring. Keep it subtle.
+- **Short text.** He worries people won't read at all. Keep copy minimal; lead with visual elements; bold only the words that matter. "Text is for CVs"; this page sells the work visually.
+- **No cringe / no slop copy.** Cut marketing filler and self-congratulation (e.g., a "built by hand, not by a template" footer, or an on-the-nose "Architecture & alignment across teams" label). Real facts, plainly.
 
 ## Brand voice
 
 Three words, as physical objects: **machined** (a precisely milled aluminum phone), **conversational** (a warm spoken answer, not a brochure), **contemporary** (built with the newest tools, unmistakably 2026).
 
-Tone in copy: first-person-adjacent but written as an assistant answering *about* him. Confident, specific, never buzzword-padded. Numbers over adjectives ("3M+ daily app launches" beats "high-scale"). A little wit is welcome; corporate gloss is not.
+Tone in copy: first-person-adjacent but written as an assistant answering *about* him. Confident and specific, but **understated, never boastful**; never buzzword-padded. Numbers over adjectives ("3M+ daily app launches" beats "high-scale"). A little dry wit is welcome; corporate gloss is not.
 
 ## Strategic principles
 
-- The interaction is the hook. Asking, streaming, and tapping suggested prompts must feel alive on first load.
-- Specific beats grand. Real project names, real metrics, real tools.
+- The interaction is the hook. Asking, streaming, and tapping prompts must feel alive on first load.
+- Specific beats grand. Real project names, real metrics, real tools, stated honestly (see Positioning rules).
+- Minimal text; the design and the visual modules carry the weight, not paragraphs.
 - It must read as hand-built, not generated. The bar is "how was this made?", not "which AI made this?"
 - Fast and frictionless. Static, no build step, loads instantly, works on a phone first.
 
 ## Anti-references
 
 - A generic ChatGPT/Perplexity clone (AI-purple/teal, lavender gradients, the assistant-app default look).
+- **The AI-generated dark theme:** dark mode + a single glowing accent + monospace "tech" labels + grain. This was the first version; it read as "AI made this" and was explicitly rejected in favor of the light "paper" theme (see DESIGN.md).
 - The editorial-typographic lane (display-serif italic + mono labels + ruled columns).
 - The hero-metric SaaS template (big number, small label, gradient accent, identical cards).
+- **Overstated or arrogant copy**, job titles, the word "Staff", and cringe footer/marketing lines (see Positioning rules).
 - Buzzword bio copy ("passionate, results-driven, synergy").
