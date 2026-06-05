@@ -93,7 +93,7 @@
 
   /* ---------------- progressive text reveal over an authored fragment ---- */
   // Walk text nodes, blank them, then refill in small chunks with a trailing
-  // block cursor. Markup (citations, highlights, cards) stays intact.
+  // block cursor. Markup (highlights, cards, links) stays intact.
   function streamText(rootEl, anchor) {
     return new Promise(function (resolve) {
       // Visual modules marked .pop are held back during the text stream, then
@@ -279,9 +279,9 @@
   /* ===================================================================
      OS-feature layer (overdrive). The device behaves like a real OS;
      each beat fires a native feature of the selected platform. The Live
-     Activity (iOS Dynamic Island / Android Live Update status chip) is the spine: it
-     tracks the Flutter migration across the whole story. Chrome only,
-     the chat content and clay-red brand are untouched.
+     Activity (iOS Dynamic Island / Android Live Update status chip) is the
+     spine: it tracks the broad story path. Chrome only, the chat content and
+     clay-red brand are untouched.
 
      All fragments below are authored/trusted (static strings + data.js),
      and the only dynamic values are passed through escapeHtml(). Insertion
@@ -312,7 +312,7 @@
   function appleSparkSVG()  { return "<svg class='ai-label__spark' viewBox='0 0 24 24' aria-hidden='true'><path d='M12 2c.6 4.8 2.6 6.8 7.4 7.4-4.8.6-6.8 2.6-7.4 7.4-.6-4.8-2.6-6.8-7.4-7.4C9.4 8.8 11.4 6.8 12 2z'/></svg>"; }
   function geminiSparkSVG() { return "<svg class='gemini__spark' viewBox='0 0 24 24' aria-hidden='true'><defs><linearGradient id='gem' x1='0' y1='0' x2='1' y2='1'><stop offset='0' stop-color='#4285F4'/><stop offset='0.5' stop-color='#9b72cb'/><stop offset='1' stop-color='#d96570'/></linearGradient></defs><path fill='url(#gem)' d='M12 2c.6 4.8 2.6 6.8 7.4 7.4-4.8.6-6.8 2.6-7.4 7.4-.6-4.8-2.6-6.8-7.4-7.4C9.4 8.8 11.4 6.8 12 2z'/></svg>"; }
 
-  // -- Live Activity controller (the migration spine) ---------------------
+  // -- Live Activity controller (the story spine) -------------------------
   var LA = {
     last: null,
     setProg: function (p) { if (liveact) liveact.style.setProperty("--prog", p || 0); },
@@ -320,24 +320,24 @@
     wake: function () { this.bump("liveact--wake"); },
     app: function (a) {
       if (!liveact) return;
-      liveact.classList.remove("liveact--migration", "liveact--expanded");
+      liveact.classList.remove("liveact--progress", "liveact--expanded");
       var label = (a && a.label) || "ask gianfranco";
       laTitle.textContent = (a && a.short) || "ask";
       laSub.hidden = true; laTrail.hidden = true;
       this.setProg(0);
       liveact.setAttribute("aria-label", label + ", live");
     },
-    migration: function (a) {
+    work: function (a) {
       if (!liveact) return;
       this.last = a;
       var pct = Math.round((a.progress || 0) * 100);
-      liveact.classList.add("liveact--migration");
+      liveact.classList.add("liveact--progress");
       laTitle.textContent = a.short || (pct ? pct + "%" : "live");
       laSub.hidden = false; laSub.textContent = a.label || a.state || "";
       laTrail.hidden = false;
       this.setProg(a.progress);
       liveact.setAttribute("aria-label",
-        ((data.activity && data.activity.title) || "Flutter migration") +
+        ((data.activity && data.activity.title) || "Work in motion") +
         ", " + (a.label || a.state || "in progress") +
         (pct ? ", " + pct + "% progress" : ""));
       this.bump("liveact--pulse");
@@ -348,15 +348,16 @@
       var pct = Math.round((a.progress || 0) * 100);
       setHtml(laExpand,
         "<div class='liveact__ehead'><span>" + escapeHtml((data.activity && data.activity.org) || "") + "</span><span>Live Update</span></div>" +
-        "<div class='liveact__etitle'>" + escapeHtml((data.activity && data.activity.title) || "Flutter migration") + "</div>" +
+        "<div class='liveact__etitle'>" + escapeHtml((data.activity && data.activity.title) || "Work in motion") + "</div>" +
         "<div class='liveact__estate'>" + escapeHtml(a.label || a.state || "in progress") + " · " + pct + "%</div>" +
         "<div class='liveact__etrack' style='--pct:" + pct + "%'><span></span></div>" +
-        "<div class='liveact__erow'><span class='liveact__ev'>Shared path</span><span class='liveact__es'>in progress</span></div>" +
-        "<div class='liveact__erow'><span class='liveact__ev'>Tradeoffs</span><span class='liveact__es'>visible</span></div>");
+        "<div class='liveact__erow'><span class='liveact__ev'>Shared context</span><span class='liveact__es'>building</span></div>" +
+        "<div class='liveact__erow'><span class='liveact__ev'>Tradeoffs</span><span class='liveact__es'>visible</span></div>" +
+        "<div class='liveact__erow'><span class='liveact__ev'>Next step</span><span class='liveact__es'>clearer</span></div>");
       laExpand.hidden = false;
     },
     openExpand: function () {
-      if (!liveact || !liveact.classList.contains("liveact--migration")) return;
+      if (!liveact || !liveact.classList.contains("liveact--progress")) return;
       this.fillExpand();
       var r = liveact;
       requestAnimationFrame(function () { r.classList.add("liveact--expanded"); });
@@ -366,7 +367,7 @@
     },
     closeExpand: function () { if (liveact) liveact.classList.remove("liveact--expanded"); },
     toggle: function () {
-      if (!liveact || !liveact.classList.contains("liveact--migration")) return;
+      if (!liveact || !liveact.classList.contains("liveact--progress")) return;
       if (liveact.classList.contains("liveact--expanded")) this.closeExpand();
       else this.openExpand();
     }
@@ -500,7 +501,7 @@
     onBeatStart: function (prompt) {
       setFocus(prompt.feature === "focus");
       var a = prompt.activity;
-      if (a) { if (a.kind === "migration") LA.migration(a); else LA.app(a); }
+      if (a) { if (a.kind === "work") LA.work(a); else LA.app(a); }
     },
     onBeatReveal: function (prompt, container) {
       switch (prompt.feature) {

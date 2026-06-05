@@ -56,7 +56,7 @@ Tone in copy: first person, as Gian answering directly. Confident and specific, 
 The page is a phone that behaves like a real OS. A platform selector (iOS / Android) reskins the whole device, and each story beat fires that platform's signature native surface as a *diegetic* storytelling device, never a gratuitous demo. Requirements:
 
 - **Platform selector.** iOS / Android, auto-detected from the visitor's device, switchable, and remembered (localStorage). On desktop it sits *outside* the phone, on the stage (mirrors the wordmark); on mobile it stays a compact control in the composer.
-- **One continuity spine.** A persistent **Live Activity** (iOS Dynamic Island / Android promoted Live Update status chip) tracks the Flutter migration through the entire arc, so the per-beat features never read as a disconnected reel. States stay accurate: the migration is *in progress / direction set*, never "shipped".
+- **One continuity spine.** A persistent **Live Activity** (iOS Dynamic Island / Android promoted Live Update status chip) tracks the broader story path, so the per-beat features never read as a disconnected reel. It should read as "work in motion" or "clear path", not as one specific workstream.
 - **A native feature per beat**, chosen for narrative meaning:
   - hero, the activity *wakes*; challenge, it *starts* (blocked); build, it *expands* (long-press detail).
   - ai, **Apple Intelligence** edge-glow (iOS) / **Circle-to-Search → Gemini** (Android), tied to his AI-tooling work.

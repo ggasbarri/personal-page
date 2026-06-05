@@ -4,7 +4,7 @@ The personal page of **Gianfranco Gasbarri**: a short first-person chat about mo
 
 A hand-authored static site. No build step, no dependencies, no framework.
 
-> **Before editing any copy, read the Positioning rules in [PRODUCT.md](PRODUCT.md):** accuracy over impressiveness (no overstating; he collaborates on and aligns the Flutter migration, he does not own it), no job title and never the word "Staff" on the page, staff-level implied only through scope, and keep text short.
+> **Before editing any copy, read the Positioning rules in [PRODUCT.md](PRODUCT.md):** accuracy over impressiveness (no overstating specific work examples), no job title and never the word "Staff" on the page, staff-level implied only through scope, and keep text short.
 
 ## Run locally
 
@@ -34,19 +34,19 @@ Open `data.js`. The thread is a sequenced story (`ASK_DATA.story` lists the beat
 
 ```js
 {
-  id: "build",                 // unique; also the answer's anchor id
-  chip: "What does he work on?",            // label on the suggestion chip
-  question: "so what does he do about it?", // the visitor's bubble when asked
-  kicker: "development",       // chapter label shown atop the answer
+  id: "motors",                // unique; also the answer's anchor id
+  chip: "Where does it show up?",           // label on the suggestion chip
+  question: "where does that show up now?", // the visitor's bubble when asked
+  kicker: "OLX Motors",        // chapter label shown atop the answer
   mood: "build",               // shifts the page's temperature for this beat
-  next: "ai",                  // the next story beat
-  hook: "The bigger shift: how they build", // cliffhanger on the continue button
+  next: "system",              // the next story beat
+  hook: "And beyond that?",     // cliffhanger on the continue button
   html: `…authored answer markup…`,         // streamed in; elements with
                                             // class="pop" reveal staggered
 
   // OS-feature layer (optional per beat) — see PRODUCT.md / DESIGN.md:
-  activity: { kind: "migration", state: "planning",
-              label: "execution plan aligned", progress: 0.4, expand: true },
+  activity: { kind: "work", state: "planning",
+              label: "teams aligning", progress: 0.4, expand: true },
   feature: "cascade",   // ai | focus | cascade | poster — the native feature this beat fires
   notes: [ /* notifications for the conclusion cascade */ ],
   silenced: { /* the one muted notification for the setback/focus beat */ }
@@ -57,7 +57,7 @@ Beats flagged `extra: true` (toolkit, timeline) sit off the story rail as ask-an
 
 ## OS-feature layer
 
-The phone behaves like a real OS, selectable between **iOS** and **Android** (auto-detected, remembered in `localStorage`; on desktop the selector sits on the stage beside the phone). A persistent **Live Activity** (iOS Dynamic Island / Android promoted Live Update status chip) tracks the Flutter migration through the whole story, and each beat fires a native feature: Apple Intelligence / Circle-to-Search (`ai`), Focus / Do Not Disturb (`focus`), a notification cascade of others' wins (`cascade`, the marquee), and a Contact Poster / Quick Share sheet (`poster`). Chrome only: the chat content keeps the brand. Android's Material You palette is seeded from the clay-red. Full `prefers-reduced-motion` fallbacks. **Fidelity matters** (the audience is mobile engineers): match the *actual* current OS, see PRODUCT.md / DESIGN.md.
+The phone behaves like a real OS, selectable between **iOS** and **Android** (auto-detected, remembered in `localStorage`; on desktop the selector sits on the stage beside the phone). A persistent **Live Activity** (iOS Dynamic Island / Android promoted Live Update status chip) tracks the broader story path, and each beat fires a native feature: Apple Intelligence / Circle-to-Search (`ai`), Focus / Do Not Disturb (`focus`), a notification cascade of outcomes (`cascade`, the marquee), and a Contact Poster / Quick Share sheet (`poster`). Chrome only: the chat content keeps the brand. Android's Material You palette is seeded from the clay-red. Full `prefers-reduced-motion` fallbacks. **Fidelity matters** (the audience is mobile engineers): match the *actual* current OS, see PRODUCT.md / DESIGN.md.
 
 ## Deploy
 

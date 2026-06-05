@@ -10,9 +10,9 @@
    Beats flagged extra:true (toolkit, timeline) sit off the story rail.
 
    Voice: accurate and understated. Gian collaborates, aligns, and shapes
-   decisions across teams; he does not "own" the Flutter migration. No job
-   titles. Let scope imply level. Keep prose short; bold only the words that
-   matter. Authored, trusted HTML only (see security note in main.js). */
+   decisions across teams; he does not overclaim specific work examples. No
+   job titles. Let scope imply level. Keep prose short; bold only the words
+   that matter. Authored, trusted HTML only (see security note in main.js). */
 
 window.ASK_DATA = {
   hero: "who are you?",
@@ -24,14 +24,13 @@ window.ASK_DATA = {
   /* OS-feature layer. The phone behaves like a real OS; each beat demonstrates
      a native feature of the selected platform (iOS / Android), switched via
      .os-switch. The spine is a persistent Live Activity that tracks the
-     Flutter direction through the story. Copy stays accurate: this is in
-     progress, never "shipped". Chrome only, the brand and answer content are
-     untouched. */
+     broader path through the story. Chrome only, the brand and answer content
+     are untouched. */
   activity: {
-    org: "OLX Motors",
-    title: "Flutter direction",
+    org: "Gian",
+    title: "Work in motion",
   },
-  // hero: the app's own "live" state, before the migration is mentioned.
+  // hero: the app's own "live" state, before any work example is mentioned.
   heroActivity: { kind: "app", state: "live", label: "gian", short: "gian" },
 
   prompts: [
@@ -41,7 +40,7 @@ window.ASK_DATA = {
       question: "what kind of work do you do?",
       kicker: "the shape",
       mood: "challenge",
-      activity: { kind: "migration", state: "framing", label: "direction forming", progress: 0.14 },
+      activity: { kind: "work", state: "framing", label: "direction", progress: 0.14 },
       next: "motors",
       hook: "Where does that show up?",
       html: `
@@ -59,9 +58,9 @@ window.ASK_DATA = {
       question: "where does that show up now?",
       kicker: "OLX Motors",
       mood: "build",
-      activity: { kind: "migration", state: "planning", label: "teams aligning", progress: 0.38, expand: true },
+      activity: { kind: "work", state: "planning", label: "teams aligning", progress: 0.38, expand: true },
       next: "system",
-      hook: "And beyond the migration?",
+      hook: "And beyond that?",
       html: `
         <p class="answer-lead">At <strong>OLX Motors</strong>, I help several teams line up behind a Flutter direction.</p>
         <article class="tile pop">
@@ -77,7 +76,7 @@ window.ASK_DATA = {
       question: "how do you shape the system?",
       kicker: "shaping the system",
       mood: "build",
-      activity: { kind: "migration", state: "shaping", label: "system choices", progress: 0.52 },
+      activity: { kind: "work", state: "shaping", label: "system choices", progress: 0.52 },
       next: "tools",
       hook: "How do tools fit in?",
       html: `
@@ -103,7 +102,7 @@ window.ASK_DATA = {
       question: "how do tools fit in?",
       kicker: "tools in the flow",
       mood: "peak",
-      activity: { kind: "migration", state: "agents", label: "agents with context", progress: 0.64 },
+      activity: { kind: "work", state: "agents", label: "tools with context", progress: 0.64 },
       feature: "ai",
       next: "human",
       hook: "What about outside the code?",
@@ -133,7 +132,7 @@ window.ASK_DATA = {
       question: "what are you like outside code?",
       kicker: "human texture",
       mood: "setback",
-      activity: { kind: "migration", state: "aligning", label: "quiet alignment", progress: 0.72 },
+      activity: { kind: "work", state: "aligning", label: "quiet focus", progress: 0.72 },
       feature: "focus",
       silenced: { app: "Focus", icon: "doc", title: "Decision thread paused", body: "Good inputs need a clear next step.", time: "now" },
       next: "lands",
@@ -151,7 +150,7 @@ window.ASK_DATA = {
       question: "what actually lands?",
       kicker: "what lands",
       mood: "payoff",
-      activity: { kind: "migration", state: "set", label: "path clear enough to move", progress: 0.9 },
+      activity: { kind: "work", state: "clear", label: "path clear", progress: 0.9 },
       feature: "cascade",
       // The marquee. Impact arriving as notifications, framed as outcomes.
       notes: [
