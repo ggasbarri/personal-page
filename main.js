@@ -308,8 +308,14 @@
     stack:     "stack tool tools toolkit tech kotlin swift kmp compose dart skill skills language languages speak",
     path:      "path timeline career history experience background past journey where when"
   };
+  var STOP = ("the and for his him her you are was what whats does did how who why where " +
+    "when with about this that they have has can your but not she does some any will would " +
+    "tell give show into out get got use using does do gianfranco").split(" ").reduce(
+    function (m, w) { m[w] = 1; return m; }, {});
   function bestMatch(q) {
-    var tokens = q.toLowerCase().split(/[^a-z0-9]+/).filter(function (t) { return t.length > 2; });
+    var tokens = q.toLowerCase().split(/[^a-z0-9]+/).filter(function (t) {
+      return t.length > 2 && !STOP[t];
+    });
     if (!tokens.length) return null;
     var best = null, bestScore = 0;
     data.prompts.forEach(function (p) {
@@ -326,15 +332,21 @@
     var q = field.value.trim();
     field.value = "";
     field.blur();
-    // a typed question routes to its closest topic; otherwise continue the story
-    var matched = q ? bestMatch(q) : null;
-    var target = matched ||
-                 data.prompts.find(function (p) { return !asked[p.id]; }) ||
-                 getPrompt("contact");
+    var target, override = null;
+    if (q) {
+      // a typed question routes to its closest topic; if nothing matches,
+      // fall back to contact rather than a random story beat. Always echo
+      // what they actually typed.
+      target = bestMatch(q) || getPrompt("contact");
+      override = q;
+    } else {
+      // empty submit just continues the story
+      target = data.prompts.find(function (p) { return !asked[p.id]; }) || getPrompt("contact");
+    }
     if (!target) return;
     var chip = suggestEl.querySelector('[data-id="' + target.id + '"]');
     if (chip) chip.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
-    ask(target, null, matched ? q : null);
+    ask(target, null, override);
   });
 
   /* -------------------------------------------------------- hero opener */

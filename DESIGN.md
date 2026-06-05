@@ -2,30 +2,31 @@
 
 ## Theme
 
-**Scene:** a recruiter or peer engineer opens Gianfranco's link at night, on the couch, thumb-scrolling a glowing premium app; or on a laptop in a dim office between meetings. The mood is curious and calm, the device is the light source. This forces a **dark** UI, warm-tinted, with a single electric glow. Not dark "because dev tools are dark", dark because the app is the light in the room.
+**Scene:** a recruiter or peer engineer opens Gianfranco's link in daylight, between meetings, on a phone or a laptop, curious and unhurried. Nothing about that forces dark; the earlier dark+glow version read as AI-generated. So this is **light**: a warm paper surface, ink text, one deep accent. The mood is editorial and human, like a well-set printed page, not a glowing app.
 
 ## Color
 
-**Strategy:** Committed. One saturated accent (electric tangerine) carries the surface; warm-tinted neutrals everywhere else. Reference point: a confident consumer app at night, warm Iberian electric orange instead of the AI-assistant lavender reflex. All neutrals tinted toward warm hue ~60. OKLCH throughout, never `#000`/`#fff`.
+**Strategy:** Committed. Warm paper neutrals carry the page; one deep **clay-red** is the single accent (the visitor's own chat bubbles, the continue button, links, key numbers). Reference point: a confident printed specimen, warm Iberian clay instead of the dark-mode-with-neon-accent reflex. All neutrals tinted warm (~hue 50-86). OKLCH throughout, never `#000`/`#fff`. No glow halos.
 
 ```
---stage:        oklch(0.15 0.012 55)   /* ambient page behind the app */
---surface:      oklch(0.20 0.014 58)   /* app screen */
---surface-2:    oklch(0.24 0.016 58)   /* raised: incoming chat bubbles, panels */
---surface-3:    oklch(0.28 0.018 58)   /* chips, inputs */
---line:         oklch(0.34 0.014 58)   /* hairline borders */
+--stage:        oklch(0.915 0.014 83)  /* warm ecru page behind the app */
+--surface:      oklch(0.975 0.006 86)  /* app screen, warm white */
+--surface-2:    oklch(0.948 0.011 80)  /* raised: incoming bubbles, panels */
+--surface-3:    oklch(0.918 0.014 78)  /* chips, inputs */
+--line:         oklch(0.85 0.015 76)   /* hairline borders */
 
---text:         oklch(0.95 0.008 75)   /* warm cream, primary */
---text-muted:   oklch(0.72 0.012 70)   /* secondary */
---text-faint:   oklch(0.56 0.012 68)   /* metadata, timestamps */
+--text:         oklch(0.28 0.018 52)   /* warm charcoal ink, primary */
+--text-muted:   oklch(0.46 0.020 50)   /* secondary */
+--text-faint:   oklch(0.60 0.018 52)   /* metadata */
 
---accent:       oklch(0.74 0.175 52)   /* electric tangerine, primary accent */
---accent-strong:oklch(0.68 0.205 45)   /* pressed / emphasis */
---accent-soft:  oklch(0.74 0.175 52 / 0.14) /* tinted fills, glows */
---mint:         oklch(0.84 0.13 168)   /* tiny: "online" status dot only */
+--accent:       oklch(0.47 0.155 33)   /* deep clay red, AA on paper */
+--accent-strong:oklch(0.41 0.160 32)   /* pressed / emphasis */
+--accent-ink:   oklch(0.975 0.012 80)  /* paper text on accent fills */
+--accent-soft:  oklch(0.47 0.155 33 / 0.13) /* tinted fills */
+--mint:         oklch(0.58 0.135 150)  /* tiny: "online" status dot only */
 ```
 
-Accent budget: tangerine carries the brand (the user's own chat bubbles, the cursor, links, key numbers, the send button). Mint appears only as the live-status dot. Text is warm cream on warm dark.
+Accent budget: clay-red carries the brand (the visitor's chat bubbles, the cursor, links, key numbers, the send button, the continue CTA). It is kept at L≈0.47 so even small text clears WCAG AA on paper. Mint appears only as the live-status dot. Ink is warm charcoal on paper.
 
 ## Typography
 
@@ -33,18 +34,18 @@ Reflex-reject list respected (no Inter / DM Sans / Space Grotesk / IBM Plex / Ge
 
 - **Display — Bricolage Grotesque** (700/800). Characterful grotesque for the hero name, the big "People also ask"-style section breaks, and oversize numbers. Allowed to break out past the app column at section moments.
 - **UI / body — Schibsted Grotesk** (400/500/600). Friendly, slightly warm grotesque for the chat thread, answers, labels, buttons. This is the workhorse.
-- **Mono — Geist Mono** (400/500). Used *only* for legitimately-technical chat chrome: citation tags `[1]`, timestamps, the typing indicator, status-bar clock, and the model/footer line. Not decorative.
+- **Labels — Schibsted Grotesk** (`--font-label`), lowercase, lightly tracked. The small UI labels (chapter kickers, panel keys, tile orgs, kit rows) are sans, not mono. Lowercase throughout, matching the quiet "ask gianfranco" voice. Using mono for labels was part of the AI-slop tell and was removed.
+- **Mono — Geist Mono** (400/500). Kept *only* where it is literally true: the status-bar clock, and the code-module chips in the agent diagram (`auth`, `listings`, ...). Nowhere decorative.
 
-Scale: fluid `clamp()`, ≥1.25 ratio between steps. Body 16–17px, line-length capped ~60ch inside the app column. Light-on-dark, so add ~0.06 to line-heights.
+Scale: fluid `clamp()`, ≥1.25 ratio between steps. Body ~16.5px, line-length capped ~60ch inside the app column.
 
 ## Layout
 
-- A centered **app column**, max-width ~460px, is the phone screen. It sits on the ambient `--stage` with a soft tangerine glow and a fine grain/noise overlay.
-- A sticky **status bar** at top (mono clock `9:41`, signal/wifi/battery glyphs, app title "ask gianfranco" with mint online dot).
-- The body is one continuous **chat thread**: the assistant's streamed answers (left, on `--surface-2` bubbles) and the visitor's questions (right, tangerine bubbles). Knowledge-panel and stack render as in-thread cards, not a separate grid.
-- A sticky **composer** at the bottom: a row of suggested-prompt chips above a fake input ("Ask anything about Gianfranco…") with a tangerine send button. Chips drive navigation.
-- **Break-out moments:** at major section transitions, a Bricolage display line ("people also ask", a huge metric, his name) extends to the full stage width behind/over the column for poster-scale punch. This is the "maximalist" seasoning on the app structure.
-- Desktop adds ambient detail flanking the column (floating metric tickers, a faint dotted grid) so the phone reads as a deliberate object on a stage, not a narrow column on emptiness. Mobile drops the stage and goes full-bleed: the app IS the viewport.
+- A centered **app column**, max-width ~460px, is the phone screen. It sits on the warm-paper `--stage` with a soft light bezel and shadow (a "paper-cradle"), plus a faint paper-tooth grain. No glow.
+- A sticky **status bar** at top (mono clock `9:41`, signal/wifi/battery glyphs, app title "ask gianfranco" with mint online dot) with a hairline story-progress fill beneath it.
+- The body is one continuous **chat thread**: the assistant's streamed answers (left, on `--surface-2` bubbles) and the visitor's questions (right, clay-red bubbles). Knowledge panel and answers render as in-thread cards, not a separate grid.
+- A sticky **composer** at the bottom: a row of suggested-prompt chips above a **real** input. A typed question routes to its closest topic (keyword match) or to contact; chips and the continue button also drive navigation.
+- Desktop grounds the floating phone with one oversize, very-low-contrast **wordmark** ("Gianfranco Gasbarri") bleeding off the left gutter; the stage is otherwise open paper. Mobile drops the stage and goes full-bleed: the app IS the viewport.
 
 Cards used only where they're the right affordance (knowledge panel, project entries, stack groups). No nested cards. No identical icon-title-text grid.
 
@@ -52,16 +53,15 @@ Cards used only where they're the right affordance (knowledge panel, project ent
 
 Ease-out only, exponential curves (`cubic-bezier(0.16, 1, 0.3, 1)` / ease-out-expo). No bounce, no elastic. Never animate layout properties (animate transform/opacity; for thread height use `grid-template-rows`).
 
-- **Hero:** the first question types itself into the composer, "sends" (slides up into the thread), a 3-dot typing indicator appears, then the answer **streams** in token-by-token with a tangerine block cursor.
-- **On scroll:** each thread message reveals with a short translateY + fade, staggered. Knowledge-panel numbers count up once when in view.
-- **Suggested chips:** tapping one "asks" it (chip animates into a user bubble), scrolls, and streams that section's answer if not already revealed.
-- **Idle:** the composer cursor blinks; the online dot has a slow pulse. Restrained, not busy.
-- `prefers-reduced-motion`: no typewriter/streaming, no count-up; everything renders immediately, scroll reveals become instant.
+- **Hero:** the first question types itself into the composer, "sends", a 3-dot typing indicator appears, then the answer **streams** in token-by-token with a clay block cursor; visual modules pop in staggered.
+- **Story arc:** the thread is sequenced (hook, challenge, development, setback, payoff). Each answer ends with a single "continue" button that **morphs into the question bubble** it becomes (View Transitions). A hairline progress bar fills; the paper's temperature shifts subtly per beat (cooler at the challenge, dimmer at the setback, warmer at the payoff).
+- **Idle:** the online dot has a slow pulse. Restrained, not busy.
+- `prefers-reduced-motion`: no typewriter/streaming/morph, no count-up; everything renders immediately.
 
 ## Imagery
 
-No stock photography (this is a tech/personal brand, not a place/food brief). The "imagery" is the rendered app UI itself: the device chrome, chat bubbles, the knowledge panel, animated numerics, an SVG favicon of his initials in tangerine. Typography and the live interaction carry the visual weight.
+No stock photography (this is a tech/personal brand, not a place/food brief). The "imagery" is the rendered app UI itself plus his profile photo (mirrored to face into the card), the animated numerics, and an SVG favicon. Typography and the live interaction carry the visual weight.
 
 ## Bans honored
 
-OKLCH (no pure black/white) · no gradient text · no `background-clip:text` · no side-stripe borders · no glassmorphism-by-default · no hero-metric template · no identical card grid · no em dashes in copy · mono used only as legitimate chat chrome, never as "developer" costume.
+OKLCH (no pure black/white) · no gradient text · no `background-clip:text` · no side-stripe borders · no glassmorphism · no glow halos · no hero-metric template · no identical card grid · no em dashes in copy · mono only where literally true (clock, code modules), never as "developer" costume.

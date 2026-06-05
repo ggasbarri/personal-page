@@ -15,11 +15,11 @@
   --text-muted:   oklch(0.46 0.020 50);
   --text-faint:   oklch(0.60 0.018 52);
 
-  --accent:       oklch(0.52 0.150 33);   /* deep clay red */
-  --accent-strong:oklch(0.45 0.160 32);
+  --accent:       oklch(0.47 0.155 33);   /* deep clay red, AA on paper */
+  --accent-strong:oklch(0.41 0.160 32);
   --accent-ink:   oklch(0.975 0.012 80);  /* paper text on accent fills */
-  --accent-soft:  oklch(0.52 0.150 33 / 0.12);
-  --accent-line:  oklch(0.52 0.150 33 / 0.30);
+  --accent-soft:  oklch(0.47 0.155 33 / 0.13);
+  --accent-line:  oklch(0.47 0.155 33 / 0.32);
   --mint:         oklch(0.58 0.135 150);  /* online dot, deepened for light */
 
   --font-display: "Bricolage Grotesque", system-ui, sans-serif;
@@ -62,6 +62,32 @@ a { color: inherit; }
   inset: 0;
   background: radial-gradient(72vw 44vw at 50% -8%, oklch(0.72 0.07 45 / 0.12), transparent 60%);
   transition: opacity 1.2s var(--ease);
+}
+
+/* oversized faint wordmark grounding the desktop stage (hidden on phones) */
+.stage-mark { display: none; }
+@media (min-width: 1080px) {
+  .stage-mark {
+    position: fixed;
+    z-index: 0;
+    pointer-events: none;
+    top: 50%;
+    right: calc(50% + var(--col) / 2 + 1.5vw);
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: clamp(3.5rem, 8.5vw, 7.5rem);
+    line-height: 0.84;
+    letter-spacing: -0.04em;
+    color: oklch(0.30 0.02 50 / 0.07);
+    white-space: nowrap;
+  }
+}
+@media (min-width: 1320px) {
+  .stage-mark { right: calc(50% + var(--col) / 2 + 3.5vw); }
 }
 
 /* subtle paper tooth */
@@ -431,9 +457,8 @@ strong { font-weight: 600; color: var(--text); }
   gap: 0.5rem;
   margin-bottom: 0.7rem;
   font-family: var(--font-label);
-  font-size: 0.66rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 0.68rem;
+  letter-spacing: 0.05em;
   color: var(--accent);
 }
 .kicker::before {
@@ -504,9 +529,8 @@ strong { font-weight: 600; color: var(--text); }
 }
 .force__k {
   font-family: var(--font-label);
-  font-size: 0.66rem;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
   color: var(--text-faint);
 }
 .force p { margin-top: 0.2rem; font-size: 0.95rem; color: var(--text-muted); }
@@ -651,9 +675,8 @@ strong { font-weight: 600; color: var(--text); }
 }
 .punch__k {
   font-family: var(--font-label);
-  font-size: 0.64rem;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
   color: var(--accent);
   background: var(--accent-soft);
   border: 1px solid var(--accent-line);
@@ -710,9 +733,8 @@ strong { font-weight: 600; color: var(--text); }
 .kit__row { display: flex; flex-direction: column; gap: 0.45rem; }
 .kit__k {
   font-family: var(--font-label);
-  font-size: 0.68rem;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
   color: var(--text-faint);
 }
 .kit__row--lead .kit__k { color: var(--accent); }
