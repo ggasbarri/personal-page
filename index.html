@@ -20,6 +20,10 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <!-- per-OS wallpaper behind the phone; crossfades on platform switch -->
+  <div class="stage-os stage-os--ios" aria-hidden="true"></div>
+  <div class="stage-os stage-os--android" aria-hidden="true"></div>
+
   <!-- ambient stage decoration + story mood overlays -->
   <div class="stage-grain" aria-hidden="true"></div>
   <div class="stage-glow" aria-hidden="true"></div>
@@ -28,17 +32,57 @@
   <div class="mood mood-bloom" aria-hidden="true"></div>
   <div class="stage-mark" aria-hidden="true"><span>Gianfranco</span><span>Gasbarri</span></div>
 
+  <!-- gooey filter: merges the Dynamic Island shapes (iOS) on state changes -->
+  <svg class="goo-defs" width="0" height="0" aria-hidden="true" focusable="false">
+    <defs>
+      <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter>
+    </defs>
+  </svg>
+
   <main class="device" id="app">
     <!-- status bar -->
     <header class="statusbar">
       <span class="statusbar__time" id="clock">9:41</span>
-      <span class="statusbar__app">
-        <span class="dot dot--live" aria-hidden="true"></span>
-        ask gianfranco
-      </span>
+      <!-- Live Activity: iOS Dynamic Island / Android Live Update status chip. One element,
+           skinned per data-os. Tracks the Flutter migration through the story. -->
+      <button class="liveact" id="liveact" type="button" aria-live="polite" aria-label="ask gianfranco, live">
+        <span class="liveact__goo" aria-hidden="true">
+          <span class="liveact__bg"></span>
+          <span class="liveact__blob"></span>
+        </span>
+        <span class="liveact__content">
+          <span class="liveact__lead" aria-hidden="true">
+            <span class="liveact__dot dot dot--live"></span>
+            <svg class="liveact__ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg>
+          </span>
+          <span class="liveact__text">
+            <span class="liveact__title" id="liveactTitle">ask gianfranco</span>
+            <span class="liveact__sub" id="liveactSub" hidden></span>
+          </span>
+          <span class="liveact__trail" id="liveactTrail" hidden>
+            <svg class="liveact__ring" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+              <circle class="liveact__ringtrack" cx="12" cy="12" r="9" fill="none" stroke-width="3"/>
+              <circle class="liveact__ringfill" cx="12" cy="12" r="9" fill="none" stroke-width="3" stroke-linecap="round" pathLength="100"/>
+            </svg>
+            <span class="liveact__bar" aria-hidden="true"><span class="liveact__barfill"></span></span>
+          </span>
+        </span>
+        <span class="liveact__expand" id="liveactExpand" hidden></span>
+      </button>
       <span class="statusbar__sys" aria-hidden="true">
-        <svg viewBox="0 0 18 12" width="18" height="12"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="4" width="3" height="8" rx="1"/><rect x="10" y="1.5" width="3" height="10.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" opacity="0.35"/></svg>
-        <svg viewBox="0 0 24 12" width="22" height="11"><rect x="0.5" y="1" width="19" height="10" rx="2.5" fill="none" stroke-width="1.2"/><rect x="2" y="2.5" width="14" height="7" rx="1"/><rect x="20.5" y="4" width="2.2" height="4" rx="1"/></svg>
+        <!-- iOS: signal bars, three-arc wifi, horizontal battery pill -->
+        <span class="sys sys--ios">
+          <svg class="sysg" viewBox="0 0 18 12" width="17" height="11"><rect x="0" y="7.5" width="3" height="4.5" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+          <svg class="sysg" viewBox="0 0 16 12" width="16" height="11"><path d="M8 2.6c2.1 0 4.1.82 5.6 2.3l1.45-1.47A10 10 0 0 0 8 .6 10 10 0 0 0 .95 3.43L2.4 4.9A7.9 7.9 0 0 1 8 2.6z"/><path d="M8 6.3c1.1 0 2.16.44 2.94 1.22l1.45-1.46A6 6 0 0 0 8 4.3a6 6 0 0 0-4.39 1.76l1.45 1.46A4.15 4.15 0 0 1 8 6.3z"/><circle cx="8" cy="9.9" r="1.5"/></svg>
+          <svg class="sysg sysg--batt" viewBox="0 0 27 13" width="25" height="12"><rect x="0.6" y="0.6" width="22" height="11.8" rx="3.2" fill="none" stroke="currentColor" stroke-width="1"/><rect x="2.2" y="2.2" width="16" height="8.6" rx="1.6"/><path d="M24.6 4.2a2.1 2.1 0 0 1 0 4.6z"/></svg>
+        </span>
+        <!-- Android: triangle wifi + signal, battery %, upright battery -->
+        <span class="sys sys--android">
+          <svg class="sysg" viewBox="0 0 20 16" width="14" height="11"><path d="M10 15.4 19.4 4A12.6 12.6 0 0 0 10 .7 12.6 12.6 0 0 0 .6 4L10 15.4z"/></svg>
+          <svg class="sysg" viewBox="0 0 18 16" width="13" height="11"><path d="M2 14h14V2z"/></svg>
+          <span class="sys-pct">84%</span>
+          <svg class="sysg sysg--abatt" viewBox="0 0 14 24" width="9" height="13"><path d="M5 0h4a1 1 0 0 1 1 1v1.4H4V1a1 1 0 0 1 1-1z"/><rect x="1.5" y="2.2" width="11" height="21.4" rx="2.6"/></svg>
+        </span>
       </span>
       <div class="story-progress" aria-hidden="true"><span class="story-progress__fill" id="progressFill"></span></div>
     </header>
@@ -83,7 +127,7 @@
           <div class="glance">
             <div class="glance__scale">
               <span class="bignum" data-count="3000000" data-suffix="M+" data-divide="1000000">3M+</span>
-              <span class="bignum__label">daily app <strong>launches</strong></span>
+              <span class="bignum__label"><strong>OLX Motors</strong> app launches, daily</span>
             </div>
             <dl class="panel">
               <div class="panel__row"><dt>now</dt><dd><strong>OLX Group</strong> · Motors</dd></div>
@@ -99,14 +143,21 @@
 
     <!-- composer / suggested prompts -->
     <div class="composer" id="composer">
-      <div class="suggest" id="suggest" role="list" aria-label="Suggested questions"></div>
-      <form class="inputbar" id="inputbar" autocomplete="off">
-        <input class="inputbar__field" id="field" type="text"
-               placeholder="Ask your own, or tap a topic…" aria-label="Ask a question about Gianfranco" />
-        <button class="inputbar__send" id="send" type="submit" aria-label="Ask">
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 12h13M12 5l7 7-7 7" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <!-- OS selector: reskins the whole device. The one piece of meta UI. -->
+      <div class="os-switch" id="osSwitch" role="group" aria-label="Operating system to simulate">
+        <span class="os-switch__thumb" aria-hidden="true"></span>
+        <button class="os-switch__btn" type="button" data-os="ios" aria-pressed="true">
+          <svg class="os-switch__glyph" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M16.37 1.43c0 1.13-.49 2.26-1.18 3.07-.74.9-1.98 1.57-2.98 1.57-.12 0-.23-.02-.3-.03-.02-.06-.04-.22-.04-.39 0-1.14.57-2.26 1.2-2.97.8-.94 2.14-1.64 3.25-1.68.03.13.05.27.05.43zM20.93 17.14c-.03.07-.46 1.58-1.52 3.12-.94 1.34-1.94 2.7-3.43 2.7-1.51 0-1.9-.87-3.63-.87-1.7 0-2.3.9-3.67.9-1.38 0-2.33-1.25-3.43-2.79C3.79 19.6 2.96 16.8 2.96 14.15c0-4.28 2.8-6.55 5.55-6.55 1.45 0 2.67.95 3.6.95.86 0 2.22-1.01 3.9-1.01.61 0 2.88.06 4.37 2.19-.12.08-2.38 1.37-2.38 4.19 0 3.26 2.85 4.41 2.95 4.45z"/></svg>
+          <span>iOS</span>
         </button>
-      </form>
+        <button class="os-switch__btn" type="button" data-os="android" aria-pressed="false">
+          <svg class="os-switch__glyph" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 18c0 .55.45 1 1 1h1v3.5a1.5 1.5 0 0 0 3 0V19h2v3.5a1.5 1.5 0 0 0 3 0V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8A1.5 1.5 0 0 0 2 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 3.5 8zm17 0a1.5 1.5 0 0 0-1.5 1.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 20.5 8zm-4.97-5.84l1.3-1.3a.5.5 0 0 0-.71-.71l-1.48 1.48A6.5 6.5 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15a.5.5 0 1 0-.71.71l1.31 1.31A6.47 6.47 0 0 0 6 7h12a6.47 6.47 0 0 0-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>
+          <span>Android</span>
+        </button>
+      </div>
+      <div class="suggest" id="suggest" role="list" aria-label="Suggested questions"></div>
+      <!-- gesture nav indicator: iOS home bar / Android handle -->
+      <div class="navind" aria-hidden="true"><span></span></div>
     </div>
   </main>
 

@@ -22,6 +22,20 @@ window.ASK_DATA = {
 
   heroNext: { next: "challenge", hook: "So what was the problem?" },
 
+  /* OS-feature layer (overdrive). The phone behaves like a real OS; each beat
+     demonstrates a native feature of the selected platform (iOS / Android),
+     switched via .os-switch. The spine is a persistent Live Activity that
+     tracks the Flutter migration: hero wakes it, challenge..conclusion are
+     authentic states of it (blocked -> aligning -> direction set). Copy stays
+     accurate: the migration is in progress, never "shipped". Chrome only, the
+     brand and answer content are untouched. */
+  activity: {
+    org: "OLX · Motors",
+    title: "Flutter migration",
+  },
+  // hero: the app's own "live" state, before the migration is even mentioned.
+  heroActivity: { kind: "app", state: "live", label: "ask gianfranco" },
+
   prompts: [
     {
       id: "challenge",
@@ -29,6 +43,7 @@ window.ASK_DATA = {
       question: "what's the hard problem?",
       kicker: "the challenge",
       mood: "challenge",
+      activity: { kind: "migration", state: "blocked", label: "Auth0 deadline", progress: 0.12 },
       next: "build",
       hook: "So what does he do about it?",
       html: `
@@ -44,7 +59,7 @@ window.ASK_DATA = {
             <p>AI starting to <strong>rewire</strong> how mobile teams build, fast.</p>
           </div>
         </div>
-        <p class="stakes pop">Unifying it isn't a coding task. It's getting many teams to <strong>commit to one direction</strong>, without breaking what <strong>3M+</strong> people open daily.</p>`
+        <p class="stakes pop">Unifying it isn't a coding task. It's getting many teams to <strong>commit to one direction</strong>, without breaking apps that generate <strong>3M+</strong> launches daily.</p>`
     },
     {
       id: "build",
@@ -52,10 +67,11 @@ window.ASK_DATA = {
       question: "so what does he do about it?",
       kicker: "development",
       mood: "build",
+      activity: { kind: "migration", state: "planning", label: "execution plan aligned", progress: 0.4, expand: true },
       next: "ai",
       hook: "The bigger shift: how they build",
       html: `
-        <p class="answer-lead">He works on the parts that make a big change actually <strong>happen</strong>.</p>
+        <p class="answer-lead"><strong>Gian</strong> works on the parts that make a big change actually <strong>happen</strong>.</p>
         <article class="tile pop">
           <header class="tile__head"><span class="tile__org">OLX · Motors</span><span class="tile__when">in progress</span></header>
           <h3 class="tile__title">A path to <strong>one</strong> Flutter codebase</h3>
@@ -79,6 +95,8 @@ window.ASK_DATA = {
       question: "how did he change how the team builds?",
       kicker: "development",
       mood: "peak",
+      activity: { kind: "migration", state: "agents", label: "agents on 5 modules", progress: 0.62 },
+      feature: "ai",
       next: "setback",
       hook: "But did any of it come easy?",
       html: `
@@ -107,6 +125,9 @@ window.ASK_DATA = {
       question: "did any of it come easy?",
       kicker: "the honest part",
       mood: "setback",
+      activity: { kind: "migration", state: "aligning", label: "aligning teams", progress: 0.68 },
+      feature: "focus",
+      silenced: { app: "Alignment", icon: "doc", title: "RFC review · still open", body: "Three teams, three good reasons. Slow by nature.", time: "now" },
       next: "conclusion",
       hook: "So where does it land?",
       html: `
@@ -123,7 +144,15 @@ window.ASK_DATA = {
       question: "so where does it all land?",
       kicker: "how it lands",
       mood: "payoff",
-      next: "contact",
+      activity: { kind: "migration", state: "set", label: "direction set · teams aligned", progress: 0.9 },
+      feature: "cascade",
+      // The marquee. Impact arriving as notifications, in other people's work.
+      // Addressed to Gian's phone, framed as others crediting him (never boastful).
+      notes: [
+        { app: "Frontend Guild", icon: "guild", title: "Webview guidelines adopted", body: "Three squads shipped on the shared standard.", time: "now" },
+        { app: "Mobile Hiring", icon: "hire", title: "Your interview format is the reference", body: "The AI-era loop is now the wider default.", time: "2m" },
+        { app: "Mentorship", icon: "mentee", title: "A mentee shipped their initiative", body: "“Thanks for the push.”", time: "9m" }
+      ],
       hook: "Want him on your problem?",
       html: `
         <p class="answer-lead">Where it counts: in <strong>other people's</strong> work.</p>
@@ -139,6 +168,7 @@ window.ASK_DATA = {
       chip: "How do I reach him?",
       question: "how do i reach him?",
       mood: "warm",
+      feature: "poster",
       html: `
         <p class="answer-lead">Easy. Pick a channel:</p>
         <div class="contact">
