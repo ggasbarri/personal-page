@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="15" fill="oklch(0.20 0.014 58)"/>
-  <rect x="2" y="2" width="60" height="60" rx="13" fill="none" stroke="oklch(0.74 0.175 52 / 0.35)" stroke-width="1.5"/>
+  <rect width="64" height="64" rx="15" fill="oklch(0.5 0.16 33)"/>
+  <rect x="2" y="2" width="60" height="60" rx="13" fill="none" stroke="oklch(0.975 0.012 80 / 0.28)" stroke-width="1.5"/>
   <text x="50%" y="52%" dy="0.34em" text-anchor="middle"
         font-family="'Bricolage Grotesque', system-ui, sans-serif" font-weight="800"
-        font-size="34" fill="oklch(0.74 0.175 52)">G</text>
-  <circle cx="46" cy="20" r="4.5" fill="oklch(0.84 0.13 168)"/>
+        font-size="34" fill="oklch(0.975 0.012 80)">G</text>
+  <circle cx="46" cy="20" r="5" fill="oklch(0.62 0.14 150)" stroke="oklch(0.975 0.012 80)" stroke-width="1.4"/>
 </svg>
