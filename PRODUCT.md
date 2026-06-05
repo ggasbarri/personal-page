@@ -2,7 +2,7 @@
 
 ## Product
 
-**Ask Gianfranco** — the personal page of Gianfranco Gasbarri, presented as a personal AI app. A single-page showcase site framed as "a search summary about me": a mobile app interface where an AI assistant answers questions about Gianfranco, streaming responses with citations to his real career while suggested-prompt chips walk a visitor through his story.
+**Ask Gianfranco** — the personal page of Gianfranco Gasbarri, presented as a personal AI app. A single-page showcase site framed as a short first-person chat: a mobile app interface where visitors ask "who are you?", Gian answers directly, and suggested-prompt chips walk through his story.
 
 **Register:** brand. Design IS the product. This is a portfolio; the visitor's impression is the deliverable. The content is intentionally light (a bio, a few real work projects, a stack), so the design and interaction carry the weight.
 
@@ -16,14 +16,14 @@
 
 ## Who Gianfranco is
 
-Officially a Senior Mobile Engineer at OLX Group (Motors), based in Aveiro, Portugal (8 years across Flutter and native Android). This is internal context for writing the page; the title itself is **not** printed on the page (see Positioning rules). His work increasingly sits across a large org: he aligns engineering, product, and platform teams, makes architecture trade-offs legible, authors cross-team standards, mentors, and interviews. Early, deliberate adopter of AI tooling in the engineering practice (Claude Code, Cursor, Copilot, Agents.md context for agents on multi-module codebases). Multilingual: Spanish (native), Portuguese (fluent), English (professional).
+Officially a Senior Mobile Engineer at OLX Group (Motors), based in Aveiro, Portugal (8 years across Flutter and native Android). This is internal context for writing the page; the title itself is **not** printed on the page (see Positioning rules). His work increasingly sits across a large org: he aligns engineering, product, and platform teams, makes architecture trade-offs legible, shapes reusable standards, mentors, and improves how teams work with modern coding tools. Multilingual: Spanish (native), Portuguese (fluent), English (professional). Currently studying economics; keep this as light personal texture, not a new headline.
 
-Signature work, **stated accurately** (see Positioning rules; prefer his honest self-assessment over his inflated promotion docs):
-- The **Flutter migration** of the Motors apps (3M+ daily launches across Europe): he does **not** own or "lead" it. He co-writes the execution plan with the EM and PM (scope, effort, risks such as the Auth0 deadline) and aligns the teams who have to commit to it.
-- **Video2Ad** (GenAI: video to a car listing): a team delivery. His specific contribution is the long-term **architecture vision** document that gave the platform team a concrete direction to evolve it.
-- **AI-tooling adoption:** Agents.md context so coding agents stay architecturally correct on a multi-module codebase; co-redesigned the mobile interview for the AI era (adopted as the standard, then a wider reference).
-- **Cross-team standards:** co-authored the Webview guidelines for the failure-prone web/native boundary (presented at the Frontend Guild); represented Motors in cross-CU Chat SDK dependency alignment.
-- Earlier: a **Kotlin Multiplatform** code-sharing initiative across native Android and iOS (Altice Smart WiFi).
+Signature work, **stated accurately** (see Positioning rules; prefer his honest self-assessment over inflated promotion docs):
+- The **Flutter migration** of the Motors apps (3M+ daily launches across Europe): he does **not** own or "lead" it. He helps several teams line up behind a Flutter direction: scope, sequencing, risks, and the tradeoffs everyone has to live with.
+- **Longer-term architecture direction:** shaping fast experiments so the next version is easier to reason about and evolve.
+- **Modern coding-tool adoption:** Agents.md context so coding agents understand the project map, module boundaries, and decisions they should not rediscover every prompt.
+- **Reusable standards:** turning repeated platform and team decisions into patterns people can pick up without reopening the same call.
+- Earlier: a **Kotlin Multiplatform** code-sharing initiative across native Android and iOS.
 
 ## Positioning rules (stated directly by Gianfranco, treat as hard constraints)
 
@@ -37,14 +37,14 @@ Signature work, **stated accurately** (see Positioning rules; prefer his honest 
 
 Three words, as physical objects: **machined** (a precisely milled aluminum phone), **conversational** (a warm spoken answer, not a brochure), **contemporary** (built with the newest tools, unmistakably 2026).
 
-Tone in copy: first-person-adjacent but written as an assistant answering *about* him. Confident and specific, but **understated, never boastful**; never buzzword-padded. Numbers over adjectives ("3M+ OLX Motors app launches daily" beats "high-scale"). A little dry wit is welcome; corporate gloss is not.
+Tone in copy: first person, as Gian answering directly. Confident and specific, but **understated, never boastful**; never buzzword-padded. Metrics are context, not identity: the 3M+ OLX Motors app-launch metric belongs only in the OLX Motors beat, never in the hero. A little dry wit is welcome; corporate gloss is not.
 
-**Name:** the assistant refers to him as **"Gian"** where it reads naturally and warm (e.g. "Gian co-wrote the execution plan"). The formal **"Gianfranco Gasbarri"** is reserved for identity surfaces: page title, wordmark, profile name, the contact poster. Both coexist.
+**Name:** the story uses **"Gian"** where it reads naturally and warm (e.g. "Hey, I'm Gian"). The formal **"Gianfranco Gasbarri"** is reserved for identity surfaces: page title, wordmark, profile name, the contact poster. Both coexist.
 
 ## Strategic principles
 
 - The interaction is the hook. Asking, streaming, and tapping prompts must feel alive on first load.
-- Specific beats grand. Real project names, real metrics, real tools, stated honestly (see Positioning rules).
+- Specific beats grand. Real work ideas, real metrics where they add context, real tools, stated honestly (see Positioning rules). Avoid internal OLX project names in visible copy.
 - Minimal text; the design and the visual modules carry the weight, not paragraphs.
 - It must read as hand-built, not generated. The bar is "how was this made?", not "which AI made this?"
 - Fast and frictionless. Static, no build step, loads instantly, works on a phone first.
@@ -61,7 +61,7 @@ The page is a phone that behaves like a real OS. A platform selector (iOS / Andr
   - hero, the activity *wakes*; challenge, it *starts* (blocked); build, it *expands* (long-press detail).
   - ai, **Apple Intelligence** edge-glow (iOS) / **Circle-to-Search → Gemini** (Android), tied to his AI-tooling work.
   - setback, **Focus / Do Not Disturb** dims the room and silences a notification (the quiet work that rarely demos).
-  - conclusion (**the marquee**), a cascade of notifications from *other people* (guidelines adopted, interview now the reference, a mentee shipped). Impact arriving in other people's work.
+  - conclusion (**the marquee**), a cascade of notifications framed as outcomes: clearer constraints, reusable patterns, fewer bespoke exceptions, and decisions that stay decided.
   - contact, **Contact Poster** (iOS) / **Quick Share** sheet (Android).
 - **Fidelity is the point** (see Strategic principles): Liquid Glass vs Material 3 Expressive, real status-bar glyphs per platform, gesture-nav indicators, platform corner radii, and a per-OS wallpaper that animates on switch.
 - **On-brand, not cartoonish.** The OS skin reskins only the *chrome*; the chat content keeps the brand type and clay-red accent. Android's Material You tonal palette is **seeded from the clay-red** so dynamic color stays on-brand. The transient AI-feature colors (Apple Intelligence / Gemini) are the only non-clay moments and resolve back to brand surfaces.

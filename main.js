@@ -250,7 +250,7 @@
         if (kick) inWrap.insertBefore(el("span", "kicker", kick), bubble);
         return streamText(bubble, inWrap);
       }).then(function () {
-        inWrap.appendChild(answerMeta("from his work"));
+        inWrap.appendChild(answerMeta("from my work"));
         OS.onBeatReveal(prompt, inWrap);
         if (prompt.next && prompt.hook) appendNextCTA(inWrap, prompt.next, prompt.hook);
         busy = false;
@@ -322,7 +322,7 @@
       if (!liveact) return;
       liveact.classList.remove("liveact--migration", "liveact--expanded");
       var label = (a && a.label) || "ask gianfranco";
-      laTitle.textContent = "ask";
+      laTitle.textContent = (a && a.short) || "ask";
       laSub.hidden = true; laTrail.hidden = true;
       this.setProg(0);
       liveact.setAttribute("aria-label", label + ", live");
@@ -351,8 +351,8 @@
         "<div class='liveact__etitle'>" + escapeHtml((data.activity && data.activity.title) || "Flutter migration") + "</div>" +
         "<div class='liveact__estate'>" + escapeHtml(a.label || a.state || "in progress") + " · " + pct + "%</div>" +
         "<div class='liveact__etrack' style='--pct:" + pct + "%'><span></span></div>" +
-        "<div class='liveact__erow'><span class='liveact__ev'>Migration plan</span><span class='liveact__es'>aligned</span></div>" +
-        "<div class='liveact__erow'><span class='liveact__ev'>Next checkpoint</span><span class='liveact__es'>Auth0 risk</span></div>");
+        "<div class='liveact__erow'><span class='liveact__ev'>Shared path</span><span class='liveact__es'>in progress</span></div>" +
+        "<div class='liveact__erow'><span class='liveact__ev'>Tradeoffs</span><span class='liveact__es'>visible</span></div>");
       laExpand.hidden = false;
     },
     openExpand: function () {
@@ -445,7 +445,7 @@
         setTimeout(function () { lasso.remove(); }, 1500);
       }
       var g = el("div", "gemini", geminiSparkSVG() +
-        "<span class='gemini__txt'>Asked <b>Gemini</b> about the module map: <b>Agents.md</b> context keeps coding agents architecturally correct.</span>");
+        "<span class='gemini__txt'><b>Gemini</b> checks the module map: project context beats guessing across modules.</span>");
       var bubble = container.querySelector(".bubble");
       if (bubble) { bubble.appendChild(g); requestAnimationFrame(function () { g.classList.add("in"); }); }
     }

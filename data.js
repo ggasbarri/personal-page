@@ -1,176 +1,186 @@
 /* Content for "Ask Gianfranco".
 
-   The thread is sequenced as a story (David JP Phillips structure): a hook,
-   the challenge, the development, an honest setback, then the payoff. Each
-   story beat carries:
+   The thread is sequenced as a first-person story (David JP Phillips
+   structure): a human hook, tension, development, a quiet personal dip, then
+   payoff. Each story beat carries:
      kicker  chapter label shown atop the answer
      mood    drives the ambient temperature of the whole app
      next    id of the next beat
      hook    cliffhanger label for the "continue" button (opens the next loop)
    Beats flagged extra:true (toolkit, timeline) sit off the story rail.
 
-   Voice: accurate and understated. He collaborates, aligns, and makes
-   decisions across teams; he does not "own" the Flutter migration, he helps
-   shape its plan and align the people behind it. No job titles. Let the scope
-   of the work imply the level. Keep prose short; bold the words that matter.
-   Authored, trusted HTML only (see security note in main.js). */
+   Voice: accurate and understated. Gian collaborates, aligns, and shapes
+   decisions across teams; he does not "own" the Flutter migration. No job
+   titles. Let scope imply level. Keep prose short; bold only the words that
+   matter. Authored, trusted HTML only (see security note in main.js). */
 
 window.ASK_DATA = {
-  hero: "who is gianfranco gasbarri?",
+  hero: "who are you?",
 
-  story: ["hero", "challenge", "build", "ai", "setback", "conclusion"],
+  story: ["hero", "shape", "motors", "system", "tools", "human", "lands", "contact"],
 
-  heroNext: { next: "challenge", hook: "So what was the problem?" },
+  heroNext: { next: "shape", hook: "What kind of work?" },
 
-  /* OS-feature layer (overdrive). The phone behaves like a real OS; each beat
-     demonstrates a native feature of the selected platform (iOS / Android),
-     switched via .os-switch. The spine is a persistent Live Activity that
-     tracks the Flutter migration: hero wakes it, challenge..conclusion are
-     authentic states of it (blocked -> aligning -> direction set). Copy stays
-     accurate: the migration is in progress, never "shipped". Chrome only, the
-     brand and answer content are untouched. */
+  /* OS-feature layer. The phone behaves like a real OS; each beat demonstrates
+     a native feature of the selected platform (iOS / Android), switched via
+     .os-switch. The spine is a persistent Live Activity that tracks the
+     Flutter direction through the story. Copy stays accurate: this is in
+     progress, never "shipped". Chrome only, the brand and answer content are
+     untouched. */
   activity: {
-    org: "OLX · Motors",
-    title: "Flutter migration",
+    org: "OLX Motors",
+    title: "Flutter direction",
   },
-  // hero: the app's own "live" state, before the migration is even mentioned.
-  heroActivity: { kind: "app", state: "live", label: "ask gianfranco" },
+  // hero: the app's own "live" state, before the migration is mentioned.
+  heroActivity: { kind: "app", state: "live", label: "gian", short: "gian" },
 
   prompts: [
     {
-      id: "challenge",
-      chip: "What's the hard problem?",
-      question: "what's the hard problem?",
-      kicker: "the challenge",
+      id: "shape",
+      chip: "What kind of work?",
+      question: "what kind of work do you do?",
+      kicker: "the shape",
       mood: "challenge",
-      activity: { kind: "migration", state: "blocked", label: "Auth0 deadline", progress: 0.12 },
-      next: "build",
-      hook: "So what does he do about it?",
+      activity: { kind: "migration", state: "framing", label: "direction forming", progress: 0.14 },
+      next: "motors",
+      hook: "Where does that show up?",
       html: `
-        <p class="answer-lead">The Motors apps run on a hybrid native-and-Flutter setup across Europe. It works, but it <strong>costs</strong>.</p>
-        <div class="forces pop">
-          <div class="force">
-            <span class="force__k">the cost</span>
-            <p>Reliability and performance hits, a split developer experience, native-and-Flutter dependencies that slow everyone down.</p>
-          </div>
-          <span class="forces__plus" aria-hidden="true">+</span>
-          <div class="force">
-            <span class="force__k">the shift</span>
-            <p>AI starting to <strong>rewire</strong> how mobile teams build, fast.</p>
-          </div>
+        <p class="answer-lead">The interesting work starts when <strong>"just build it"</strong> is too small.</p>
+        <div class="badges pop" role="list" aria-label="what the work needs">
+          <span class="badge badge--lead" role="listitem">direction</span>
+          <span class="badge" role="listitem">risk</span>
+          <span class="badge" role="listitem">context</span>
         </div>
-        <p class="stakes pop">Unifying it isn't a coding task. It's getting many teams to <strong>commit to one direction</strong>, without breaking apps that generate <strong>3M+</strong> launches daily.</p>`
+        <p class="stakes pop">You need a direction, a risk call, and enough shared context for people to <strong>move</strong>.</p>`
     },
     {
-      id: "build",
-      chip: "What does he work on?",
-      question: "so what does he do about it?",
-      kicker: "development",
+      id: "motors",
+      chip: "Where does it show up?",
+      question: "where does that show up now?",
+      kicker: "OLX Motors",
       mood: "build",
-      activity: { kind: "migration", state: "planning", label: "execution plan aligned", progress: 0.4, expand: true },
-      next: "ai",
-      hook: "The bigger shift: how they build",
+      activity: { kind: "migration", state: "planning", label: "teams aligning", progress: 0.38, expand: true },
+      next: "system",
+      hook: "And beyond the migration?",
       html: `
-        <p class="answer-lead"><strong>Gian</strong> works on the parts that make a big change actually <strong>happen</strong>.</p>
+        <p class="answer-lead">At <strong>OLX Motors</strong>, I help several teams line up behind a Flutter direction.</p>
         <article class="tile pop">
-          <header class="tile__head"><span class="tile__org">OLX · Motors</span><span class="tile__when">in progress</span></header>
-          <h3 class="tile__title">A path to <strong>one</strong> Flutter codebase</h3>
-          <p class="tile__sub">Co-writing the migration's execution plan with the EM and PM, scope, effort, risks, and aligning the teams who have to commit to it.</p>
-        </article>
-        <article class="tile tile--flow pop">
-          <header class="tile__head"><span class="tile__org">OLX · GenAI</span><span class="tile__when">shipped</span></header>
-          <div class="flow" aria-label="video to a finished ad">
-            <span class="flow__step">📹 video</span>
-            <span class="flow__arrow">→</span>
-            <span class="flow__step flow__step--ai">GenAI</span>
-            <span class="flow__arrow">→</span>
-            <span class="flow__step flow__step--out">finished ad</span>
-          </div>
-          <p class="tile__sub">Shipped with the team. He wrote the <strong>long-term architecture vision</strong>, turning a fast trade-off into a documented direction.</p>
+          <header class="tile__head"><span class="tile__org">OLX Motors</span><span class="tile__when">in progress</span></header>
+          <h3 class="tile__title">A shared <strong>Flutter</strong> path</h3>
+          <p class="tile__sub">Scope, sequencing, risks, and the tradeoffs everyone has to live with.</p>
+          <p class="tile__sub"><strong>3M+ daily app launches</strong> sit behind that work, so context matters before decisions get expensive.</p>
         </article>`
     },
     {
-      id: "ai",
-      chip: "How does he work with AI?",
-      question: "how did he change how the team builds?",
-      kicker: "development",
-      mood: "peak",
-      activity: { kind: "migration", state: "agents", label: "agents on 5 modules", progress: 0.62 },
-      feature: "ai",
-      next: "setback",
-      hook: "But did any of it come easy?",
+      id: "system",
+      chip: "How do you shape it?",
+      question: "how do you shape the system?",
+      kicker: "shaping the system",
+      mood: "build",
+      activity: { kind: "migration", state: "shaping", label: "system choices", progress: 0.52 },
+      next: "tools",
+      hook: "How do tools fit in?",
       html: `
-        <p class="answer-lead">The higher-leverage bet: how a <strong>whole mobile org</strong> works with AI.</p>
-        <div class="badges pop" role="list" aria-label="AI tools">
+        <p class="answer-lead">I like the part where a choice becomes easier for the next team, not just the current ticket.</p>
+        <div class="forces pop" role="list" aria-label="ways I shape systems">
+          <div class="force" role="listitem">
+            <span class="force__k">shape</span>
+            <p>Fast experiments need a longer-term architecture before they become tomorrow's default.</p>
+          </div>
+          <div class="force" role="listitem">
+            <span class="force__k">clarify</span>
+            <p>Fragile platform boundaries get easier when the rules are visible.</p>
+          </div>
+          <div class="force" role="listitem">
+            <span class="force__k">reuse</span>
+            <p>Repeated decisions become standards people can pick up without another meeting.</p>
+          </div>
+        </div>`
+    },
+    {
+      id: "tools",
+      chip: "How do tools fit in?",
+      question: "how do tools fit in?",
+      kicker: "tools in the flow",
+      mood: "peak",
+      activity: { kind: "migration", state: "agents", label: "agents with context", progress: 0.64 },
+      feature: "ai",
+      next: "human",
+      hook: "What about outside the code?",
+      html: `
+        <p class="answer-lead">I use coding agents in the normal flow now. The useful part is not the sparkle.</p>
+        <div class="badges pop" role="list" aria-label="coding tools">
           <span class="badge badge--lead" role="listitem"><span class="badge__dot"></span>Claude Code</span>
           <span class="badge" role="listitem">Cursor</span>
           <span class="badge" role="listitem">Copilot</span>
         </div>
-        <div class="agentviz pop" aria-label="Agents.md context keeps coding agents architecturally correct across a multi-module Flutter codebase">
+        <div class="agentviz pop" aria-label="Agents.md context helps coding agents work across a multi-module mobile codebase">
           <span class="agentviz__agent">agent</span>
           <span class="agentviz__beam"></span>
           <div class="agentviz__mods">
             <span class="mod">auth</span><span class="mod mod--hot">listings</span><span class="mod">chat</span><span class="mod">media</span><span class="mod">core</span>
           </div>
-          <span class="agentviz__cap"><strong>Agents.md</strong> context, so agents stay architecturally right across modules</span>
+          <span class="agentviz__cap"><strong>Agents.md</strong> context, so tools help with the system instead of guessing around it</span>
         </div>
         <div class="punch pop">
-          <span class="punch__k">interview</span>
-          <p>Co-redesigned the <strong>AI-era mobile interview</strong>. Adopted as the standard, then a reference for a wider effort.</p>
+          <span class="punch__k">context</span>
+          <p>The better the map, the more useful the speed: modules, boundaries, and choices that should not be rediscovered every prompt.</p>
         </div>`
     },
     {
-      id: "setback",
-      chip: "Did it come easy?",
-      question: "did any of it come easy?",
-      kicker: "the honest part",
+      id: "human",
+      chip: "What outside code?",
+      question: "what are you like outside code?",
+      kicker: "human texture",
       mood: "setback",
-      activity: { kind: "migration", state: "aligning", label: "aligning teams", progress: 0.68 },
+      activity: { kind: "migration", state: "aligning", label: "quiet alignment", progress: 0.72 },
       feature: "focus",
-      silenced: { app: "Alignment", icon: "doc", title: "RFC review · still open", body: "Three teams, three good reasons. Slow by nature.", time: "now" },
-      next: "conclusion",
-      hook: "So where does it land?",
+      silenced: { app: "Focus", icon: "doc", title: "Decision thread paused", body: "Good inputs need a clear next step.", time: "now" },
+      next: "lands",
+      hook: "What actually lands?",
       html: `
-        <p class="answer-lead">Honestly? The hard part isn't the code. It's the <strong>alignment</strong>.</p>
+        <p class="answer-lead">I like systems outside code too. <strong>Economics</strong> is the current rabbit hole.</p>
         <div class="setback-block pop">
-          <p>Writing the plan, mapping the trade-offs, getting teams who each have their own way (and good reasons) to agree on one direction: it's <strong>slow</strong>.</p>
-          <p>It rarely demos well. The payoff shows up quietly, in other people's work, months later.</p>
-        </div>
-        <p class="aside-quiet pop">So he's learned to close those conversations: gather the input, then <strong>own the recommendation</strong>.</p>`
+          <p>Incentives, tradeoffs, opportunity cost, why reasonable people choose different things. Annoyingly useful at work.</p>
+          <p>Also: Aveiro, three languages, and a soft spot for problems with more than one right answer.</p>
+        </div>`
     },
     {
-      id: "conclusion",
-      chip: "So where does it land?",
-      question: "so where does it all land?",
-      kicker: "how it lands",
+      id: "lands",
+      chip: "What actually lands?",
+      question: "what actually lands?",
+      kicker: "what lands",
       mood: "payoff",
-      activity: { kind: "migration", state: "set", label: "direction set · teams aligned", progress: 0.9 },
+      activity: { kind: "migration", state: "set", label: "path clear enough to move", progress: 0.9 },
       feature: "cascade",
-      // The marquee. Impact arriving as notifications, in other people's work.
-      // Addressed to Gian's phone, framed as others crediting him (never boastful).
+      // The marquee. Impact arriving as notifications, framed as outcomes.
       notes: [
-        { app: "Frontend Guild", icon: "guild", title: "Webview guidelines adopted", body: "Three squads shipped on the shared standard.", time: "now" },
-        { app: "Mobile Hiring", icon: "hire", title: "Your interview format is the reference", body: "The AI-era loop is now the wider default.", time: "2m" },
-        { app: "Mentorship", icon: "mentee", title: "A mentee shipped their initiative", body: "“Thanks for the push.”", time: "9m" }
+        { app: "Architecture", icon: "doc", title: "Constraints made visible", body: "Tradeoffs are clear before implementation starts.", time: "now" },
+        { app: "Platform", icon: "guild", title: "Patterns reused", body: "Less bespoke glue at the fragile edges.", time: "2m" },
+        { app: "Delivery", icon: "hire", title: "Decisions stayed decided", body: "The team moves instead of reopening the same call.", time: "9m" }
       ],
-      hook: "Want him on your problem?",
+      next: "contact",
+      hook: "Want to talk?",
       html: `
-        <p class="answer-lead">Where it counts: in <strong>other people's</strong> work.</p>
+        <p class="answer-lead">The work lands when outputs <strong>outlive the meeting</strong>.</p>
         <div class="payoff pop" role="list">
-          <span class="payoff__chip" role="listitem">guidelines and standards other teams build on</span>
-          <span class="payoff__chip" role="listitem">an AI-era interview, now a shared reference</span>
-          <span class="payoff__chip" role="listitem">mentees who now drive their own initiatives</span>
+          <span class="payoff__chip" role="listitem">clearer constraints</span>
+          <span class="payoff__chip" role="listitem">reusable patterns</span>
+          <span class="payoff__chip" role="listitem">fewer bespoke exceptions</span>
+          <span class="payoff__chip" role="listitem">decisions people do not reopen every sprint</span>
         </div>
-        <p class="punchline pop">The throughline: he makes cross-team decisions <strong>legible</strong>, and moves them forward.</p>`
+        <p class="punchline pop">That's the work I like most: making the path clear enough for people to <strong>move</strong>.</p>`
     },
     {
       id: "contact",
-      chip: "How do I reach him?",
-      question: "how do i reach him?",
+      chip: "How do I reach you?",
+      question: "how do i reach you?",
+      kicker: "contact",
       mood: "warm",
+      activity: { kind: "app", state: "contact", label: "contact gian", short: "talk" },
       feature: "poster",
       html: `
-        <p class="answer-lead">Easy. Pick a channel:</p>
+        <p class="answer-lead">Want to talk? Email or LinkedIn is easiest.</p>
         <div class="contact">
           <a class="cta pop" href="mailto:hey@ggasbarri.com">
             <svg class="cta__icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="m3 6 9 6 9-6"/></svg>
@@ -186,13 +196,13 @@ window.ASK_DATA = {
     },
     {
       id: "stack",
-      chip: "His toolkit",
-      question: "what's in his toolkit?",
+      chip: "Your toolkit",
+      question: "what's in your toolkit?",
       extra: true,
       html: `
         <div class="kit">
           <div class="kit__row kit__row--lead pop">
-            <span class="kit__k">ai</span>
+            <span class="kit__k">tools</span>
             <span class="chips"><span class="badge badge--lead"><span class="badge__dot"></span>Claude Code</span><span class="badge">Cursor</span><span class="badge">Copilot</span><span class="badge badge--ghost">Agents.md context</span></span>
           </div>
           <div class="kit__row pop">
@@ -200,26 +210,26 @@ window.ASK_DATA = {
             <span class="chips"><span class="badge">Flutter</span><span class="badge">Kotlin</span><span class="badge">Compose</span><span class="badge">Swift</span><span class="badge">KMP</span></span>
           </div>
           <div class="kit__row pop">
-            <span class="kit__k">how he works</span>
-            <span class="chips"><span class="badge">RFCs &amp; ADRs</span><span class="badge">DDD</span><span class="badge">stakeholder alignment</span><span class="badge">A/B &amp; rollouts</span><span class="badge">monitoring</span></span>
+            <span class="kit__k">how I work</span>
+            <span class="chips"><span class="badge">RFCs &amp; ADRs</span><span class="badge">DDD</span><span class="badge">team alignment</span><span class="badge">A/B &amp; rollouts</span><span class="badge">monitoring</span></span>
           </div>
           <div class="kit__row pop">
-            <span class="kit__k">speaks</span>
-            <span class="chips"><span class="badge badge--flag">🇪🇸 Spanish</span><span class="badge badge--flag">🇵🇹 Português</span><span class="badge badge--flag">🇬🇧 English</span></span>
+            <span class="kit__k">languages</span>
+            <span class="chips"><span class="badge badge--flag">🇪🇸 Spanish</span><span class="badge badge--flag">🇵🇹 Portuguese</span><span class="badge badge--flag">🇬🇧 English</span></span>
           </div>
         </div>`
     },
     {
       id: "path",
-      chip: "The timeline",
-      question: "what's the path so far?",
+      chip: "Your path",
+      question: "what's your path so far?",
       extra: true,
       html: `
         <ol class="timeline">
-          <li class="timeline__item pop"><span class="timeline__when">2021 — now</span><span class="timeline__what"><strong>Mobile &amp; cross-team architecture</strong>, OLX Group · Motors</span></li>
-          <li class="timeline__item pop"><span class="timeline__when">2020 — 21</span><span class="timeline__what"><strong>Mobile engineer</strong>, GFI / Altice Labs</span></li>
-          <li class="timeline__item pop"><span class="timeline__when">2017 — 20</span><span class="timeline__what"><strong>Flutter &amp; Node</strong> at Nemobile · Android at Grupo Nepuntobiz</span></li>
-          <li class="timeline__item timeline__item--edu pop"><span class="timeline__when">2018</span><span class="timeline__what">Associate Android Developer, <strong>Google</strong></span></li>
+          <li class="timeline__item pop"><span class="timeline__when">2021 to now</span><span class="timeline__what"><strong>OLX Group · Motors</strong>, mobile systems and cross-team architecture</span></li>
+          <li class="timeline__item pop"><span class="timeline__when">2020 to 21</span><span class="timeline__what"><strong>GFI / Altice Labs</strong>, mobile product work</span></li>
+          <li class="timeline__item pop"><span class="timeline__when">2017 to 20</span><span class="timeline__what"><strong>Nemobile / Grupo Nepuntobiz</strong>, Flutter, Node, and Android</span></li>
+          <li class="timeline__item timeline__item--edu pop"><span class="timeline__when">2018</span><span class="timeline__what">Associate Android Developer certification, <strong>Google</strong></span></li>
         </ol>`
     }
   ]

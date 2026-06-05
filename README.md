@@ -1,6 +1,6 @@
 # Ask Gianfranco
 
-The personal page of **Gianfranco Gasbarri** — mobile engineering, cross-team architecture, and AI-augmented engineering at OLX Motors — framed as a personal AI app: ask a question, an answer streams back, and a guided story walks you through his work. The page is a working phone that **behaves like a real OS** (an iOS / Android selector reskins it), and each story beat demonstrates a native mobile feature of the chosen platform.
+The personal page of **Gianfranco Gasbarri**: a short first-person chat about mobile systems, cross-team architecture, tooling, economics, and the kind of work he likes most. The page is a working phone that **behaves like a real OS** (an iOS / Android selector reskins it), and each story beat demonstrates a native mobile feature of the chosen platform.
 
 A hand-authored static site. No build step, no dependencies, no framework.
 
