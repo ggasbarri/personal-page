@@ -1266,8 +1266,12 @@ body[data-os="ios"] {
   --glass-hi:      oklch(1 0 0 / 0.72);           /* bright top specular edge */
   --glass-spec:    oklch(1 0 0 / 0.45);           /* diagonal sheen */
   --glass-shadow:  0 0.6rem 1.9rem -0.7rem oklch(0.3 0.03 60 / 0.42);
+  --glass-edge-lo: oklch(1 0 0 / 0.14);           /* faint lower inner edge */
   --glass-blur:    20px;
   --glass-sat:     1.8;
+  /* saturate + a touch of brightness/contrast: glass should lighten and crisp
+     what's behind it, not just blur it (the real Liquid-Glass tell). */
+  --glass-fx:      saturate(1.8) brightness(1.07) contrast(1.04);
   --radius-device: 3rem;
 }
 body[data-os="android"] {
@@ -1320,10 +1324,10 @@ body[data-os="ios"] .composer::before {
   background:
     linear-gradient(to bottom, var(--glass-spec), transparent 38%),
     var(--glass-bg);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-          backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-fx);
+          backdrop-filter: blur(var(--glass-blur)) var(--glass-fx);
   border-top: 1px solid var(--glass-hi);
-  box-shadow: inset 0 1px 0 var(--glass-hi), 0 -0.5rem 1.4rem -0.9rem oklch(0.3 0.03 60 / 0.3);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-edge-lo), 0 -0.5rem 1.4rem -0.9rem oklch(0.3 0.03 60 / 0.3);
 }
 body[data-os="android"] .composer::before {
   background: color-mix(in oklch, var(--m3-surface-container) 92%, transparent);
@@ -1339,11 +1343,11 @@ body[data-os="ios"] .chip {
   background:
     linear-gradient(to bottom, var(--glass-spec), transparent 50%),
     var(--glass-bg);
-  -webkit-backdrop-filter: blur(14px) saturate(1.6);
-          backdrop-filter: blur(14px) saturate(1.6);
+  -webkit-backdrop-filter: blur(14px) var(--glass-fx);
+          backdrop-filter: blur(14px) var(--glass-fx);
   border: 1px solid var(--glass-stroke);
   border-top-color: var(--glass-hi);
-  box-shadow: inset 0 1px 0 var(--glass-hi), 0 0.35rem 0.9rem -0.55rem oklch(0.3 0.03 60 / 0.4);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-edge-lo), 0 0.35rem 0.9rem -0.55rem oklch(0.3 0.03 60 / 0.4);
 }
 body[data-os="ios"] .chip:active { background: linear-gradient(to bottom, var(--glass-spec), transparent 50%), var(--glass-bg-hi); }
 body[data-os="android"] .chip { background: var(--m3-surface-container-hi); border-color: transparent; border-radius: var(--m3-shape-chip, 1.25rem); }
@@ -1354,10 +1358,19 @@ body[data-os="android"] .chip:hover { background: var(--m3-primary-container); t
    adds html.refract only there. The frosted base above already looks correct
    everywhere (iOS Safari included); this just bends the backdrop at the rim.
    Blur is dialled back where the lens applies, so the refraction stays legible. */
-html.refract body[data-os="ios"] .composer::before { backdrop-filter: blur(11px) saturate(var(--glass-sat)) url("#lq-glass"); }
-html.refract body[data-os="ios"] .chip            { backdrop-filter: blur(8px)  saturate(1.6) url("#lq-glass"); }
-html.refract body[data-os="ios"] .notif           { backdrop-filter: blur(12px) saturate(var(--glass-sat)) url("#lq-glass"); }
+html.refract body[data-os="ios"] .composer::before { backdrop-filter: blur(11px) var(--glass-fx) url("#lq-glass"); }
+html.refract body[data-os="ios"] .chip            { backdrop-filter: blur(8px)  var(--glass-fx) url("#lq-glass"); }
+html.refract body[data-os="ios"] .notif           { backdrop-filter: blur(12px) var(--glass-fx) url("#lq-glass"); }
 html.refract body[data-os="ios"] .liveact__expand { backdrop-filter: blur(16px) saturate(1.5) url("#lq-glass"); }
+
+/* No backdrop-filter at all (very old engines): trade translucency for
+   legibility so text never sits on an unblurred backdrop. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body[data-os="ios"] .composer::before { background: oklch(0.985 0.004 80 / 0.93); }
+  body[data-os="ios"] .chip             { background: oklch(0.972 0.005 80 / 0.96); }
+  body[data-os="ios"] .notif            { background: oklch(0.986 0.004 80 / 0.96); }
+  body[data-os="ios"] .sheet            { background: oklch(0.986 0.004 80 / 0.97); }
+}
 
 /* =========================================================================
    Material 3 Expressive interactions (Android)
@@ -1565,16 +1578,16 @@ body[data-os="ios"] .notif {
   background:
     linear-gradient(135deg, var(--glass-spec), transparent 42%),
     var(--glass-bg-hi);
-  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
-          backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-fx);
+          backdrop-filter: blur(var(--glass-blur)) var(--glass-fx);
   border: 1px solid var(--glass-stroke);
   border-top-color: var(--glass-hi);
   box-shadow: var(--glass-shadow);
 }
-/* specular: a bright top edge plus a faint inner contour, the tell of glass */
+/* specular: bright top edge, faint lower edge, plus a fine inner contour */
 body[data-os="ios"] .notif::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 0.5px oklch(1 0 0 / 0.12);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 -1px 0 var(--glass-edge-lo), inset 0 0 0 0.5px oklch(1 0 0 / 0.12);
 }
 body[data-os="android"] .poster { box-shadow: 0 0.6rem 1.6rem -0.8rem oklch(0.3 0.03 50 / 0.4); }
 
@@ -1690,13 +1703,13 @@ body[data-os="android"] .share-trigger:active { border-radius: var(--m3-shape-bt
 body[data-os="ios"] .sheet {
   border-radius: 1.6rem 1.6rem 0 0;
   background: linear-gradient(to bottom, var(--glass-spec), transparent 22%), var(--glass-bg-hi);
-  -webkit-backdrop-filter: blur(30px) saturate(1.8);
-          backdrop-filter: blur(30px) saturate(1.8);
+  -webkit-backdrop-filter: blur(30px) var(--glass-fx);
+          backdrop-filter: blur(30px) var(--glass-fx);
   border: 1px solid var(--glass-stroke);
   border-bottom: none;
   box-shadow: 0 -0.8rem 2.6rem -0.8rem oklch(0.3 0.03 60 / 0.4), inset 0 1px 0 var(--glass-hi);
 }
-html.refract body[data-os="ios"] .sheet { backdrop-filter: blur(18px) saturate(1.8) url("#lq-glass"); }
+html.refract body[data-os="ios"] .sheet { backdrop-filter: blur(18px) var(--glass-fx) url("#lq-glass"); }
 body[data-os="ios"] .sheet__cancel { background: color-mix(in oklch, var(--surface) 70%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
 
 /* ---- Android skin: Quick Share Material bottom sheet ------------------- */
