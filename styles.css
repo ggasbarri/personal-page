@@ -1263,8 +1263,8 @@ body[data-os="android"] .poster__sub { font-family: var(--font-label); font-size
    the refraction tier below); the tokens here describe the frosted base that
    every browser (incl. iOS Safari) renders underneath it. */
 body[data-os="ios"] {
-  --glass-bg:      oklch(0.98 0.004 80 / 0.44);   /* base translucent fill */
-  --glass-bg-hi:   oklch(0.995 0.004 80 / 0.6);   /* raised surfaces */
+  --glass-bg:      oklch(0.98 0.004 80 / 0.6);    /* base translucent fill */
+  --glass-bg-hi:   oklch(0.995 0.004 80 / 0.74);  /* raised surfaces */
   --glass-stroke:  oklch(1 0 0 / 0.22);           /* full hairline edge */
   --glass-hi:      oklch(1 0 0 / 0.72);           /* bright top specular edge */
   --glass-spec:    oklch(1 0 0 / 0.45);           /* diagonal sheen */
@@ -1361,23 +1361,16 @@ body[data-os="android"] .chip:hover { background: var(--m3-primary-container); t
    its id on each element as the --lq custom property (frosted base if the script
    never runs, since var(--lq, none) collapses to none).
 
-   html.refract (Chromium): SVG filters work inside backdrop-filter, so the lens
-   bends the live backdrop — the real deal. Blur is dialled back where the lens
-   applies so the refraction stays legible.
-   html.refract-el (Safari/Firefox attempt): those engines don't support url() in
-   backdrop-filter, so the same --lq is routed through element `filter` instead;
-   where the engine cooperates it warps the blurred surface, where it doesn't the
-   frosted base stands. See detect() in glass.js. */
+   html.refract (Chromium only): SVG filters work inside backdrop-filter, so the
+   lens bends the live backdrop — the real deal. Blur is dialled back where the
+   lens applies so the refraction stays legible. Safari/Firefox can't reference
+   an SVG filter from backdrop-filter (and routing it through element `filter`
+   makes Safari drop the backdrop blur), so they keep the blurred frosted base
+   above. See detect() in glass.js. */
 html.refract body[data-os="ios"] .composer::before { backdrop-filter: blur(11px) var(--glass-fx) var(--lq, none); }
 html.refract body[data-os="ios"] .chip            { backdrop-filter: blur(8px)  var(--glass-fx) var(--lq, none); }
 html.refract body[data-os="ios"] .notif           { backdrop-filter: blur(12px) var(--glass-fx) var(--lq, none); }
 html.refract body[data-os="ios"] .liveact__expand { backdrop-filter: blur(16px) saturate(1.5) var(--lq, none); }
-
-html.refract-el body[data-os="ios"] .composer::before,
-html.refract-el body[data-os="ios"] .chip,
-html.refract-el body[data-os="ios"] .notif,
-html.refract-el body[data-os="ios"] .sheet,
-html.refract-el body[data-os="ios"] .liveact__expand { filter: var(--lq, none); }
 
 /* No backdrop-filter at all (very old engines): trade translucency for
    legibility so text never sits on an unblurred backdrop. */
