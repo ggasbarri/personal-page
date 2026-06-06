@@ -29,9 +29,12 @@
   })();
 
   /* Haptics: a real Vibration-API tap on supported devices (Android Chrome).
-     iOS Safari has no web vibration, so this is a no-op there by design. */
-  function haptic(ms) {
-    try { if (!REDUCED && OS.cur === "android" && navigator.vibrate) navigator.vibrate(ms || 8); } catch (e) {}
+     iOS Safari has no web vibration, so this is a no-op there by design.
+     Intensity is semantic (tap < select < open), not a per-call magic number. */
+  var HAPTIC = { tap: 7, select: 10, open: 12 };
+  function haptic(kind) {
+    var ms = HAPTIC[kind] || HAPTIC.tap;
+    try { if (!REDUCED && OS.cur === "android" && navigator.vibrate) navigator.vibrate(ms); } catch (e) {}
   }
 
   var thread    = document.getElementById("thread");
@@ -223,7 +226,7 @@
       escapeHtml(hook) + "<span class='next-cta__go' aria-hidden='true'>→</span>");
     cta.type = "button";
     cta.addEventListener("click", function () {
-      haptic(9);
+      haptic("select");
       cta.disabled = true;
       markChip(nextId);
       // The button becomes the question: morph it into the user bubble.
@@ -322,6 +325,8 @@
       (attrs || "fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'") +
       " width='16' height='16' aria-hidden='true'>" + inner + "</svg>";
   }
+  // shared so the contact share-trigger and the share-sheet tile stay identical
+  var SHARE_PATH = "<path d='M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7'/><path d='M12 16V3'/><path d='m7 8 5-5 5 5'/>";
   var ICON = {
     guild:  function () { return svg("<path d='M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/><circle cx='9.5' cy='7' r='4'/><path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'/>"); },
     hire:   function () { return svg("<path d='M20 6 9 17l-5-5'/>"); },
@@ -499,10 +504,9 @@
     });
 
     var share = el("button", "share-trigger",
-      svg("<path d='M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7'/><path d='M12 16V3'/><path d='m7 8 5-5 5 5'/>") +
-      "<span>Share this page</span>");
+      svg(SHARE_PATH) + "<span>Share this page</span>");
     share.type = "button";
-    share.addEventListener("click", function () { haptic(10); ShareSheet.open(share); });
+    share.addEventListener("click", function () { haptic("select"); ShareSheet.open(share); });
     if (p.nextSibling) bubble.insertBefore(share, p.nextSibling);
     else bubble.appendChild(share);
   }
@@ -539,7 +543,7 @@
       this.btns.forEach(function (b) {
         b.addEventListener("click", function () { self.set(b.getAttribute("data-os")); });
         b.addEventListener("pointerdown", function () {
-          haptic(7);
+          haptic("tap");
           if (self.cur !== "android") return;
           b.classList.add("is-pressing");
           self.btns.forEach(function (o) { if (o !== b) o.classList.add("is-squished"); });
@@ -581,7 +585,7 @@
 
     function tIcon(name) {
       var p = {
-        share: "<path d='M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7'/><path d='M12 16V3'/><path d='m7 8 5-5 5 5'/>",
+        share: SHARE_PATH,
         copy:  "<rect x='9' y='9' width='11' height='11' rx='2.2'/><path d='M5 15V5a2 2 0 0 1 2-2h10'/>",
         mail:  "<rect x='2.5' y='4.5' width='19' height='15' rx='2.5'/><path d='m3 6 9 6 9-6'/>",
         link:  "<path d='M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5'/><path d='M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1.5-1.5'/>"
@@ -618,25 +622,25 @@
       if (navigator.share) {
         var tShare = target("sheet__target--share", "Share…", tIcon("share"));
         tShare.addEventListener("click", function () {
-          haptic(10);
+          haptic("select");
           navigator.share(SHARE).then(function () { close(); }).catch(function () {});
         });
         targets.appendChild(tShare);
       }
       var tCopy = target("sheet__target--copy", "Copy link", tIcon("copy"));
       tCopy.addEventListener("click", function () {
-        haptic(8);
+        haptic("select");
         copyLink(SHARE.url, tCopy);
       });
       var tMail = target("sheet__target--mail", "Email", tIcon("mail"));
       tMail.addEventListener("click", function () {
-        haptic(8);
+        haptic("select");
         location.href = "mailto:hey@ggasbarri.com?subject=" + encodeURIComponent("Hello Gian") +
           "&body=" + encodeURIComponent("Saw your page (" + SHARE.url + ") and wanted to reach out.");
       });
       var tLi = target("sheet__target--li", "LinkedIn", liLogo());
       tLi.addEventListener("click", function () {
-        haptic(8);
+        haptic("select");
         window.open("https://www.linkedin.com/in/ggasbarri/", "_blank", "noopener");
       });
       targets.appendChild(tCopy); targets.appendChild(tMail); targets.appendChild(tLi);
@@ -720,7 +724,7 @@
       isDesk = window.matchMedia("(min-width: 1080px)").matches;
       sheet.hidden = false; scrim.hidden = false;
       sheet.style.transform = "";
-      haptic(12);
+      haptic("open");
       requestAnimationFrame(function () {
         sheet.classList.add("is-animating");
         scrim.classList.add("is-open");
@@ -762,7 +766,7 @@
       chip.setAttribute("data-id", p.id);
       chip.setAttribute("role", "listitem");
       chip.addEventListener("click", function () {
-        haptic(6);
+        haptic("tap");
         ask(p);
         chip.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
       });
