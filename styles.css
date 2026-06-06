@@ -875,6 +875,19 @@ body[data-os="android"] {
   --m3-surface-container:     oklch(0.945 0.013 58);
   --m3-surface-container-hi:  oklch(0.915 0.016 52);
   --m3-outline:               oklch(0.78 0.020 58);
+
+  /* Material 3 Expressive motion: spatial springs overshoot (damping < 1),
+     effect springs settle flat (damping = 1). Encoded as linear() easings so
+     the bounce is real CSS, no JS. */
+  --m3-spatial:        linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121 24.3%, 1.149, 1.159 29.4%, 1.154, 1.129 32.1%, 1.051 39.6%, 1.017 43.1%, 0.992 50.4%, 0.985 54.6%, 0.987 61.2%, 1.001 76.9%, 1.004 83.2%, 1);
+  --m3-spatial-soft:   linear(0, 0.026, 0.1 5.2%, 0.39 11.3%, 0.62 16%, 0.81, 0.945 25.4%, 1.02, 1.06 34.3%, 1.07, 1.062 44.7%, 1.013 61%, 0.997 73.5%, 1.001 91%, 1);
+  --m3-effects:        cubic-bezier(0.2, 0, 0, 1);
+
+  /* Expressive shapes: rounder at rest, morph on press. */
+  --m3-shape-chip:     1.6rem;
+  --m3-shape-chip-press: 0.65rem;
+  --m3-shape-btn:      1.7rem;
+  --m3-shape-btn-press: 0.85rem;
 }
 body[data-os="android"] .device { background: oklch(0.972 0.009 64); }
 
@@ -1240,11 +1253,21 @@ body[data-os="android"] .poster__sub { font-family: var(--font-label); font-size
    ========================================================================= */
 
 /* ---- per-OS design tokens ---------------------------------------------- */
+/* Liquid Glass (iOS 26) is a *material*, not a blur: a translucent lens that
+   refracts the backdrop, carries a bright specular rim, and casts a soft
+   shadow. Tinted warm-neutral (hue ~80) so it sits on the paper brand instead
+   of the old arbitrary blue. The refraction itself rides on backdrop-filter
+   url(#lq-glass) and is gated to Chromium via html.refract; the tokens below
+   describe the frosted base that every browser (incl. iOS Safari) renders. */
 body[data-os="ios"] {
-  --glass-bg:     oklch(0.985 0.006 250 / 0.5);
-  --glass-stroke: oklch(1 0 0 / 0.55);
-  --glass-hi:     oklch(1 0 0 / 0.7);
-  --glass-shadow: 0 0.7rem 2rem -0.7rem oklch(0.32 0.04 255 / 0.4);
+  --glass-bg:      oklch(0.98 0.004 80 / 0.44);   /* base translucent fill */
+  --glass-bg-hi:   oklch(0.995 0.004 80 / 0.6);   /* raised surfaces */
+  --glass-stroke:  oklch(1 0 0 / 0.22);           /* full hairline edge */
+  --glass-hi:      oklch(1 0 0 / 0.72);           /* bright top specular edge */
+  --glass-spec:    oklch(1 0 0 / 0.45);           /* diagonal sheen */
+  --glass-shadow:  0 0.6rem 1.9rem -0.7rem oklch(0.3 0.03 60 / 0.42);
+  --glass-blur:    20px;
+  --glass-sat:     1.8;
   --radius-device: 3rem;
 }
 body[data-os="android"] {
@@ -1294,11 +1317,13 @@ body[data-os="android"] .navind span { width: 25%; max-width: 7rem;  opacity: 0.
   transition: background 0.6s var(--ease), border-color 0.6s var(--ease);
 }
 body[data-os="ios"] .composer::before {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(22px) saturate(1.8);
-          backdrop-filter: blur(22px) saturate(1.8);
-  border-top: 1px solid var(--glass-stroke);
-  box-shadow: inset 0 1px 0 var(--glass-hi);
+  background:
+    linear-gradient(to bottom, var(--glass-spec), transparent 38%),
+    var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+          backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+  border-top: 1px solid var(--glass-hi);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 -0.5rem 1.4rem -0.9rem oklch(0.3 0.03 60 / 0.3);
 }
 body[data-os="android"] .composer::before {
   background: color-mix(in oklch, var(--m3-surface-container) 92%, transparent);
@@ -1311,13 +1336,70 @@ body[data-os="android"] .composer::before {
 .suggest { scroll-snap-type: x proximity; }
 .chip { scroll-snap-align: center; transition: background 0.25s var(--ease), border-color 0.25s var(--ease), transform 0.25s var(--ease); }
 body[data-os="ios"] .chip {
-  background: var(--glass-bg);
+  background:
+    linear-gradient(to bottom, var(--glass-spec), transparent 50%),
+    var(--glass-bg);
   -webkit-backdrop-filter: blur(14px) saturate(1.6);
           backdrop-filter: blur(14px) saturate(1.6);
   border: 1px solid var(--glass-stroke);
+  border-top-color: var(--glass-hi);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 0.35rem 0.9rem -0.55rem oklch(0.3 0.03 60 / 0.4);
 }
-body[data-os="android"] .chip { background: var(--m3-surface-container-hi); border-color: transparent; border-radius: 1.25rem; }
+body[data-os="ios"] .chip:active { background: linear-gradient(to bottom, var(--glass-spec), transparent 50%), var(--glass-bg-hi); }
+body[data-os="android"] .chip { background: var(--m3-surface-container-hi); border-color: transparent; border-radius: var(--m3-shape-chip, 1.25rem); }
 body[data-os="android"] .chip:hover { background: var(--m3-primary-container); transform: none; }
+
+/* ---- refraction tier: the real Liquid Glass lens (Chromium only) ---------
+   SVG filters in backdrop-filter are a Chromium-only capability, so main.js
+   adds html.refract only there. The frosted base above already looks correct
+   everywhere (iOS Safari included); this just bends the backdrop at the rim.
+   Blur is dialled back where the lens applies, so the refraction stays legible. */
+html.refract body[data-os="ios"] .composer::before { backdrop-filter: blur(11px) saturate(var(--glass-sat)) url("#lq-glass"); }
+html.refract body[data-os="ios"] .chip            { backdrop-filter: blur(8px)  saturate(1.6) url("#lq-glass"); }
+html.refract body[data-os="ios"] .notif           { backdrop-filter: blur(12px) saturate(var(--glass-sat)) url("#lq-glass"); }
+html.refract body[data-os="ios"] .liveact__expand { backdrop-filter: blur(16px) saturate(1.5) url("#lq-glass"); }
+
+/* =========================================================================
+   Material 3 Expressive interactions (Android)
+   Spring motion, shape-morph on press, and a connected button-group with
+   neighbour-squish. The bounce is pure CSS via linear() easings; main.js only
+   toggles the squish classes. Reduced-motion strips the bounce below.
+   ========================================================================= */
+/* chips: round at rest, morph squarer and squish on press, spring back */
+body[data-os="android"] .chip {
+  transition: background 0.3s var(--m3-effects), border-color 0.3s var(--m3-effects),
+              border-radius 0.4s var(--m3-spatial), transform 0.4s var(--m3-spatial);
+}
+body[data-os="android"] .chip:active {
+  border-radius: var(--m3-shape-chip-press);
+  transform: scale(0.93);
+  background: var(--m3-primary-container);
+}
+/* continue button + contact tiles share the expressive squish */
+body[data-os="android"] .next-cta {
+  border-radius: var(--m3-shape-btn);
+  transition: background 0.25s var(--m3-effects), border-radius 0.4s var(--m3-spatial),
+              transform 0.4s var(--m3-spatial), box-shadow 0.3s var(--ease);
+}
+body[data-os="android"] .next-cta:active { border-radius: var(--m3-shape-btn-press); transform: scale(0.96); }
+body[data-os="android"] .cta {
+  transition: background 0.3s var(--m3-effects), border-color 0.3s var(--m3-effects),
+              border-radius 0.4s var(--m3-spatial), transform 0.4s var(--m3-spatial);
+}
+body[data-os="android"] .cta:active { border-radius: var(--m3-shape-chip-press); transform: scale(0.975); }
+
+/* os-switch as an Expressive connected button group */
+body[data-os="android"] .os-switch__thumb {
+  transition: transform 0.55s var(--m3-spatial);
+  background: var(--m3-primary-container);
+  border-color: transparent;
+}
+body[data-os="android"] .os-switch__btn {
+  transition: color 0.3s var(--m3-effects), transform 0.45s var(--m3-spatial);
+}
+body[data-os="android"] .os-switch__btn[aria-pressed="true"] { color: var(--m3-on-primary-container); }
+body[data-os="android"] .os-switch__btn.is-pressing { transform: scale(1.06); }
+body[data-os="android"] .os-switch__btn.is-squished { transform: scale(0.9); }
 
 /* ---- Live Activity polish ---------------------------------------------- */
 /* iOS compact Live Activities live around the TrueDepth camera, not inside it.
@@ -1480,15 +1562,19 @@ body[data-os="android"] .liveact__expand {
 /* ---- notifications: glass (iOS) with a specular top edge ---------------- */
 .notif { position: relative; }
 body[data-os="ios"] .notif {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(22px) saturate(1.7);
-          backdrop-filter: blur(22px) saturate(1.7);
+  background:
+    linear-gradient(135deg, var(--glass-spec), transparent 42%),
+    var(--glass-bg-hi);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
+          backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-sat));
   border: 1px solid var(--glass-stroke);
+  border-top-color: var(--glass-hi);
   box-shadow: var(--glass-shadow);
 }
+/* specular: a bright top edge plus a faint inner contour, the tell of glass */
 body[data-os="ios"] .notif::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
-  box-shadow: inset 0 1px 0 var(--glass-hi);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 0.5px oklch(1 0 0 / 0.12);
 }
 body[data-os="android"] .poster { box-shadow: 0 0.6rem 1.6rem -0.8rem oklch(0.3 0.03 50 / 0.4); }
 
@@ -1498,3 +1584,137 @@ body[data-os="android"] .poster { box-shadow: 0 0.6rem 1.6rem -0.8rem oklch(0.3 
 .profile__role { margin-bottom: 0; }
 .profile__link { margin-top: 0.38rem; }
 .glance { gap: 1.1rem; }
+
+/* =========================================================================
+   SHARE SHEET (contact beat)
+   A real bottom sheet: slides up over the phone, drag-to-dismiss, and the
+   primary action calls the Web Share API (navigator.share) when present,
+   falling back to copy-link / mailto / LinkedIn targets. iOS skin = a Liquid
+   Glass share sheet; Android skin = a Quick Share Material bottom sheet.
+   Confined to the .device on desktop, fixed to the viewport on mobile.
+   ========================================================================= */
+/* the share affordance inside the contact answer */
+.share-trigger {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  margin-top: 0.85rem; padding: 0.7rem 1.05rem;
+  font-family: var(--font-ui); font-size: 0.95rem; font-weight: 600;
+  color: var(--accent); background: var(--accent-soft);
+  border: 1px solid var(--accent-line); border-radius: 2rem; cursor: pointer;
+  transition: background 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.share-trigger svg { width: 1.05rem; height: 1.05rem; }
+.share-trigger:hover { background: color-mix(in oklch, var(--accent) 20%, transparent); transform: translateY(-0.1rem); }
+.share-trigger:active { transform: translateY(0) scale(0.97); }
+.share-trigger:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 3px; }
+body[data-os="android"] .share-trigger {
+  border-radius: var(--m3-shape-btn);
+  transition: background 0.25s var(--m3-effects), border-radius 0.4s var(--m3-spatial), transform 0.4s var(--m3-spatial);
+}
+body[data-os="android"] .share-trigger:active { border-radius: var(--m3-shape-btn-press); transform: scale(0.96); }
+
+.sheet-scrim {
+  position: fixed; inset: 0; z-index: 40;
+  background: oklch(0.2 0.02 50 / 0.001);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.45s var(--ease), background 0.45s var(--ease);
+}
+.sheet-scrim.is-open { opacity: 1; pointer-events: auto; background: oklch(0.2 0.02 50 / 0.42); }
+
+.sheet {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 41;
+  width: var(--col);
+  max-width: 460px;
+  transform: translate(-50%, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 0.6rem 1.05rem max(1.1rem, env(safe-area-inset-bottom));
+  will-change: transform;
+  touch-action: none;
+}
+.sheet.is-open { transform: translate(-50%, 0); }
+.sheet:not(.is-dragging).is-animating { transition: transform 0.52s var(--ease); }
+.sheet[hidden], .sheet-scrim[hidden] { display: none; }
+
+/* on desktop the phone floats; pin the sheet to the device itself so it slides
+   up *inside* the phone and clips to its rounded corners (.device overflow). */
+@media (min-width: 1080px) {
+  .sheet-scrim { position: absolute; z-index: 40; }
+  .sheet { position: absolute; width: auto; left: 0; right: 0; max-width: none; transform: translateY(100%); }
+  .sheet.is-open { transform: translateY(0); }
+}
+
+.sheet__grip { align-self: center; width: 100%; max-width: 9rem; height: 1.5rem; border: none; background: none; cursor: grab; display: grid; place-items: center; padding: 0; }
+.sheet__grip::before { content: ""; width: 2.4rem; height: 0.3rem; border-radius: 1rem; background: var(--text-faint); opacity: 0.55; }
+.sheet.is-dragging .sheet__grip { cursor: grabbing; }
+
+.sheet__head { display: flex; align-items: center; gap: 0.85rem; padding: 0.1rem 0.35rem 0.2rem; }
+.sheet__avatar { flex: 0 0 auto; width: 3.1rem; height: 3.1rem; border-radius: 50%; overflow: hidden; box-shadow: 0 0.3rem 0.9rem -0.4rem oklch(0 0 0 / 0.5); }
+.sheet__avatar img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; transform: scaleX(-1); }
+.sheet__id { display: flex; flex-direction: column; min-width: 0; }
+.sheet__name { font-family: var(--font-display); font-weight: 700; font-size: 1.12rem; letter-spacing: -0.015em; line-height: 1.05; }
+.sheet__sub { font-size: 0.85rem; color: var(--text-muted); }
+
+.sheet__targets { display: flex; gap: 0.7rem; overflow-x: auto; scrollbar-width: none; padding: 0.3rem 0.35rem 0.2rem; scroll-snap-type: x proximity; }
+.sheet__targets::-webkit-scrollbar { display: none; }
+.sheet__target {
+  flex: 0 0 auto; scroll-snap-align: start;
+  display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  width: 4.1rem; padding: 0; border: none; background: none; cursor: pointer;
+  font-family: var(--font-ui); font-size: 0.7rem; color: var(--text-muted);
+}
+.sheet__ticon {
+  width: 3.3rem; height: 3.3rem; border-radius: 50%; display: grid; place-items: center;
+  color: var(--accent-ink); background: var(--accent);
+  box-shadow: 0 0.4rem 1rem -0.5rem var(--accent-strong);
+  transition: transform 0.4s var(--ease);
+}
+.sheet__ticon svg { width: 1.45rem; height: 1.45rem; }
+.sheet__target:active .sheet__ticon { transform: scale(0.9); }
+.sheet__target:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 3px; border-radius: 0.8rem; }
+.sheet__target--copy .sheet__ticon  { background: var(--surface-3); color: var(--accent); border: 1px solid var(--line); }
+.sheet__target--mail .sheet__ticon  { background: var(--surface-3); color: var(--accent); border: 1px solid var(--line); }
+.sheet__target.is-done .sheet__tlabel { color: var(--accent); font-weight: 600; }
+
+.sheet__cancel {
+  width: 100%; margin-top: 0.1rem; padding: 0.95rem; border: none; cursor: pointer;
+  font-family: var(--font-ui); font-size: 1.02rem; font-weight: 600; color: var(--accent);
+  background: var(--surface-2); border-radius: 1.1rem;
+}
+.sheet__cancel:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+
+/* ---- iOS skin: Liquid Glass share sheet -------------------------------- */
+body[data-os="ios"] .sheet {
+  border-radius: 1.6rem 1.6rem 0 0;
+  background: linear-gradient(to bottom, var(--glass-spec), transparent 22%), var(--glass-bg-hi);
+  -webkit-backdrop-filter: blur(30px) saturate(1.8);
+          backdrop-filter: blur(30px) saturate(1.8);
+  border: 1px solid var(--glass-stroke);
+  border-bottom: none;
+  box-shadow: 0 -0.8rem 2.6rem -0.8rem oklch(0.3 0.03 60 / 0.4), inset 0 1px 0 var(--glass-hi);
+}
+html.refract body[data-os="ios"] .sheet { backdrop-filter: blur(18px) saturate(1.8) url("#lq-glass"); }
+body[data-os="ios"] .sheet__cancel { background: color-mix(in oklch, var(--surface) 70%, transparent); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+
+/* ---- Android skin: Quick Share Material bottom sheet ------------------- */
+body[data-os="android"] .sheet {
+  border-radius: 1.9rem 1.9rem 0 0;
+  background: var(--m3-surface-container);
+  box-shadow: 0 -0.6rem 2rem -0.7rem oklch(0.3 0.03 50 / 0.45);
+}
+body[data-os="android"] .sheet__title { display: block; font-weight: 600; font-size: 1.1rem; padding: 0 0.4rem 0.1rem; color: var(--text); }
+body[data-os="ios"] .sheet__title { display: none; }
+body[data-os="android"] .sheet__cancel { display: none; }
+body[data-os="android"] .sheet__ticon { background: var(--m3-primary-container); color: var(--m3-on-primary-container); box-shadow: none; }
+body[data-os="android"] .sheet__target--copy .sheet__ticon,
+body[data-os="android"] .sheet__target--mail .sheet__ticon { background: var(--m3-surface-container-hi); border: none; }
+body[data-os="android"] .sheet__target:active .sheet__ticon { transform: scale(0.88); transition: transform 0.4s var(--m3-spatial); }
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-scrim, .sheet { transition: none !important; }
+  .sheet.is-open { transform: translate(-50%, 0); }
+  @media (min-width: 1080px) { .sheet.is-open { transform: translateY(0); } }
+}
