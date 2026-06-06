@@ -147,7 +147,20 @@ window.LiquidGlass = (function () {
      Two displacement passes — red slightly stronger than green/blue — recombined
      for a subtle chromatic split at the rim, then softened. Same shape as the
      original #lq-glass, but fed a geometry-aware map. SourceGraphic is the
-     backdrop when used in backdrop-filter. */
+     backdrop when used in backdrop-filter.
+
+     Primitives are built with createElementNS, NOT innerHTML: setting innerHTML
+     on an SVG node can parse the children into the HTML namespace, leaving the
+     <filter> with no recognised primitives — an empty filter, which Chromium
+     renders as backdrop-filter with no blur (washed-out, over-translucent glass).
+     Explicit namespaced nodes avoid that entirely. */
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function fe(tag, attrs) {
+    var el = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
   function makeFilter(w, h, r, bezel, scale) {
     var key = w + "x" + h + "x" + r + "x" + bezel + "x" + scale;
     if (filterCache[key]) return filterCache[key];
@@ -158,27 +171,28 @@ window.LiquidGlass = (function () {
     var map = makeMap(w, h, r, bezel);
     var rS = (scale * CHROMA).toFixed(2);
     var gS = scale.toFixed(2);
-    var SVG = "http://www.w3.org/2000/svg";
-    var f = document.createElementNS(SVG, "filter");
-    f.setAttribute("id", id);
+    var f = fe("filter", { id: id, "color-interpolation-filters": "sRGB" });
     // filter region = element box grown by MARGIN on each side (as a % of the box,
     // since filterUnits defaults to objectBoundingBox). The feImage map was padded
     // by the same MARGIN, so its rim still lines up with the element's edges while
-    // the region stays roomy enough not to clip drop shadows.
+    // the region stays roomy enough not to clip the rim displacement.
     var mx = (MARGIN / w * 100), my = (MARGIN / h * 100);
     f.setAttribute("x", (-mx).toFixed(2) + "%");
     f.setAttribute("y", (-my).toFixed(2) + "%");
     f.setAttribute("width", (100 + mx * 2).toFixed(2) + "%");
     f.setAttribute("height", (100 + my * 2).toFixed(2) + "%");
-    f.setAttribute("color-interpolation-filters", "sRGB");
-    f.innerHTML =
-      '<feImage preserveAspectRatio="none" x="0" y="0" width="100%" height="100%" result="map" href="' + map + '"></feImage>' +
-      '<feDisplacementMap in="SourceGraphic" in2="map" scale="' + rS + '" xChannelSelector="R" yChannelSelector="G" result="rD"></feDisplacementMap>' +
-      '<feColorMatrix in="rD" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rOnly"></feColorMatrix>' +
-      '<feDisplacementMap in="SourceGraphic" in2="map" scale="' + gS + '" xChannelSelector="R" yChannelSelector="G" result="gbD"></feDisplacementMap>' +
-      '<feColorMatrix in="gbD" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" result="gbOnly"></feColorMatrix>' +
-      '<feBlend in="rOnly" in2="gbOnly" mode="screen" result="aberr"></feBlend>' +
-      '<feGaussianBlur in="aberr" stdDeviation="0.4"></feGaussianBlur>';
+
+    var feImg = fe("feImage", { preserveAspectRatio: "none", x: "0", y: "0", width: "100%", height: "100%", result: "map" });
+    feImg.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", map);
+    feImg.setAttribute("href", map);
+    f.appendChild(feImg);
+    f.appendChild(fe("feDisplacementMap", { "in": "SourceGraphic", in2: "map", scale: rS, xChannelSelector: "R", yChannelSelector: "G", result: "rD" }));
+    f.appendChild(fe("feColorMatrix", { "in": "rD", type: "matrix", values: "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0", result: "rOnly" }));
+    f.appendChild(fe("feDisplacementMap", { "in": "SourceGraphic", in2: "map", scale: gS, xChannelSelector: "R", yChannelSelector: "G", result: "gbD" }));
+    f.appendChild(fe("feColorMatrix", { "in": "gbD", type: "matrix", values: "0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0", result: "gbOnly" }));
+    f.appendChild(fe("feBlend", { "in": "rOnly", in2: "gbOnly", mode: "screen", result: "aberr" }));
+    f.appendChild(fe("feGaussianBlur", { "in": "aberr", stdDeviation: "0.4" }));
+
     host.appendChild(f);
     filterCache[key] = id;
     return id;
