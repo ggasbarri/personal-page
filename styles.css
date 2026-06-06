@@ -888,6 +888,8 @@ body[data-os="android"] {
   --m3-shape-chip-press: 0.65rem;
   --m3-shape-btn:      1.7rem;
   --m3-shape-btn-press: 0.85rem;
+  /* the shared press-morph: shape + squish spring, reused by every pressable */
+  --m3-morph: border-radius 0.4s var(--m3-spatial), transform 0.4s var(--m3-spatial);
 }
 body[data-os="android"] .device { background: oklch(0.972 0.009 64); }
 
@@ -1380,8 +1382,7 @@ html.refract body[data-os="ios"] .liveact__expand { backdrop-filter: blur(16px) 
    ========================================================================= */
 /* chips: round at rest, morph squarer and squish on press, spring back */
 body[data-os="android"] .chip {
-  transition: background 0.3s var(--m3-effects), border-color 0.3s var(--m3-effects),
-              border-radius 0.4s var(--m3-spatial), transform 0.4s var(--m3-spatial);
+  transition: background 0.3s var(--m3-effects), border-color 0.3s var(--m3-effects), var(--m3-morph);
 }
 body[data-os="android"] .chip:active {
   border-radius: var(--m3-shape-chip-press);
@@ -1391,13 +1392,11 @@ body[data-os="android"] .chip:active {
 /* continue button + contact tiles share the expressive squish */
 body[data-os="android"] .next-cta {
   border-radius: var(--m3-shape-btn);
-  transition: background 0.25s var(--m3-effects), border-radius 0.4s var(--m3-spatial),
-              transform 0.4s var(--m3-spatial), box-shadow 0.3s var(--ease);
+  transition: background 0.25s var(--m3-effects), var(--m3-morph), box-shadow 0.3s var(--ease);
 }
 body[data-os="android"] .next-cta:active { border-radius: var(--m3-shape-btn-press); transform: scale(0.96); }
 body[data-os="android"] .cta {
-  transition: background 0.3s var(--m3-effects), border-color 0.3s var(--m3-effects),
-              border-radius 0.4s var(--m3-spatial), transform 0.4s var(--m3-spatial);
+  transition: background 0.3s var(--m3-effects), border-color 0.3s var(--m3-effects), var(--m3-morph);
 }
 body[data-os="android"] .cta:active { border-radius: var(--m3-shape-chip-press); transform: scale(0.975); }
 
@@ -1621,7 +1620,7 @@ body[data-os="android"] .poster { box-shadow: 0 0.6rem 1.6rem -0.8rem oklch(0.3 
 .share-trigger:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 3px; }
 body[data-os="android"] .share-trigger {
   border-radius: var(--m3-shape-btn);
-  transition: background 0.25s var(--m3-effects), border-radius 0.4s var(--m3-spatial), transform 0.4s var(--m3-spatial);
+  transition: background 0.25s var(--m3-effects), var(--m3-morph);
 }
 body[data-os="android"] .share-trigger:active { border-radius: var(--m3-shape-btn-press); transform: scale(0.96); }
 
@@ -1645,10 +1644,11 @@ body[data-os="android"] .share-trigger:active { border-radius: var(--m3-shape-bt
   flex-direction: column;
   gap: 0.9rem;
   padding: 0.6rem 1.05rem max(1.1rem, env(safe-area-inset-bottom));
-  will-change: transform;
   touch-action: none;
 }
 .sheet.is-open { transform: translate(-50%, 0); }
+/* promote to its own layer only while actually moving, not at rest */
+.sheet.is-dragging, .sheet.is-animating { will-change: transform; }
 .sheet:not(.is-dragging).is-animating { transition: transform 0.52s var(--ease); }
 .sheet[hidden], .sheet-scrim[hidden] { display: none; }
 
