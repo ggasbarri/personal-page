@@ -62,10 +62,10 @@ The page is a phone that behaves like a real OS. A platform selector (iOS / Andr
   - ai, **Apple Intelligence** edge-glow (iOS) / **Circle-to-Search → Gemini** (Android), tied to his AI-tooling work.
   - setback, **Focus / Do Not Disturb** dims the room and silences a notification (the quiet work that rarely demos).
   - conclusion (**the marquee**), a cascade of notifications framed as outcomes: clearer constraints, reusable patterns, fewer bespoke exceptions, and decisions that stay decided.
-  - contact, **Contact Poster** (iOS) / **Quick Share** sheet (Android).
-- **Fidelity is the point** (see Strategic principles): Liquid Glass vs Material 3 Expressive, real status-bar glyphs per platform, gesture-nav indicators, platform corner radii, and a per-OS wallpaper that animates on switch.
+  - contact, **Contact Poster** (iOS) / **Quick Share** sheet (Android). This is a *working* share sheet, not a prop: it raises a real drag-to-dismiss bottom sheet and uses the **Web Share API** (with copy-link / email / LinkedIn fallbacks), so the native gesture actually does the native thing.
+- **Fidelity is the point** (see Strategic principles): Liquid Glass vs Material 3 Expressive, real status-bar glyphs per platform, gesture-nav indicators, platform corner radii, and a per-OS wallpaper that animates on switch. iOS glass *refracts* the backdrop where the engine allows (Chromium) and stays a correct frosted material everywhere else; Android chrome carries Expressive spring + shape-morph. Where a platform exposes a real capability (share, vibration), the page uses it rather than faking it. See DESIGN.md for the implementation.
 - **On-brand, not cartoonish.** The OS skin reskins only the *chrome*; the chat content keeps the brand type and clay-red accent. Android's Material You tonal palette is **seeded from the clay-red** so dynamic color stays on-brand. The transient AI-feature colors (Apple Intelligence / Gemini) are the only non-clay moments and resolve back to brand surfaces.
-- **Accessible.** Every feature has a still, complete `prefers-reduced-motion` end state (no goo/glow/spring; the cascade falls back to static chips).
+- **Accessible.** Every feature has a still, complete `prefers-reduced-motion` end state (no goo/glow/spring/squish, no haptics; the cascade falls back to static chips, the share sheet appears without the slide). The share sheet is a focus-managed `role="dialog"` with Escape/scrim close.
 
 ## Anti-references
 
