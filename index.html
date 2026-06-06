@@ -33,34 +33,17 @@
   <div class="stage-mark" aria-hidden="true"><span>Gianfranco</span><span>Gasbarri</span></div>
 
   <!-- SVG filter defs (zero-size, off-canvas):
-       #goo     merges the Dynamic Island shapes (iOS) on state changes
-       #lq-glass real Liquid Glass refraction: a convex-lens displacement map
-                 bends the backdrop at the rim, with a faint chromatic split.
-                 Used as backdrop-filter on iOS chrome, Chromium only (see
-                 html.refract gate in main.js); every other browser keeps the
-                 frosted-glass base, so nothing breaks. -->
+       #goo      merges the Dynamic Island shapes (iOS) on state changes.
+       lq-glass-* real Liquid Glass refraction filters are generated at runtime by
+                 glass.js, one per surface size, and injected into this <defs>.
+                 Each bends the backdrop with a geometry-aware convex-lens map
+                 (strong at the rounded rim, flat in the centre) plus a faint
+                 chromatic split. Wired via the --lq custom property; any browser
+                 that can't refract simply keeps the frosted base, so nothing
+                 breaks. -->
   <svg class="goo-defs" width="0" height="0" aria-hidden="true" focusable="false">
     <defs>
       <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter>
-      <filter id="lq-glass" x="0%" y="0%" width="100%" height="100%" color-interpolation-filters="sRGB">
-        <!-- displacement map, built from two single-channel gradients blended in
-             the filter (reliable everywhere) rather than CSS blend inside the
-             image. R encodes horizontal bend, G vertical; 128 = neutral centre,
-             edges push outward → a gentle convex lens over the backdrop. -->
-        <feImage preserveAspectRatio="none" x="0" y="0" width="100%" height="100%" result="mx"
-          href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='100'%20height='100'%3E%3ClinearGradient%20id='g'%20x2='1'%20y2='0'%3E%3Cstop%20stop-color='%23000'/%3E%3Cstop%20offset='1'%20stop-color='%23f00'/%3E%3C/linearGradient%3E%3Crect%20width='100'%20height='100'%20fill='url(%23g)'/%3E%3C/svg%3E" />
-        <feImage preserveAspectRatio="none" x="0" y="0" width="100%" height="100%" result="my"
-          href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='100'%20height='100'%3E%3ClinearGradient%20id='g'%20x2='0'%20y2='1'%3E%3Cstop%20stop-color='%23000'/%3E%3Cstop%20offset='1'%20stop-color='%2300ff00'/%3E%3C/linearGradient%3E%3Crect%20width='100'%20height='100'%20fill='url(%23g)'/%3E%3C/svg%3E" />
-        <feBlend in="mx" in2="my" mode="screen" result="map"/>
-        <!-- red channel bends a touch further than green/blue → subtle chromatic edge.
-             Scales kept modest so the lens reads on small chips without warping. -->
-        <feDisplacementMap in="SourceGraphic" in2="map" scale="11" xChannelSelector="R" yChannelSelector="G" result="rD"/>
-        <feColorMatrix in="rD" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rOnly"/>
-        <feDisplacementMap in="SourceGraphic" in2="map" scale="7" xChannelSelector="R" yChannelSelector="G" result="gbD"/>
-        <feColorMatrix in="gbD" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" result="gbOnly"/>
-        <feBlend in="rOnly" in2="gbOnly" mode="screen" result="aberr"/>
-        <feGaussianBlur in="aberr" stdDeviation="0.4"/>
-      </filter>
     </defs>
   </svg>
 
@@ -189,6 +172,7 @@
   </main>
 
   <script src="data.js"></script>
+  <script src="glass.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
