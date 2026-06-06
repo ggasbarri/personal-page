@@ -14,19 +14,11 @@
   var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var data = window.ASK_DATA || { prompts: [] };
 
-  /* Real Liquid Glass refraction rides on an SVG backdrop-filter (#lq-glass),
-     which is a Chromium-only capability. Gate it to Chromium so Safari and
-     Firefox keep the frosted-glass base instead of dropping backdrop-filter
-     entirely. The frosted base already reads as correct iOS 26 glass. */
-  (function detectRefract() {
-    try {
-      var ua = navigator.userAgent || "";
-      var chromium = /Chrome|Chromium|Edg|OPR/.test(ua) && !/Edge\//.test(ua);
-      if (chromium && window.CSS && CSS.supports && CSS.supports("backdrop-filter", "url(#lq-glass)")) {
-        document.documentElement.classList.add("refract");
-      }
-    } catch (e) {}
-  })();
+  /* Real Liquid Glass refraction is owned by glass.js: it builds a geometry-aware
+     displacement filter per surface and decides, by capability, whether to drive
+     it through backdrop-filter (Chromium) or element filter (Safari/Firefox
+     attempt) — falling back to the frosted base where neither works. */
+  try { if (window.LiquidGlass) window.LiquidGlass.init(); } catch (e) {}
 
   /* Haptics: a real Vibration-API tap on supported devices (Android Chrome).
      iOS Safari has no web vibration, so this is a no-op there by design.
@@ -525,6 +517,11 @@
       this.cur = os;
       document.body.setAttribute("data-os", os);
       this.btns.forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-os") === os ? "true" : "false"); });
+      // glass surfaces only render (and have a measurable size) under iOS — refresh
+      // the lenses once the skin is on so each picks up a correctly-sized map.
+      if (os === "ios" && window.LiquidGlass) {
+        requestAnimationFrame(function () { window.LiquidGlass.refresh(); });
+      }
     },
     set: function (os) {
       if (os === this.cur) return;
