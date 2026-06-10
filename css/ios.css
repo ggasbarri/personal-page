@@ -1,0 +1,267 @@
+/* =========================================================================
+   Ask Gianfranco — iOS skin (body[data-os="ios"])
+   Liquid Glass (iOS 26) is a *material*, not a blur: a translucent lens that
+   refracts the backdrop, carries a bright specular rim, and casts a soft
+   shadow. Two tiers:
+     1. Frosted base + CSS edge-lensing (every browser, incl. all of iOS —
+        WebKit can't refract a live backdrop, so this tier is what real
+        iPhones see and it has to carry the illusion alone: clear fill,
+        strong specular top rim, a darkening lower inner edge, and a radial
+        band at the rim that brightens → darkens → catches light, reading as
+        a convex lens edge).
+     2. html.refract (Chromium only): glass.js injects geometry-aware
+        displacement filters and the backdrop genuinely bends (wired through
+        the --lq custom property; see js/glass.js).
+   ========================================================================= */
+
+body[data-os="ios"] {
+  --glass-bg:      oklch(0.98 0.004 80 / 0.40);   /* base translucent fill — clear, not milky */
+  --glass-bg-hi:   oklch(0.99 0.004 80 / 0.52);   /* raised surfaces */
+  --glass-stroke:  oklch(1 0 0 / 0.30);           /* full hairline edge */
+  --glass-hi:      oklch(1 0 0 / 0.85);           /* bright top specular edge */
+  --glass-spec:    oklch(1 0 0 / 0.5);            /* diagonal sheen */
+  --glass-shadow:  0 0.6rem 1.9rem -0.7rem oklch(0.3 0.03 60 / 0.42);
+  --glass-edge-lo: oklch(0.40 0.02 60 / 0.16);    /* darkening lower inner edge */
+  --glass-blur:    18px;
+  --glass-sat:     2.1;
+  /* legibility comes from the boosted backdrop, not from an opaque fill:
+     glass lightens and crisps what's behind it (the real Liquid-Glass tell) */
+  --glass-fx:      saturate(2.1) brightness(1.1) contrast(1.06);
+  --radius-device: 3rem;
+  --la-expand-r:   2.75rem;                       /* expanded island corner */
+}
+
+/* =========================================================================
+   Dynamic Island — ONE continuous black pill (the real compact shape).
+   The TrueDepth sensors live *inside* the black, invisible; compact leading
+   and trailing content hug the left/right edges. No visible sensor cutout,
+   no split pills.
+   ========================================================================= */
+body[data-os="ios"] .liveact {
+  width: 10.4rem;
+  height: 2.1rem;
+  color: oklch(0.97 0.005 80);
+}
+body[data-os="ios"] .liveact__bg {
+  border-radius: 999px;
+  background: oklch(0.10 0.006 60);
+  box-shadow:
+    inset 0 0.5px 0 oklch(1 0 0 / 0.08),       /* faint top sheen on the black */
+    inset 0 0 0.8rem oklch(0 0 0 / 0.55),      /* sensors disappear into the depth */
+    0 0.25rem 0.7rem -0.25rem oklch(0 0 0 / 0.75);
+}
+body[data-os="ios"] .liveact__content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 0 0.7rem;
+  gap: 0.5rem;
+}
+/* compact iOS Live Activities carry glyphs at the edges, not text */
+body[data-os="ios"] .liveact__text { display: none; }
+body[data-os="ios"] .liveact--progress .liveact__ic {
+  display: inline-flex;
+  width: 0.95rem;
+  height: 0.95rem;
+}
+body[data-os="ios"] .liveact--progress .liveact__ring {
+  display: block;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+body[data-os="ios"] .liveact__ringtrack { stroke: oklch(0.55 0.01 60); }
+body[data-os="ios"] .liveact__bar { display: none !important; }
+
+/* state update: the whole pill swells once and settles (replaces the old
+   detached-blob goo, which no real island does) */
+body[data-os="ios"] .liveact--pulse .liveact__shape {
+  animation: island-nudge 0.6s var(--ease);
+  transform-origin: center;
+}
+@keyframes island-nudge {
+  0%, 100% { transform: scale(1); }
+  40% { transform: scale(1.07, 1.16); }
+}
+
+/* expanded island: dark Liquid Glass, grown out of the pill (the geometry
+   morph itself lives in chrome.css + js/live-activity.js) */
+body[data-os="ios"] .liveact__expand {
+  background: oklch(0.13 0.01 60 / 0.92);
+  color: oklch(0.96 0.005 80);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+          backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid oklch(1 0 0 / 0.10);
+  box-shadow: 0 1.2rem 2.6rem -1rem oklch(0 0 0 / 0.55);
+}
+
+/* ---- composer: Liquid Glass bar ----------------------------------------- */
+body[data-os="ios"] .composer::before {
+  background:
+    linear-gradient(to bottom, var(--glass-spec), transparent 38%),
+    var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-fx);
+          backdrop-filter: blur(var(--glass-blur)) var(--glass-fx);
+  border-top: 1px solid var(--glass-hi);
+  box-shadow:
+    inset 0 1.5px 0 var(--glass-hi),
+    inset 0 -1px 2px var(--glass-edge-lo),
+    0 -0.5rem 1.4rem -0.9rem oklch(0.3 0.03 60 / 0.3);
+}
+
+/* ---- chips: small glass lenses ------------------------------------------ */
+body[data-os="ios"] .chip {
+  position: relative;
+  background:
+    linear-gradient(to bottom, var(--glass-spec), transparent 50%),
+    var(--glass-bg);
+  -webkit-backdrop-filter: blur(14px) var(--glass-fx);
+          backdrop-filter: blur(14px) var(--glass-fx);
+  border: 1px solid var(--glass-stroke);
+  border-top-color: var(--glass-hi);
+  box-shadow:
+    inset 0 1px 1px var(--glass-hi),
+    inset 0 -1.5px 2px var(--glass-edge-lo),
+    0 0.35rem 0.9rem -0.55rem oklch(0.3 0.03 60 / 0.4);
+}
+/* the lens band: brightens, then darkens, then catches light right at the
+   rim — the convex-edge illusion the frosted tier relies on */
+body[data-os="ios"] .chip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(140% 140% at 50% 38%,
+    transparent 58%,
+    oklch(1 0 0 / 0.10) 84%,
+    oklch(0.40 0.03 60 / 0.12) 96%,
+    oklch(1 0 0 / 0.22) 100%);
+}
+body[data-os="ios"] .chip:active {
+  background:
+    linear-gradient(to bottom, var(--glass-spec), transparent 50%),
+    var(--glass-bg-hi);
+}
+
+/* ---- notifications: glass cards with a specular top edge ---------------- */
+body[data-os="ios"] .notif {
+  background:
+    linear-gradient(135deg, var(--glass-spec), transparent 42%),
+    var(--glass-bg-hi);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) var(--glass-fx);
+          backdrop-filter: blur(var(--glass-blur)) var(--glass-fx);
+  border: 1px solid var(--glass-stroke);
+  border-top-color: var(--glass-hi);
+  box-shadow: var(--glass-shadow);
+  border-radius: 1.35rem;
+}
+/* specular contour + lens band */
+body[data-os="ios"] .notif::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(160% 160% at 50% 30%,
+    transparent 62%,
+    oklch(1 0 0 / 0.08) 86%,
+    oklch(0.40 0.03 60 / 0.10) 96%,
+    oklch(1 0 0 / 0.20) 100%);
+  box-shadow:
+    inset 0 1px 0 var(--glass-hi),
+    inset 0 -1px 1.5px var(--glass-edge-lo),
+    inset 0 0 0 0.5px oklch(1 0 0 / 0.12);
+}
+
+/* =========================================================================
+   AI beat: Apple Intelligence edge glow
+   ========================================================================= */
+@property --ai-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.ai-glow {
+  position: absolute; inset: -2px; z-index: 25;
+  border-radius: inherit;
+  padding: 2.5px;
+  pointer-events: none;
+  background: conic-gradient(from var(--ai-angle),
+    oklch(0.72 0.17 30), oklch(0.70 0.16 310), oklch(0.70 0.17 250),
+    oklch(0.78 0.16 150), oklch(0.74 0.17 60), oklch(0.72 0.17 30));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0;
+  animation: ai-spin 1.6s linear, ai-fade 1.9s var(--ease);
+}
+@keyframes ai-spin { to { --ai-angle: 360deg; } }
+@keyframes ai-fade { 0%, 100% { opacity: 0; } 18%, 72% { opacity: 0.95; } }
+.ai-label {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  z-index: 26; pointer-events: none;
+  font-family: var(--font-label); font-size: 0.82rem; font-weight: 600; color: var(--text);
+  background: color-mix(in oklch, var(--surface) 78%, transparent);
+  -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+  padding: 0.55rem 0.95rem; border-radius: 1rem; border: 1px solid var(--line-soft);
+  display: inline-flex; align-items: center; gap: 0.45rem;
+  opacity: 0; animation: ai-fade 1.9s var(--ease);
+}
+.ai-label__spark { width: 1rem; height: 1rem; fill: var(--accent); }
+
+/* =========================================================================
+   Share sheet — the real iOS layout: grabber, header row with a circled ✕,
+   one native Share… target, then a grouped inset list of actions.
+   (No Cancel button: iOS dropped it from share sheets in iOS 13.)
+   ========================================================================= */
+body[data-os="ios"] .sheet {
+  border-radius: 1.6rem 1.6rem 0 0;
+  background: linear-gradient(to bottom, var(--glass-spec), transparent 22%), var(--glass-bg-hi);
+  -webkit-backdrop-filter: blur(28px) var(--glass-fx);
+          backdrop-filter: blur(28px) var(--glass-fx);
+  border: 1px solid var(--glass-stroke);
+  border-bottom: none;
+  border-top-color: var(--glass-hi);
+  box-shadow: 0 -0.8rem 2.6rem -0.8rem oklch(0.3 0.03 60 / 0.4), inset 0 1px 0 var(--glass-hi);
+}
+body[data-os="ios"] .sheet::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(180% 150% at 50% 20%,
+    transparent 64%,
+    oklch(1 0 0 / 0.07) 88%,
+    oklch(0.40 0.03 60 / 0.08) 97%,
+    oklch(1 0 0 / 0.16) 100%);
+}
+body[data-os="ios"] .sheet__title { display: none; }
+/* the grouped rows carry copy/mail/linkedin; their circle twins hide */
+body[data-os="ios"] .sheet__target--copy,
+body[data-os="ios"] .sheet__target--mail,
+body[data-os="ios"] .sheet__target--li { display: none; }
+/* no Web Share API → the circle row would be empty on iOS: collapse it */
+body[data-os="ios"] .sheet__targets--noshare { display: none; }
+body[data-os="ios"] .sheet__actions {
+  background: color-mix(in oklch, var(--surface) 58%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
+}
+
+/* ---- refraction tier: the real Liquid Glass lens (Chromium only) ---------
+   glass.js sets --lq per surface; html.refract gates engines where SVG
+   filters work inside backdrop-filter. Blur is dialled back where the lens
+   applies so the refraction stays legible. */
+html.refract body[data-os="ios"] .composer::before { backdrop-filter: blur(11px) var(--glass-fx) var(--lq, none); }
+html.refract body[data-os="ios"] .chip            { backdrop-filter: blur(8px)  var(--glass-fx) var(--lq, none); }
+html.refract body[data-os="ios"] .notif           { backdrop-filter: blur(12px) var(--glass-fx) var(--lq, none); }
+html.refract body[data-os="ios"] .liveact__expand { backdrop-filter: blur(16px) saturate(1.5) var(--lq, none); }
+html.refract body[data-os="ios"] .sheet           { backdrop-filter: blur(18px) var(--glass-fx) var(--lq, none); }
+
+/* No backdrop-filter at all (very old engines): trade translucency for
+   legibility so text never sits on an unblurred backdrop. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body[data-os="ios"] .composer::before { background: oklch(0.985 0.004 80 / 0.93); }
+  body[data-os="ios"] .chip             { background: oklch(0.972 0.005 80 / 0.96); }
+  body[data-os="ios"] .notif            { background: oklch(0.986 0.004 80 / 0.96); }
+  body[data-os="ios"] .sheet            { background: oklch(0.986 0.004 80 / 0.97); }
+  body[data-os="ios"] .liveact__expand  { background: oklch(0.13 0.01 60 / 0.98); }
+}

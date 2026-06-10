@@ -250,7 +250,7 @@ window.LiquidGlass = (function () {
   /* Decide whether the lens can apply at all.
      Only Chromium supports an SVG filter inside backdrop-filter, which is the
      one way to bend the *live backdrop* — so that's the real Liquid Glass lens
-     (html.refract drives var(--lq) into backdrop-filter; see styles.css).
+     (html.refract drives var(--lq) into backdrop-filter; see css/ios.css).
      Safari/Firefox can't reference an SVG filter from backdrop-filter, and
      routing it through element `filter` makes Safari drop the backdrop blur
      (washed-out, over-translucent glass) — so they keep the blurred frosted

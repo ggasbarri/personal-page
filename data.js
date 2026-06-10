@@ -12,7 +12,7 @@
    Voice: accurate and understated. Gian collaborates, aligns, and shapes
    decisions across teams; he does not overclaim specific work examples. No
    job titles. Let scope imply level. Keep prose short; bold only the words
-   that matter. Authored, trusted HTML only (see security note in main.js). */
+   that matter. Authored, trusted HTML only (see security note in js/util.js). */
 
 window.ASK_DATA = {
   hero: "who are you?",
