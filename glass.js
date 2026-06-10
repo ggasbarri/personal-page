@@ -11,10 +11,11 @@
    How it plugs in:
      - Each surface gets its own  <filter id="lq-glass-N">  injected into the
        shared off-canvas <defs>, and  el.style.setProperty('--lq', url(#id)).
-     - CSS consumes  var(--lq)  inside backdrop-filter (Chromium: real backdrop
-       refraction) or inside filter (Safari/Firefox attempt — see detect()).
-     - If this script never runs,  var(--lq, none)  collapses to none and every
-       surface keeps the frosted-glass base. Nothing breaks.
+     - CSS consumes  var(--lq)  inside backdrop-filter, which bends the live
+       backdrop on Chromium (the only engine that supports it; see detect()).
+     - Safari/Firefox can't refract the backdrop, so they keep the blurred
+       frosted base. If this script never runs, var(--lq, none) collapses to
+       none and every surface keeps that frosted base too. Nothing breaks.
 
    Maps are immutable per id: a given id always paints the same map, so there is
    no stale-filter-cache problem (the issue Aave hit on Safari when mutating a
@@ -41,11 +42,10 @@ window.LiquidGlass = (function () {
   ];
 
   var CHROMA = 1.5;              // red channel bends a touch further → glassy edge fringe
-  var MARGIN = 32;              // px of neutral padding around the map / filter region.
-                                // Keeps element `filter` (the Safari/Firefox path) from
-                                // clipping each surface's drop shadow; harmless to the
-                                // Chromium backdrop path (backdrop-filter is clipped to
-                                // the border-box, and the margin is neutral anyway).
+  var MARGIN = 32;              // px of neutral padding around the map / filter region,
+                                // so the rim displacement isn't clipped flush to the box.
+                                // Harmless to backdrop-filter (clipped to the border-box,
+                                // and the margin is neutral anyway).
   var uid = 0;                   // monotonic filter-id counter
   var defs = null;               // <defs> host for generated filters
   var mapCache = {};             // (w×h×r×bezel) -> displacement-map data URL
@@ -147,7 +147,20 @@ window.LiquidGlass = (function () {
      Two displacement passes — red slightly stronger than green/blue — recombined
      for a subtle chromatic split at the rim, then softened. Same shape as the
      original #lq-glass, but fed a geometry-aware map. SourceGraphic is the
-     backdrop when used in backdrop-filter. */
+     backdrop when used in backdrop-filter.
+
+     Primitives are built with createElementNS, NOT innerHTML: setting innerHTML
+     on an SVG node can parse the children into the HTML namespace, leaving the
+     <filter> with no recognised primitives — an empty filter, which Chromium
+     renders as backdrop-filter with no blur (washed-out, over-translucent glass).
+     Explicit namespaced nodes avoid that entirely. */
+  var SVGNS = "http://www.w3.org/2000/svg";
+  function fe(tag, attrs) {
+    var el = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+
   function makeFilter(w, h, r, bezel, scale) {
     var key = w + "x" + h + "x" + r + "x" + bezel + "x" + scale;
     if (filterCache[key]) return filterCache[key];
@@ -158,27 +171,28 @@ window.LiquidGlass = (function () {
     var map = makeMap(w, h, r, bezel);
     var rS = (scale * CHROMA).toFixed(2);
     var gS = scale.toFixed(2);
-    var SVG = "http://www.w3.org/2000/svg";
-    var f = document.createElementNS(SVG, "filter");
-    f.setAttribute("id", id);
+    var f = fe("filter", { id: id, "color-interpolation-filters": "sRGB" });
     // filter region = element box grown by MARGIN on each side (as a % of the box,
     // since filterUnits defaults to objectBoundingBox). The feImage map was padded
     // by the same MARGIN, so its rim still lines up with the element's edges while
-    // the region stays roomy enough not to clip drop shadows.
+    // the region stays roomy enough not to clip the rim displacement.
     var mx = (MARGIN / w * 100), my = (MARGIN / h * 100);
     f.setAttribute("x", (-mx).toFixed(2) + "%");
     f.setAttribute("y", (-my).toFixed(2) + "%");
     f.setAttribute("width", (100 + mx * 2).toFixed(2) + "%");
     f.setAttribute("height", (100 + my * 2).toFixed(2) + "%");
-    f.setAttribute("color-interpolation-filters", "sRGB");
-    f.innerHTML =
-      '<feImage preserveAspectRatio="none" x="0" y="0" width="100%" height="100%" result="map" href="' + map + '"></feImage>' +
-      '<feDisplacementMap in="SourceGraphic" in2="map" scale="' + rS + '" xChannelSelector="R" yChannelSelector="G" result="rD"></feDisplacementMap>' +
-      '<feColorMatrix in="rD" type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="rOnly"></feColorMatrix>' +
-      '<feDisplacementMap in="SourceGraphic" in2="map" scale="' + gS + '" xChannelSelector="R" yChannelSelector="G" result="gbD"></feDisplacementMap>' +
-      '<feColorMatrix in="gbD" type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0" result="gbOnly"></feColorMatrix>' +
-      '<feBlend in="rOnly" in2="gbOnly" mode="screen" result="aberr"></feBlend>' +
-      '<feGaussianBlur in="aberr" stdDeviation="0.4"></feGaussianBlur>';
+
+    var feImg = fe("feImage", { preserveAspectRatio: "none", x: "0", y: "0", width: "100%", height: "100%", result: "map" });
+    feImg.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", map);
+    feImg.setAttribute("href", map);
+    f.appendChild(feImg);
+    f.appendChild(fe("feDisplacementMap", { "in": "SourceGraphic", in2: "map", scale: rS, xChannelSelector: "R", yChannelSelector: "G", result: "rD" }));
+    f.appendChild(fe("feColorMatrix", { "in": "rD", type: "matrix", values: "1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0", result: "rOnly" }));
+    f.appendChild(fe("feDisplacementMap", { "in": "SourceGraphic", in2: "map", scale: gS, xChannelSelector: "R", yChannelSelector: "G", result: "gbD" }));
+    f.appendChild(fe("feColorMatrix", { "in": "gbD", type: "matrix", values: "0 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 1 0", result: "gbOnly" }));
+    f.appendChild(fe("feBlend", { "in": "rOnly", in2: "gbOnly", mode: "screen", result: "aberr" }));
+    f.appendChild(fe("feGaussianBlur", { "in": "aberr", stdDeviation: "0.4" }));
+
     host.appendChild(f);
     filterCache[key] = id;
     return id;
@@ -233,22 +247,18 @@ window.LiquidGlass = (function () {
     mo.observe(document.body, { childList: true, subtree: true });
   }
 
-  /* Decide how the lens applies, if at all.
-       - Chromium supports an SVG filter inside backdrop-filter → refract the live
-         backdrop. This is the real deal: html.refract drives the var(--lq) into
-         backdrop-filter (see styles.css). UA-free, capability-detected.
-       - Safari / Firefox do NOT support url() in backdrop-filter, so the live
-         backdrop can't be bent there. We still ATTEMPT a lens by routing var(--lq)
-         through element `filter` (html.refract-el) at conservative strength: where
-         the engine cooperates it warps the blurred surface; where it doesn't it's
-         a near-invisible nudge — and the frosted base is untouched either way.
-     Both paths fall back to the frosted glass if anything is unsupported. */
+  /* Decide whether the lens can apply at all.
+     Only Chromium supports an SVG filter inside backdrop-filter, which is the
+     one way to bend the *live backdrop* — so that's the real Liquid Glass lens
+     (html.refract drives var(--lq) into backdrop-filter; see styles.css).
+     Safari/Firefox can't reference an SVG filter from backdrop-filter, and
+     routing it through element `filter` makes Safari drop the backdrop blur
+     (washed-out, over-translucent glass) — so they keep the blurred frosted
+     base instead. Capability-detected, no UA sniff. */
   function detect() {
-    var s = window.CSS && CSS.supports;
-    if (!s) return null;
+    if (!(window.CSS && CSS.supports)) return null;
     if (CSS.supports("backdrop-filter", 'url("#x")') ||
         CSS.supports("-webkit-backdrop-filter", 'url("#x")')) return "refract";
-    if (CSS.supports("filter", 'url("#x")')) return "refract-el";
     return null;
   }
 
