@@ -1,0 +1,198 @@
+/* =========================================================================
+   Ask Gianfranco — Android skin (body[data-os="android"])
+   Material 3 Expressive: tonal surfaces seeded from the clay-red, spatial
+   spring motion (linear() easings, pure CSS), shape-morph on press.
+   ========================================================================= */
+
+/* ---- Material You tonal palette, seeded from the clay-red (hue ~33) ----- */
+body[data-os="android"] {
+  --m3-primary:               oklch(0.47 0.155 33);
+  --m3-on-primary:            oklch(0.985 0.010 80);
+  --m3-primary-container:     oklch(0.885 0.052 42);
+  --m3-on-primary-container:  oklch(0.33 0.100 33);
+  --m3-surface:               oklch(0.975 0.006 70);
+  --m3-surface-container:     oklch(0.945 0.013 58);
+  --m3-surface-container-hi:  oklch(0.915 0.016 52);
+  --m3-outline:               oklch(0.78 0.020 58);
+
+  /* Material 3 Expressive motion: spatial springs overshoot (damping < 1),
+     effect springs settle flat (damping = 1). Encoded as linear() easings so
+     the bounce is real CSS, no JS. */
+  --m3-spatial:        linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121 24.3%, 1.149, 1.159 29.4%, 1.154, 1.129 32.1%, 1.051 39.6%, 1.017 43.1%, 0.992 50.4%, 0.985 54.6%, 0.987 61.2%, 1.001 76.9%, 1.004 83.2%, 1);
+  --m3-spatial-soft:   linear(0, 0.026, 0.1 5.2%, 0.39 11.3%, 0.62 16%, 0.81, 0.945 25.4%, 1.02, 1.06 34.3%, 1.07, 1.062 44.7%, 1.013 61%, 0.997 73.5%, 1.001 91%, 1);
+  --m3-effects:        cubic-bezier(0.2, 0, 0, 1);
+
+  /* Expressive shapes: rounder at rest, morph on press. */
+  --m3-shape-chip:     1.6rem;
+  --m3-shape-chip-press: 0.65rem;
+  --m3-shape-btn:      1.7rem;
+  --m3-shape-btn-press: 0.85rem;
+  /* the shared press-morph: shape + squish spring, reused by every pressable */
+  --m3-morph: border-radius 0.4s var(--m3-spatial), transform 0.4s var(--m3-spatial);
+
+  --radius-device: 2rem;
+  --la-expand-r:   1.45rem;
+}
+body[data-os="android"] .device { background: oklch(0.972 0.009 64); }
+
+/* Android clocks sit lighter and a touch smaller than iOS (framed mode) */
+body[data-os="android"] .statusbar__time { font-weight: 500; font-size: 0.84rem; letter-spacing: 0; }
+
+/* =========================================================================
+   Live Update status chip: the platform's promoted-notification pattern —
+   short critical text in the status bar, fuller context in the card.
+   ========================================================================= */
+body[data-os="android"] .liveact { color: var(--m3-on-primary-container); height: 1.7rem; max-width: 6.5rem; }
+body[data-os="android"] .liveact__bg {
+  background: var(--m3-primary-container);
+  border-radius: 0.95rem;
+  box-shadow: 0 0.18rem 0.5rem -0.22rem oklch(0.3 0.03 50 / 0.4);
+}
+body[data-os="android"] .liveact--progress .liveact__bar { display: inline-block; }
+body[data-os="android"] .liveact__content {
+  gap: 0.28rem;
+  padding: 0 0.55rem;
+}
+body[data-os="android"] .liveact__text {
+  display: inline-flex;
+  min-width: 0;
+}
+body[data-os="android"] .liveact__title {
+  max-width: 2.4rem;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+body[data-os="android"] .liveact__sub { display: none !important; }
+body[data-os="android"] .liveact__ic {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+body[data-os="android"] .liveact__bar {
+  width: 1.42rem;
+  height: 0.23rem;
+}
+body[data-os="android"] .liveact__trail[hidden] { display: none !important; }
+
+/* expanded Live Update card: Material tonal surface (geometry morph shared
+   in chrome.css) */
+body[data-os="android"] .liveact__expand {
+  background: var(--m3-surface-container-hi);
+  color: var(--text);
+  border: 1px solid var(--m3-outline);
+  box-shadow: 0 0.8rem 2rem -0.8rem oklch(0.3 0.03 50 / 0.4);
+}
+
+/* ---- notifications: Material surfaces, circular tonal icons ------------- */
+body[data-os="android"] .notif { background: var(--m3-surface-container); border-radius: 1.6rem; }
+body[data-os="android"] .notif__icon { background: var(--m3-primary-container); color: var(--m3-on-primary-container); border-radius: 50%; }
+
+/* ---- AI beat: Gemini sheet + circle-to-search lasso --------------------- */
+.gemini {
+  position: relative; margin-top: 0.7rem;
+  display: flex; align-items: center; gap: 0.6rem;
+  padding: 0.6rem 0.8rem; border-radius: 1.4rem;
+  background: var(--m3-surface-container); border: 1px solid var(--m3-outline);
+  opacity: 0; transform: translateY(0.9rem);
+}
+.gemini.in { opacity: 1; transform: none; transition: opacity 0.4s var(--ease), transform 0.5s var(--ease); }
+.gemini__spark { flex: 0 0 auto; width: 1.5rem; height: 1.5rem; }
+.gemini__txt { font-size: 0.82rem; color: var(--text); line-height: 1.3; }
+.gemini__txt b { font-weight: 600; }
+.cts-lasso { position: absolute; inset: 0; z-index: 6; pointer-events: none; overflow: visible; }
+.cts-lasso ellipse { fill: oklch(0.6 0.16 250 / 0.07); stroke: oklch(0.6 0.17 250); stroke-width: 2.4; stroke-dasharray: 1; stroke-dashoffset: 1; }
+.cts-lasso.draw ellipse { animation: cts-draw 0.85s var(--ease) forwards; }
+@keyframes cts-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+/* ---- contact poster as a Quick Share / Material You header -------------- */
+body[data-os="android"] .poster {
+  min-height: auto; flex-direction: row; align-items: center; gap: 0.85rem;
+  justify-content: flex-start;
+  background: var(--m3-surface-container);
+  border-radius: 1.8rem 1.8rem 1.3rem 1.3rem;
+  padding-top: 1.45rem;
+  box-shadow: 0 0.6rem 1.6rem -0.8rem oklch(0.3 0.03 50 / 0.4);
+}
+body[data-os="android"] .poster::before { content: ""; position: absolute; top: 0.6rem; left: 50%; transform: translateX(-50%); width: 2.1rem; height: 0.28rem; border-radius: 1rem; background: var(--m3-outline); z-index: 3; }
+body[data-os="android"] .poster__photo { position: relative; width: 3.1rem; height: 3.1rem; border-radius: 50%; overflow: hidden; flex: 0 0 auto; }
+body[data-os="android"] .poster__scrim { display: none; }
+body[data-os="android"] .poster__name { font-size: 1.35rem; color: var(--text); }
+body[data-os="android"] .poster__full { color: var(--text-muted); }
+body[data-os="android"] .poster__sub { font-family: var(--font-label); font-size: 0.66rem; color: var(--text-faint); display: block; margin-bottom: 0.1rem; }
+
+/* ---- composer: Material surface ------------------------------------------ */
+body[data-os="android"] .composer::before {
+  background: color-mix(in oklch, var(--m3-surface-container) 92%, transparent);
+  -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
+  border-top: 1px solid var(--m3-outline);
+}
+
+/* ---- chips: tonal, round at rest, morph squarer and squish on press ----- */
+body[data-os="android"] .chip {
+  background: var(--m3-surface-container-hi);
+  border-color: transparent;
+  border-radius: var(--m3-shape-chip, 1.25rem);
+  transition: background 0.3s var(--m3-effects), border-color 0.3s var(--m3-effects), var(--m3-morph);
+}
+body[data-os="android"] .chip:hover { background: var(--m3-primary-container); transform: none; }
+body[data-os="android"] .chip:active {
+  border-radius: var(--m3-shape-chip-press);
+  transform: scale(0.93);
+  background: var(--m3-primary-container);
+}
+
+/* ---- Expressive interactions: shared press-morph springs ---------------- */
+/* continue button + contact tiles share the expressive squish */
+body[data-os="android"] .next-cta {
+  border-radius: var(--m3-shape-btn);
+  transition: background 0.25s var(--m3-effects), var(--m3-morph), box-shadow 0.3s var(--ease);
+}
+body[data-os="android"] .next-cta:active { border-radius: var(--m3-shape-btn-press); transform: scale(0.96); }
+body[data-os="android"] .cta {
+  transition: background 0.3s var(--m3-effects), border-color 0.3s var(--m3-effects), var(--m3-morph);
+}
+body[data-os="android"] .cta:active { border-radius: var(--m3-shape-chip-press); transform: scale(0.975); }
+
+/* os-switch as an Expressive connected button group */
+body[data-os="android"] .os-switch__thumb {
+  transition: transform 0.55s var(--m3-spatial);
+  background: var(--m3-primary-container);
+  border-color: transparent;
+}
+body[data-os="android"] .os-switch__btn {
+  transition: color 0.3s var(--m3-effects), transform 0.45s var(--m3-spatial);
+}
+body[data-os="android"] .os-switch__btn[aria-pressed="true"] { color: var(--m3-on-primary-container); }
+body[data-os="android"] .os-switch__btn.is-pressing { transform: scale(1.06); }
+body[data-os="android"] .os-switch__btn.is-squished { transform: scale(0.9); }
+
+/* ---- share affordance ----------------------------------------------------- */
+body[data-os="android"] .share-trigger {
+  border-radius: var(--m3-shape-btn);
+  transition: background 0.25s var(--m3-effects), var(--m3-morph);
+}
+body[data-os="android"] .share-trigger:active { border-radius: var(--m3-shape-btn-press); transform: scale(0.96); }
+
+/* =========================================================================
+   Share sheet — Android share sheet / Quick Share: drag handle, "Share"
+   title, a row of tonal circular targets, 28dp top corners. No header ✕
+   and no grouped list (those are the iOS layout).
+   ========================================================================= */
+body[data-os="android"] .sheet {
+  border-radius: 1.75rem 1.75rem 0 0;   /* 28dp */
+  background: var(--m3-surface-container);
+  box-shadow: 0 -0.6rem 2rem -0.7rem oklch(0.3 0.03 50 / 0.45);
+}
+body[data-os="android"] .sheet__title { display: block; font-weight: 600; font-size: 1.1rem; padding: 0 0.4rem 0.1rem; color: var(--text); }
+body[data-os="android"] .sheet__close { display: none; }
+body[data-os="android"] .sheet__actions { display: none; }
+body[data-os="android"] .sheet__targets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(4.1rem, 1fr));
+  justify-items: center;
+  overflow: visible;
+}
+body[data-os="android"] .sheet__ticon { background: var(--m3-primary-container); color: var(--m3-on-primary-container); box-shadow: none; }
+body[data-os="android"] .sheet__target--copy .sheet__ticon,
+body[data-os="android"] .sheet__target--mail .sheet__ticon { background: var(--m3-surface-container-hi); border: none; }
+body[data-os="android"] .sheet__target:active .sheet__ticon { transform: scale(0.88); transition: transform 0.4s var(--m3-spatial); }

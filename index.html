@@ -11,15 +11,19 @@
   <meta property="og:description" content="A short first-person page about mobile systems, tooling, economics, and the kind of work Gian likes most." />
   <meta property="og:locale" content="en" />
   <meta property="og:image" content="assets/gianfranco.jpg" />
-  <meta name="theme-color" content="#ece4d6" />
+  <!-- kept in sync with the active skin + display mode by js/os.js -->
+  <meta name="theme-color" content="#f8f7f2" />
 
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/chrome.css" />
+  <link rel="stylesheet" href="css/ios.css" />
+  <link rel="stylesheet" href="css/android.css" />
 </head>
-<body>
+<body data-os="ios">
   <!-- per-OS wallpaper behind the phone; crossfades on platform switch -->
   <div class="stage-os stage-os--ios" aria-hidden="true"></div>
   <div class="stage-os stage-os--android" aria-hidden="true"></div>
@@ -33,30 +37,30 @@
   <div class="stage-mark" aria-hidden="true"><span>Gianfranco</span><span>Gasbarri</span></div>
 
   <!-- SVG filter defs (zero-size, off-canvas):
-       #goo      merges the Dynamic Island shapes (iOS) on state changes.
        lq-glass-* real Liquid Glass refraction filters are generated at runtime by
-                 glass.js, one per surface size, and injected into this <defs>.
+                 js/glass.js, one per surface size, and injected into this <defs>.
                  Each bends the backdrop with a geometry-aware convex-lens map
                  (strong at the rounded rim, flat in the centre) plus a faint
                  chromatic split. Wired via the --lq custom property; any browser
                  that can't refract simply keeps the frosted base, so nothing
                  breaks. -->
   <svg class="goo-defs" width="0" height="0" aria-hidden="true" focusable="false">
-    <defs>
-      <filter id="goo"><feGaussianBlur in="SourceGraphic" stdDeviation="4" result="b"/><feColorMatrix in="b" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -11" result="g"/><feComposite in="SourceGraphic" in2="g" operator="atop"/></filter>
-    </defs>
+    <defs></defs>
   </svg>
 
   <main class="device" id="app">
-    <!-- status bar -->
+    <!-- status bar / slim header.
+         Fullbleed (real phones, narrow windows): collapses to a slim header
+         carrying only the Live Activity + story progress — the real device
+         already draws a clock and battery. Framed (desktop mockup): the full
+         simulated status bar shows. See css/chrome.css. -->
     <header class="statusbar">
       <span class="statusbar__time" id="clock">9:41</span>
       <!-- Live Activity: iOS Dynamic Island / Android Live Update status chip. One element,
            skinned per data-os. Tracks the broad story path. -->
       <button class="liveact" id="liveact" type="button" aria-live="polite" aria-label="ask gianfranco, live">
-        <span class="liveact__goo" aria-hidden="true">
+        <span class="liveact__shape" aria-hidden="true">
           <span class="liveact__bg"></span>
-          <span class="liveact__blob"></span>
         </span>
         <span class="liveact__content">
           <span class="liveact__lead" aria-hidden="true">
@@ -172,7 +176,12 @@
   </main>
 
   <script src="data.js"></script>
-  <script src="glass.js"></script>
-  <script src="main.js"></script>
+  <script src="js/glass.js"></script>
+  <script src="js/util.js"></script>
+  <script src="js/os.js"></script>
+  <script src="js/live-activity.js"></script>
+  <script src="js/share-sheet.js"></script>
+  <script src="js/features.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>
