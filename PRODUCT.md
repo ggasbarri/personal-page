@@ -2,16 +2,18 @@
 
 ## Product
 
-**Ask Gianfranco** — the personal page of Gianfranco Gasbarri, presented as a personal AI app. A single-page showcase site framed as a short first-person chat: a mobile app interface where visitors ask "who are you?", Gian answers directly, and suggested-prompt chips walk through his story.
+**GianOS** — the personal page of Gianfranco Gasbarri, presented as a small fictional mobile OS. A single-page showcase site framed as a phone you're handed: a lock screen with his name in kinetic display type, a home screen of apps and widgets, and full-screen apps that each tell one slice of his story (work, system thinking, tools, outcomes, the off-code texture, contact).
 
 **Register:** brand. Design IS the product. This is a portfolio; the visitor's impression is the deliverable. The content is intentionally light (a bio, a few real work projects, a stack), so the design and interaction carry the weight.
 
-**Signature mechanic (the hook):** the page is a working phone, and it behaves like a real OS. The visitor picks the platform (iOS or Android) and each beat of the story demonstrates a genuine native feature of that OS, recreated by hand in the browser. This does double duty: it advances the narrative and proves the craft of a senior mobile engineer. See **OS-feature layer** below, and DESIGN.md for the visual spec.
+**Signature mechanic (the hook):** the page doesn't *mimic* iOS or Android — it IS its own OS, and it behaves like a real one. Apps open with genuine shared-element morphs (View Transitions), the browser back button / Android back gesture actually closes an app, `#appid` deep links open straight into one, the share sheet is the real Web Share API, haptics are the real Vibration API. The craft argument moved from "can he recreate Apple's chrome" to "can he design and build an OS-grade interaction model" — which is the actual job of a senior mobile engineer.
+
+**The easter egg:** Settings → tap Build number seven times — Android's own developer-mode ritual, countdown toasts included. It unlocks Developer options (layout bounds, an FPS meter, animator duration scale) and a working Terminal app. It rewards exactly the audience this page is for.
 
 ## Users
 
 - **Recruiters, hiring managers, and engineering leaders** evaluating a senior mobile engineer. They scan fast, on a phone or a laptop, often between meetings. They should grasp seniority, scope (cross-org, not just code), and craft within seconds.
-- **Peer engineers** (mobile, platform) who land here from LinkedIn or a conference and want to know "is this person legit and interesting." They reward technical specificity and a clever build.
+- **Peer engineers** (mobile, platform) who land here from LinkedIn or a conference and want to know "is this person legit and interesting." They reward technical specificity and a clever build — they are the ones who will find the easter egg.
 - **Gianfranco himself**, who wants a surface that feels unmistakably his and that he's proud to drop in a bio link.
 
 ## Who Gianfranco is
@@ -31,41 +33,34 @@ Signature work, **stated accurately** (see Positioning rules; prefer his honest 
 - **His own promotion / performance docs overstate and can be cringe.** They say "Staff", "led the migration", "secured executive sign-off", "10+ teams". Treat them as raw material, not truth. Prefer his honest FY26 self-assessment for facts.
 - **Subtle staff-level signaling, never stated.** He is currently a Senior Mobile Engineer and wants visitors to come away feeling he *deserves staff*. So: **do not print any job title on the page**, and **never use the word "Staff"** (cringe, do not shout it). Let the scope of the work imply the level: cross-team collaboration, architecture trade-offs made legible, prioritizing initiatives by business value, force-multiplying through standards and an interview format others adopt, mentoring. Keep it subtle.
 - **Short text.** He worries people won't read at all. Keep copy minimal; lead with visual elements; bold only the words that matter. "Text is for CVs"; this page sells the work visually.
-- **No cringe / no slop copy.** Cut marketing filler and self-congratulation (e.g., a "built by hand, not by a template" footer, or an on-the-nose "Architecture & alignment across teams" label). Real facts, plainly.
+- **No cringe / no slop copy.** Cut marketing filler and self-congratulation (e.g., a "built by hand, not by a template" footer, or an on-the-nose "Architecture & alignment across teams" label). Real facts, plainly. (The terminal's `cat README` is the one place the build is described — factually, because the visitor asked.)
 
 ## Brand voice
 
 Three words, as physical objects: **machined** (a precisely milled aluminum phone), **conversational** (a warm spoken answer, not a brochure), **contemporary** (built with the newest tools, unmistakably 2026).
 
-Tone in copy: first person, as Gian answering directly. Confident and specific, but **understated, never boastful**; never buzzword-padded. Metrics are context, not identity: the 3M+ OLX Motors app-launch metric belongs only in the OLX Motors beat, never in the hero. A little dry wit is welcome; corporate gloss is not.
+Tone in copy: first person, as Gian answering directly. Confident and specific, but **understated, never boastful**; never buzzword-padded. Metrics are context, not identity: the 3M+ OLX Motors app-launch metric belongs only in the Work app, never on the lock or home screen. A little dry wit is welcome (the terminal has some); corporate gloss is not.
 
-**Name:** the story uses **"Gian"** where it reads naturally and warm (e.g. "Hey, I'm Gian"). The formal **"Gianfranco Gasbarri"** is reserved for identity surfaces: page title, wordmark, profile name, the contact poster. Both coexist.
+**Name:** the copy uses **"Gian"** where it reads naturally and warm (e.g. "Hey, I'm Gian", the About app's icon label). The formal **"Gianfranco Gasbarri"** is reserved for identity surfaces: page title, the lock-screen name, wordmark, profile name, the share sheet. Both coexist.
 
 ## Strategic principles
 
-- The interaction is the hook. Asking, streaming, and tapping prompts must feel alive on first load.
+- The interaction is the hook. Unlocking, the icon-to-app morph, and the tactile presses must feel alive on first load.
 - Specific beats grand. Real work ideas, real metrics where they add context, real tools, stated honestly (see Positioning rules). Avoid internal OLX project names in visible copy.
 - Minimal text; the design and the visual modules carry the weight, not paragraphs.
 - It must read as hand-built, not generated. The bar is "how was this made?", not "which AI made this?"
 - Fast and frictionless. Static, no build step, loads instantly, works on a phone first.
-- **The phone must read as a *real* phone.** Platform chrome (status bar, Live Activity, notifications, gesture nav, materials, wallpaper) must resemble the *actual current* OS, iOS 26 Liquid Glass and Android Material 3 Expressive, not a generic approximation. Research the current OS design when unsure: wrong-looking native UI is worse than none, because the audience includes mobile engineers who know exactly how these surfaces should look.
-- **Chips drive the story; no free-text input.** Navigation is the suggested-prompt chips plus the per-answer "continue" button. The earlier free-text composer input was removed (read as crowded/useless); the opening question now types itself into the outgoing bubble.
+- **The OS must behave like a real OS, not look like someone else's.** GianOS has one original design language; the fidelity budget goes into *mechanics* a mobile engineer will clock: real history/back-gesture integration, deep links, focus management, a working share sheet, honest haptics, authentic developer-mode mechanics. Where the platform exposes a real capability, use it rather than faking it.
+- **No dead ends.** Every screen has an obvious way forward (unlock hint, back chevron, home handle, Escape) and the browser's own controls always work.
 
-## OS-feature layer (overdrive)
+## The OS layer
 
-The page is a phone that behaves like a real OS. A platform selector (iOS / Android) reskins the whole device, and each story beat fires that platform's signature native surface as a *diegetic* storytelling device, never a gratuitous demo. Requirements:
-
-- **Platform selector.** iOS / Android, auto-detected from the visitor's device, switchable, and remembered (localStorage). On desktop it sits *outside* the phone, on the stage (mirrors the wordmark); on mobile it stays a compact control in the composer.
-- **One continuity spine.** A persistent **Live Activity** (iOS Dynamic Island / Android promoted Live Update status chip) tracks the broader story path, so the per-beat features never read as a disconnected reel. It should read as "work in motion" or "clear path", not as one specific workstream.
-- **A native feature per beat**, chosen for narrative meaning:
-  - hero, the activity *wakes*; challenge, it *starts* (blocked); build, it *expands* (long-press detail).
-  - ai, **Apple Intelligence** edge-glow (iOS) / **Circle-to-Search → Gemini** (Android), tied to his AI-tooling work.
-  - setback, **Focus / Do Not Disturb** dims the room and silences a notification (the quiet work that rarely demos).
-  - conclusion (**the marquee**), a cascade of notifications framed as outcomes: clearer constraints, reusable patterns, fewer bespoke exceptions, and decisions that stay decided.
-  - contact, **Contact Poster** (iOS) / **Quick Share** sheet (Android). This is a *working* share sheet, not a prop: it raises a real drag-to-dismiss bottom sheet and uses the **Web Share API** (with copy-link / email / LinkedIn fallbacks), so the native gesture actually does the native thing.
-- **Fidelity is the point** (see Strategic principles): Liquid Glass vs Material 3 Expressive, real status-bar glyphs per platform, gesture-nav indicators, platform corner radii, and a per-OS wallpaper that animates on switch. iOS glass *refracts* the backdrop where the engine allows (Chromium) and stays a correct frosted material everywhere else; Android chrome carries Expressive spring + shape-morph. Where a platform exposes a real capability (share, vibration), the page uses it rather than faking it. See DESIGN.md for the implementation.
-- **On-brand, not cartoonish.** The OS skin reskins only the *chrome*; the chat content keeps the brand type and clay-red accent. Android's Material You tonal palette is **seeded from the clay-red** so dynamic color stays on-brand. The transient AI-feature colors (Apple Intelligence / Gemini) are the only non-clay moments and resolve back to brand surfaces.
-- **Accessible.** Every feature has a still, complete `prefers-reduced-motion` end state (no goo/glow/spring/squish, no haptics; the cascade falls back to static chips, the share sheet appears without the slide). The share sheet is a focus-managed `role="dialog"` with Escape/scrim close.
+- **Lock screen** — the hero moment: a real clock, the name as oversized kinetic type (staggered per-letter rise), one bio line, swipe-up or button unlock. Skipped for returning visitors (sessionStorage) and deep links.
+- **Home screen** — widgets (now @ OLX Motors, languages), a tinted icon grid, a dock (Gian, Work, Contact, Settings). Icons squish on press with a spring and a haptic tap.
+- **Apps** — full-screen views with an oversized collapsing title and scroll-revealed content blocks. Open/close is a shared-element morph (icon tile ↔ app-bar glyph) where View Transitions exist, a clean swap elsewhere and under reduced motion.
+- **Contact** — email/LinkedIn CTAs plus a *working* share sheet: drag-to-dismiss, Web Share API first, copy-link / mailto / LinkedIn fallbacks.
+- **Settings + developer mode (the easter egg)** — factual rows (version, build, engine, host) and the 7-tap build-number unlock with Android's real toast copy. Developer options: Show layout bounds, Profile frame rate, Animator duration scale (0.5×/1×/5×/10× — all durations route through one token). Unlocking adds the **Terminal** app: `help`, `whoami`, `uname -a`, `ls /apps`, `open <app>` (really navigates), `cat README`, `neofetch`, `clear`, `exit`.
+- **Accessible.** Every control is a real `<button>`; unlock works by keyboard; Escape closes; focus returns to the opening icon; complete `prefers-reduced-motion` end states (no kinetic entrance, parallax, springs, morphs, or haptics).
 
 ## Anti-references
 
@@ -75,4 +70,4 @@ The page is a phone that behaves like a real OS. A platform selector (iOS / Andr
 - The hero-metric SaaS template (big number, small label, gradient accent, identical cards).
 - **Overstated or arrogant copy**, job titles, the word "Staff", and cringe footer/marketing lines (see Positioning rules).
 - Buzzword bio copy ("passionate, results-driven, synergy").
-- Cartoonish or generic OS chrome that doesn't match the real platform; native components that a mobile engineer would clock as fake (see OS-feature layer).
+- Imitation platform chrome: recreating Apple's or Google's actual UI invites "spot the fake" from the exact audience this page targets. GianOS is original on purpose; only the *mechanics* (back gesture, share, haptics, dev mode) borrow from real OS behavior, because there they are real.
