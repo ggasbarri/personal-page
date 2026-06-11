@@ -74,7 +74,7 @@ body[data-os="android"] .liveact__bar {
 body[data-os="android"] .liveact__trail[hidden] { display: none !important; }
 
 /* expanded Live Update card: Material tonal surface (geometry morph shared
-   in chrome.css) */
+   in device.css) */
 body[data-os="android"] .liveact__expand {
   background: var(--m3-surface-container-hi);
   color: var(--text);

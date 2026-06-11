@@ -85,7 +85,7 @@ body[data-os="ios"] .liveact--pulse .liveact__shape {
 }
 
 /* expanded island: dark Liquid Glass, grown out of the pill (the geometry
-   morph itself lives in chrome.css + js/live-activity.js) */
+   morph itself lives in device.css + js/live-activity.js) */
 body[data-os="ios"] .liveact__expand {
   background: oklch(0.13 0.01 60 / 0.92);
   color: oklch(0.96 0.005 80);

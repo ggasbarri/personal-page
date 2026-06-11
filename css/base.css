@@ -2,7 +2,7 @@
    Ask Gianfranco — base layer
    Tokens, stage, chat thread, story components, composer layout.
    Hand-authored. OKLCH throughout. Warm paper stage, deep clay-red accent.
-   OS-specific chrome lives in chrome.css / ios.css / android.css.
+   OS-specific chrome lives in device.css / ios.css / android.css.
    ========================================================================= */
 
 :root {
@@ -718,7 +718,7 @@ strong { font-weight: 600; color: var(--text); }
 
 /* -------------------------------------------------------------- composer */
 /* Layout only. The visible material (Liquid Glass / Material surface) is
-   painted on a ::before layer defined in chrome.css and skinned per OS —
+   painted on a ::before layer defined in device.css and skinned per OS —
    a backdrop-filter on .composer itself would make it a containing block
    and trap the fixed desktop OS-switch inside it. */
 

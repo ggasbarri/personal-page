@@ -7,7 +7,7 @@
                  draws its own simulated status bar.
      fullbleed — everything narrower (real phones, tablets, small windows):
                  the real device already has a status bar, so the simulated
-                 chrome stays hidden (see css/chrome.css).
+                 chrome stays hidden (see css/device.css).
 
    The mode mirrors the same media query CSS uses, exposed on
    html[data-display] so JS consumers (share sheet) and CSS stay in lockstep.
