@@ -21,6 +21,22 @@
    accurate and understated, no titles, let scope imply level.
    ========================================================================= */
 window.APP_DATA = {
+  /* Lock screen — notification teasers for unvisited apps. Shape mirrors
+     buildNotif() in messages.js: {app, icon, title, body, time}.
+     Icon keys must exist in the ICON map (guild|hire|mentee|doc); doc is the
+     safe fallback for anything without a dedicated glyph. Tone: understated,
+     intriguing — each card is a door, not a spoiler. */
+  lock: {
+    notifications: [
+      { id: "messages", app: "Messages", icon: "doc",    title: "Gian — 1 new message",          body: "who are you?",                       time: "now" },
+      { id: "maps",     app: "Maps",     icon: "mentee", title: "a ≈7,000 km route",             body: "Valencia → Aveiro",                  time: "1h"  },
+      { id: "ledger",   app: "Ledger",   icon: "hire",   title: "new transaction",               body: "Matemáticas Financieras  +10.0",     time: "2h"  },
+      { id: "terminal", app: "Terminal", icon: "doc",    title: "1 job finished",                body: "gian --stack  exited 0",             time: "3h"  },
+      { id: "settings", app: "Settings", icon: "guild",  title: "new wallpapers available",      body: "re-seed the whole OS",               time: "1d"  },
+      { id: "mail",     app: "Mail",     icon: "doc",    title: "draft saved",                   body: "to: hey@ggasbarri.com",              time: "1d"  }
+    ]
+  },
+
   /* Maps — the Venezuela→Portugal journey. Stops are chronological; x/y are
      0–1 fractions over the map viewBox (0,0 top-left → 1,1 bottom-right). They
      sit along the route arc: the first on the Venezuela landmass (bottom-left),

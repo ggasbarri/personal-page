@@ -407,6 +407,231 @@ body:not([data-app]) .navind span { opacity: 0.25; }
 .liveact__es--todo { opacity: 0.45; }
 
 /* =========================================================================
+   LOCK SCREEN — Phase 8
+   z70: above homescreen (10), app-screen (30), navind (40), statusbar (50),
+   LA expand (60). Full-device takeover; no scroll. Wallpaper, clock, notif
+   stack, and a real unlock button (never gesture-only). Per-OS fidelity:
+   iOS = thin centered clock + home-bar affordance + glass notification cards;
+   Android = left-aligned M3 clock + lock glyph + tonal notification cards.
+
+   Visibility: the element carries `hidden` in markup (no-JS never sees it).
+   Shell adds/removes `hidden` and `body[data-locked]` to gate dependent layers.
+   ========================================================================= */
+
+/* ---- base container ---------------------------------------------------- */
+.lockscreen {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+  /* clear status bar */
+  padding-top: calc(env(safe-area-inset-top) + 3.4rem);
+  padding-bottom: calc(max(1.5rem, env(safe-area-inset-bottom)) + 2.4rem);
+  padding-inline: 1.15rem;
+}
+.lockscreen[hidden] { display: none; }
+
+/* ---- wallpaper: mirrors .homescreen__wall per OS ----------------------- */
+.lockscreen__wall {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+body[data-os="ios"] .lockscreen__wall {
+  background:
+    radial-gradient(120% 60% at 78% -8%, oklch(0.86 0.07 255 / 0.6), transparent 60%),
+    radial-gradient(110% 60% at 6% 108%, oklch(0.88 0.06 200 / 0.5), transparent 60%),
+    linear-gradient(165deg, oklch(0.96 0.018 255), oklch(0.94 0.02 285));
+}
+body[data-os="android"] .lockscreen__wall {
+  background:
+    radial-gradient(120% 60% at 84% -6%, oklch(0.88 0.10 45 / 0.55), transparent 60%),
+    radial-gradient(110% 60% at 4% 106%, oklch(0.90 0.08 75 / 0.5), transparent 60%),
+    linear-gradient(165deg, oklch(0.95 0.03 60), oklch(0.93 0.028 38));
+  background:
+    radial-gradient(120% 60% at 84% -6%, oklch(from var(--seed) 0.88 0.10 calc(h + 12) / 0.55), transparent 60%),
+    radial-gradient(110% 60% at 4% 106%, oklch(from var(--seed) 0.90 0.08 calc(h + 42) / 0.5), transparent 60%),
+    linear-gradient(165deg, oklch(from var(--seed) 0.95 0.03 calc(h + 27)), oklch(from var(--seed) 0.93 0.028 calc(h + 5)));
+}
+
+/* ---- clock ------------------------------------------------------------ */
+.lockscreen__clock {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  width: 100%;
+  margin-bottom: 2rem;
+}
+/* iOS: thin centered large clock */
+body[data-os="ios"] .lockscreen__clock { align-items: center; text-align: center; }
+/* Android: M3 two-line stacked clock left-aligned */
+body[data-os="android"] .lockscreen__clock { align-items: flex-start; text-align: left; }
+
+.lockscreen__time {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(4.5rem, 20vw, 6.5rem);
+  line-height: 0.9;
+  letter-spacing: -0.04em;
+  color: var(--text);
+}
+body[data-os="ios"] .lockscreen__time {
+  font-weight: 600;
+  letter-spacing: -0.05em;
+}
+body[data-os="android"] .lockscreen__time {
+  font-weight: 700;
+  font-size: clamp(4rem, 18vw, 5.8rem);
+}
+
+.lockscreen__date {
+  font-family: var(--font-ui);
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  letter-spacing: 0;
+}
+body[data-os="ios"] .lockscreen__date { font-weight: 400; font-size: 0.95rem; }
+body[data-os="android"] .lockscreen__date { font-size: 1.02rem; }
+
+/* ---- notification stack ----------------------------------------------- */
+.lockscreen__notifs {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  /* max 5 notifications, no overflow scroll */
+  overflow: hidden;
+  max-height: none;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Notification cards on the lock screen are clickable: each one unlocks +
+   deep-opens its app. They extend the base .notif styles from messages.css. */
+.lockscreen__notifs .notif {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  /* start hidden for stagger reveal */
+  opacity: 0;
+  transform: translateY(0.8rem) scale(0.97);
+}
+.lockscreen__notifs .notif:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: 3px;
+}
+.lockscreen__notifs .notif:active {
+  transform: scale(0.97);
+  opacity: 0.85;
+}
+.lockscreen__notifs .notif.in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s var(--ease), transform 0.55s var(--ease);
+}
+
+/* "all explored" quiet message shown when no unvisited apps remain */
+.lockscreen__allvisited {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  font-family: var(--font-label);
+  font-size: 0.82rem;
+  color: var(--text-faint);
+  letter-spacing: 0.01em;
+  padding: 0.5rem 0;
+  opacity: 0;
+  transition: opacity 0.5s var(--ease);
+}
+.lockscreen__allvisited.in { opacity: 1; }
+
+/* ---- unlock affordance ------------------------------------------------- */
+.lockscreen__unlock {
+  position: absolute;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  left: 0; right: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 0 max(0.5rem, env(safe-area-inset-bottom));
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--text-muted);
+}
+.lockscreen__unlock:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: 4px;
+}
+
+/* iOS: home-bar affordance — hide lock glyph, show bar */
+body[data-os="ios"] .lockscreen__lock-icon { display: none; }
+body[data-os="ios"] .lockscreen__bar {
+  display: block;
+  width: 38%;
+  max-width: 9.5rem;
+  height: 5px;
+  border-radius: 100px;
+  background: var(--text);
+  opacity: 0.4;
+}
+body[data-os="ios"] .lockscreen__unlock-label::before {
+  content: "swipe up to open";
+  font-family: var(--font-label);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-faint);
+  letter-spacing: 0.01em;
+}
+
+/* Android: lock glyph + "tap to open" — hide bar */
+body[data-os="android"] .lockscreen__bar { display: none; }
+body[data-os="android"] .lockscreen__lock-icon {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--m3-primary-container);
+  color: var(--m3-on-primary-container);
+}
+body[data-os="android"] .lockscreen__unlock-label::before {
+  content: "tap to open";
+  font-family: var(--font-label);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-faint);
+  letter-spacing: 0.01em;
+}
+
+/* ---- unlock animation -------------------------------------------------- */
+/* The lock slides up and fades out; the home screen slides in from below. */
+@keyframes lockscreen-exit {
+  from { transform: translateY(0); opacity: 1; }
+  to   { transform: translateY(-100%); opacity: 0; }
+}
+.lockscreen--exiting {
+  animation: lockscreen-exit 0.5s var(--ease) forwards;
+  pointer-events: none;
+}
+
+/* body[data-locked]: guard LA while lock is active (keep it dormant visually) */
+body[data-locked] .liveact { pointer-events: none; opacity: 0.6; }
+
+/* =========================================================================
    reduced motion: no VT, no stagger, instant toggles
    ========================================================================= */
 @media (prefers-reduced-motion: reduce) {
@@ -419,4 +644,9 @@ body:not([data-app]) .navind span { opacity: 0.25; }
   .screen-enter { animation: none; }
   ::view-transition-group(app-zoom) { animation: none; }
   .appicon__badge.badge--pop { animation: none; opacity: 0; }
+  /* lock screen: no slide-out, no stagger — instant transitions */
+  .lockscreen--exiting { animation: none; opacity: 0; }
+  .lockscreen__notifs .notif { opacity: 1; transform: none; transition: none; }
+  .lockscreen__notifs .notif.in { transition: none; }
+  .lockscreen__allvisited { opacity: 1; transition: none; }
 }

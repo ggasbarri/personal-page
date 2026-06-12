@@ -99,6 +99,45 @@
     </header>
 
     <!-- ===================================================================
+         LOCK SCREEN — first-impression dopamine. z70: above homescreen (10),
+         app-screen (30), navind (40), statusbar (50), LA expand (60).
+
+         Shown only to fresh (unvisited) sessions; skipped on deep links and
+         for no-JS visitors. The entire element carries `hidden` in markup so
+         no-JS visitors NEVER see it (Shell.boot() removes `hidden` when
+         appropriate). `aria-modal` traps focus inside while shown.
+
+         Per-OS clock style and unlock affordance (iOS home-bar / Android
+         lock-glyph) are driven by CSS body[data-os] selectors.
+         =================================================================== -->
+    <section class="lockscreen" id="lockscreen" role="dialog" aria-label="Lock screen" aria-modal="true" hidden>
+      <!-- wallpaper layer: mirrors .homescreen__wall gradients per OS -->
+      <div class="lockscreen__wall" aria-hidden="true"></div>
+
+      <!-- clock block -->
+      <div class="lockscreen__clock" aria-live="off" aria-atomic="true">
+        <span class="lockscreen__time" id="lockTime">9:41</span>
+        <span class="lockscreen__date" id="lockDate"></span>
+      </div>
+
+      <!-- notification stack: built by Shell from APP_DATA.lock filtered to unvisited apps -->
+      <div class="lockscreen__notifs" id="lockNotifs" aria-label="Notifications" role="list"></div>
+
+      <!-- unlock affordance: always a real button; per-OS labelling via CSS content -->
+      <button class="lockscreen__unlock" id="lockUnlock" type="button">
+        <!-- iOS: home-bar visual -->
+        <span class="lockscreen__bar" aria-hidden="true"></span>
+        <!-- Android: lock glyph -->
+        <span class="lockscreen__lock-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+        </span>
+        <span class="lockscreen__unlock-label">
+          <!-- visible text set by CSS ::before per OS -->
+        </span>
+      </button>
+    </section>
+
+    <!-- ===================================================================
          HOME SCREEN — app grid. Every future app has an icon here; the Shell
          hides any icon whose id is not in the GG.Apps registry, so the grid
          stays honest each deploy (only Messages shows until later phases land).

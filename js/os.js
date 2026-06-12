@@ -14,13 +14,24 @@
   var REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   var data = window.ASK_DATA || { prompts: [] };
 
-  var clockEl = document.getElementById("clock");
+  var clockEl   = document.getElementById("clock");
+  var lockTimeEl = document.getElementById("lockTime");
+  var lockDateEl = document.getElementById("lockDate");
 
   /* ---------------------------------------------------------------- clock */
+  // Day abbreviations for the lock-screen date line (locked screen shows date).
+  var DAYS   = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
   function tick() {
     var d = new Date();
     var h = d.getHours(), m = d.getMinutes();
-    clockEl.textContent = h + ":" + (m < 10 ? "0" + m : m);
+    var timeStr = h + ":" + (m < 10 ? "0" + m : m);
+    if (clockEl) clockEl.textContent = timeStr;
+    if (lockTimeEl) lockTimeEl.textContent = timeStr;
+    if (lockDateEl) {
+      lockDateEl.textContent = DAYS[d.getDay()] + ", " + MONTHS[d.getMonth()] + " " + d.getDate();
+    }
   }
 
   /* ----------------------------------------------------------- utilities */
@@ -500,6 +511,240 @@
     return { load: load, visit: visit, count: count, isVisited: isVisited, getState: getState, _save: _save };
   })();
 
+  /* ===================================================================
+     Lock — Phase 8: first-impression dopamine screen.
+
+     Shows once per session (sessionStorage flag "gg-unlocked"). Skipped
+     when:
+       1. sessionStorage already has "gg-unlocked" (returning same-session)
+       2. A deep link hash (#m/<appid>) is present on load (direct link)
+       3. No-JS (lockscreen has `hidden` in markup; no .js → nothing runs)
+
+     Reduced-motion users still see the lock (it's a screen, not an
+     animation) but with instant transitions (CSS media query + delay(0)).
+
+     Notification cards tap to unlock AND deep-open their app.
+     Focus is trapped to unlock button + notif cards while shown.
+     On unlock, focus moves to the first app icon.
+
+     The small ICON map from messages.js is NOT available here (different
+     file). We duplicate the four needed SVGs inline as a local lock-icon
+     map. This keeps os.js self-contained and avoids cross-file coupling.
+     =================================================================== */
+  var Lock = (function () {
+    var SESS_KEY = "gg-unlocked";
+
+    // Inline SVG icons for the lock notification cards.
+    // Shape matches the ICON functions in messages.js (same SVG paths).
+    function _svg(inner) {
+      return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' width='16' height='16' aria-hidden='true'>" + inner + "</svg>";
+    }
+    var LOCK_ICON = {
+      guild:  function () { return _svg("<path d='M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/><circle cx='9.5' cy='7' r='4'/><path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'/>"); },
+      hire:   function () { return _svg("<path d='M20 6 9 17l-5-5'/>"); },
+      mentee: function () { return _svg("<path d='M23 6 13.5 15.5l-5-5L1 18'/><path d='M17 6h6v6'/>"); },
+      doc:    function () { return _svg("<path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><path d='M14 2v6h6'/>"); }
+    };
+
+    var _lockEl    = null;
+    var _notifsEl  = null;
+    var _unlockBtn = null;
+    var _unlockCb  = null; // called after animation completes
+
+    function _markUnlocked() {
+      try { sessionStorage.setItem(SESS_KEY, "1"); } catch (e) {}
+    }
+
+    function isSkipped() {
+      // skip if already unlocked this session
+      try { if (sessionStorage.getItem(SESS_KEY)) return true; } catch (e) {}
+      // skip if deep link hash is present
+      var h = location.hash || "";
+      if (/^#m\/[a-z0-9_-]+$/i.test(h)) return true;
+      return false;
+    }
+
+    // Build one notification card. Returns a DOM element (button — focusable).
+    function _buildCard(nt) {
+      var ic = (LOCK_ICON[nt.icon] || LOCK_ICON.doc)();
+      var card = el("button", "notif",
+        "<span class='notif__icon'>" + ic + "</span>" +
+        "<span class='notif__main'>" +
+          "<span class='notif__app'>" + escapeHtml(nt.app) + "</span>" +
+          "<span class='notif__title'>" + escapeHtml(nt.title) + "</span>" +
+          "<span class='notif__body'>" + escapeHtml(nt.body) + "</span>" +
+        "</span>" +
+        "<span class='notif__time'>" + escapeHtml(nt.time || "now") + "</span>");
+      card.type = "button";
+      card.setAttribute("role", "listitem");
+      card.setAttribute("aria-label", nt.app + ": " + nt.title);
+      return card;
+    }
+
+    // Populate the notification stack from APP_DATA.lock filtered to unvisited apps.
+    // Returns the array of card elements (for focus management + stagger).
+    function _buildStack(notifsEl) {
+      var appData = window.APP_DATA || {};
+      var lockData = appData.lock || {};
+      var allNotifs = lockData.notifications || [];
+
+      // filter to unvisited apps; cap at 5
+      var unvisited = allNotifs.filter(function (nt) {
+        return nt.id && !Collection.isVisited(nt.id);
+      }).slice(0, 5);
+
+      if (unvisited.length === 0) {
+        // all apps explored: quiet welcome-back line
+        var msg = el("p", "lockscreen__allvisited", "all explored · welcome back");
+        notifsEl.appendChild(msg);
+        setTimeout(function () { msg.classList.add("in"); }, REDUCED ? 0 : 80);
+        return [];
+      }
+
+      var cards = [];
+      unvisited.forEach(function (nt) {
+        var card = _buildCard(nt);
+        card.setAttribute("data-app", nt.id);
+        notifsEl.appendChild(card);
+        cards.push(card);
+      });
+      return cards;
+    }
+
+    // Wire touch swipe-up on the lock screen itself (in addition to the button).
+    function _wireSwipe(lockEl, cb) {
+      var ty0 = null;
+      lockEl.addEventListener("touchstart", function (e) {
+        var t = e.touches && e.touches[0];
+        ty0 = t ? t.clientY : null;
+      }, { passive: true });
+      lockEl.addEventListener("touchend", function (e) {
+        if (ty0 == null) return;
+        var t = e.changedTouches && e.changedTouches[0];
+        if (t && (ty0 - t.clientY) > 40) { ty0 = null; cb(null); }
+        ty0 = null;
+      }, { passive: true });
+    }
+
+    // Simple focus trap: Tab / Shift+Tab stay within focusable elements in lockscreen.
+    function _trapFocus(lockEl) {
+      lockEl.addEventListener("keydown", function (e) {
+        if (e.key !== "Tab") return;
+        var focusables = Array.prototype.slice.call(
+          lockEl.querySelectorAll("button, [href], [tabindex]:not([tabindex='-1'])")
+        ).filter(function (el) { return !el.hasAttribute("disabled"); });
+        if (!focusables.length) return;
+        var first = focusables[0], last = focusables[focusables.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+        } else {
+          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+        }
+      });
+    }
+
+    // Escape unlocks (plan requirement).
+    function _wireEscape(cb) {
+      function handler(e) {
+        if (e.key === "Escape") {
+          document.removeEventListener("keydown", handler);
+          cb(null);
+        }
+      }
+      document.addEventListener("keydown", handler);
+      return handler; // so show() can remove it after unlock
+    }
+
+    // Animate lock away, then call done().
+    function _animateOut(lockEl, done) {
+      if (REDUCED) {
+        lockEl.hidden = true;
+        done();
+        return;
+      }
+      lockEl.classList.add("lockscreen--exiting");
+      lockEl.addEventListener("animationend", function () {
+        lockEl.hidden = true;
+        lockEl.classList.remove("lockscreen--exiting");
+        done();
+      }, { once: true });
+    }
+
+    // show(): render and display the lock screen, then call onUnlock when dismissed.
+    function show(lockEl, onUnlock) {
+      _lockEl    = lockEl;
+      _notifsEl  = document.getElementById("lockNotifs");
+      _unlockBtn = document.getElementById("lockUnlock");
+      _unlockCb  = onUnlock;
+
+      if (!_lockEl || !_notifsEl || !_unlockBtn) return;
+
+      // Set aria-modal body guard
+      document.body.setAttribute("data-locked", "");
+
+      // Build notification stack
+      var cards = _buildStack(_notifsEl);
+
+      // Show lock screen
+      _lockEl.hidden = false;
+
+      // Focus unlock button (first focusable inside the dialog)
+      setTimeout(function () {
+        if (_unlockBtn) {
+          try { _unlockBtn.focus(); } catch (e) {}
+        }
+      }, REDUCED ? 0 : 80);
+
+      // Stagger-reveal notification cards
+      if (cards.length) {
+        // use the same stagger pattern as revealNotifs in messages.js
+        cards.forEach(function (card, i) {
+          setTimeout(function () { card.classList.add("in"); }, REDUCED ? 0 : 120 + i * 130);
+        });
+      }
+
+      // trap focus
+      _trapFocus(_lockEl);
+
+      // Wire unlock: button click
+      var escHandler = null;
+      function unlock(targetAppId) {
+        if (escHandler) document.removeEventListener("keydown", escHandler);
+        _markUnlocked();
+        document.body.removeAttribute("data-locked");
+        _animateOut(_lockEl, function () {
+          if (onUnlock) onUnlock(targetAppId);
+        });
+      }
+
+      _unlockBtn.addEventListener("click", function () { unlock(null); });
+
+      // Notification card click → unlock + deep-open that app
+      cards.forEach(function (card) {
+        card.addEventListener("click", function (e) {
+          e.stopPropagation();
+          unlock(card.getAttribute("data-app"));
+        });
+      });
+
+      // Click anywhere on the lock screen (not a card) → unlock
+      _lockEl.addEventListener("click", function (e) {
+        // only respond to clicks on the lock screen backdrop itself
+        if (e.target === _lockEl || e.target.classList.contains("lockscreen__wall") || e.target.classList.contains("lockscreen__clock") || e.target === lockDateEl || e.target === lockTimeEl) {
+          unlock(null);
+        }
+      });
+
+      // Swipe-up gesture → unlock
+      _wireSwipe(_lockEl, unlock);
+
+      // Escape → unlock
+      escHandler = _wireEscape(unlock);
+    }
+
+    return { show: show, isSkipped: isSkipped };
+  })();
+
   /* ---------------------------------------------------------------- Apps */
   var _appsRegistry = {};
 
@@ -858,12 +1103,30 @@
         // initial route: deep link opens its app with no transition, else home
         var initial = targetFromHash();
         if (initial) {
-          route(false);          // open directly, no zoom on first paint
+          // deep link: skip lock, open app directly
+          route(false);
+        } else if (!Lock.isSkipped()) {
+          // fresh session: show lock screen first
+          var lockEl = document.getElementById("lockscreen");
+          Lock.show(lockEl, function (targetAppId) {
+            // lock dismissed: reveal home + stagger icons
+            showHome(null, false);
+            var c = Collection.count();
+            LA.discover(c.done, c.total);
+            if (targetAppId) {
+              // tapping a notification: unlock → deep-open that app
+              GG.Shell.open(targetAppId);
+            } else {
+              // focus the first app icon
+              var firstIcon = gridIcons[0];
+              if (firstIcon) deferFocus(firstIcon, null);
+            }
+          });
         } else {
-          showHome(null, false); // land on the home grid
-          // start discovery tracking on home screen (replaces heroActivity on home)
-          var c = Collection.count();
-          LA.discover(c.done, c.total);
+          // returning same-session visitor: go straight home
+          showHome(null, false);
+          var ch = Collection.count();
+          LA.discover(ch.done, ch.total);
         }
       },
 
@@ -908,6 +1171,7 @@
     LA: LA,
     Collection: Collection,
     Apps: Apps,
-    Shell: Shell
+    Shell: Shell,
+    Lock: Lock
   };
 })();
