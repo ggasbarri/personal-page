@@ -1,0 +1,320 @@
+/* =========================================================================
+   GianOS — shell
+   The device, the screen stack (lock / home / app via html[data-screen]),
+   the simulated status bar (framed mode only), the home handle, the
+   wallpaper layers, View Transitions choreography, and the share sheet.
+
+   DISPLAY MODES (single source of truth):
+     fullbleed (default, mobile-first) — the page runs on a real phone or a
+       narrow window. NO simulated phone chrome: no fake clock or battery,
+       no handle (the real OS draws those).
+     framed (desktop ≥1080px) — the page floats as a phone mockup on the
+       stage with the full simulated status bar and the home handle.
+   js/system.js mirrors the same 1080px media query onto
+   html[data-display="framed"|"fullbleed"]; the rules pair the media query
+   with :not([data-display="fullbleed"]) so attribute and query always
+   agree — without JS the attribute is absent and the query alone decides.
+   ========================================================================= */
+
+/* ---------------------------------------------------------------- device */
+
+.device {
+  position: relative;
+  z-index: 1;
+  width: var(--col);
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+  background: var(--surface);
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 2rem 4.5rem -2rem oklch(0.4 0.03 50 / 0.28);
+}
+html:not(.js) .device { display: none; } /* no JS: only the fallback renders */
+
+/* ------------------------------------------------------------- wallpaper */
+/* Two layers parallax at different rates (js/lock.js). Deep clay into
+   apricot, one warm-magenta blob as the single dopamine pop. */
+
+.wall { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.wall__a, .wall__b {
+  position: absolute;
+  inset: -4%;
+  display: block;
+  will-change: transform;
+}
+.wall__a {
+  background:
+    radial-gradient(110% 85% at 82% -12%, var(--wall-apricot), transparent 58%),
+    radial-gradient(130% 110% at 50% 118%, var(--wall-mid), transparent 72%),
+    linear-gradient(168deg, var(--wall-deep), oklch(0.46 0.14 36) 55%, oklch(0.55 0.13 45));
+}
+.wall__b {
+  background:
+    radial-gradient(52% 40% at 8% 96%, oklch(0.58 0.165 350 / 0.5), transparent 70%),
+    radial-gradient(40% 30% at 96% 42%, oklch(0.76 0.115 60 / 0.3), transparent 70%);
+}
+/* the wallpaper sits behind everything; the app screen is opaque above it */
+
+/* --------------------------------------------------------------- screens */
+
+.screen {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: none;
+  flex-direction: column;
+}
+html[data-screen="lock"] .screen--lock,
+html[data-screen="home"] .screen--home,
+html[data-screen="app"]  .screen--app { display: flex; }
+
+/* unlock choreography: the lock slides away above the entering home */
+.screen--lock { z-index: 3; touch-action: none; }
+.screen--lock.is-dragging { transition: none; }
+.screen--lock:not(.is-dragging) { transition: transform calc(0.45s * var(--ms)) var(--spring); }
+.screen--lock.is-unlocking {
+  display: flex;
+  animation: lock-out calc(0.6s * var(--ms)) var(--ease) both;
+  pointer-events: none;
+}
+@keyframes lock-out {
+  to { transform: translateY(-14%); opacity: 0; }
+}
+.screen--home.is-entering { animation: home-in calc(0.55s * var(--ms)) var(--ease) both; }
+@keyframes home-in {
+  from { transform: scale(0.93); opacity: 0; }
+}
+
+/* the app screen is opaque paper over the wallpaper */
+.screen--app { z-index: 2; background: var(--surface); }
+
+/* ------------------------------------------------------ view transitions */
+/* The shared element (icon tile ↔ app-bar glyph) carries the open/close;
+   the app screen itself rises and settles. Root stays still. */
+
+.screen--app { view-transition-name: app-screen; }
+
+::view-transition-group(*) {
+  animation-duration: calc(0.45s * var(--ms, 1));
+  animation-timing-function: var(--ease);
+}
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; }
+
+::view-transition-old(app-screen) {
+  animation: vt-app-out calc(0.38s * var(--ms, 1)) var(--ease) both;
+}
+::view-transition-new(app-screen) {
+  animation: vt-app-in calc(0.45s * var(--ms, 1)) var(--ease) both;
+}
+@keyframes vt-app-in  { from { opacity: 0; transform: translateY(2.5%) scale(0.94); } }
+@keyframes vt-app-out { to   { opacity: 0; transform: translateY(2%) scale(0.95); } }
+
+::view-transition-group(app-hero) {
+  animation-duration: calc(0.45s * var(--ms, 1));
+  animation-timing-function: var(--ease);
+  z-index: 10;
+}
+
+/* ------------------------------------------------------------- statusbar */
+/* Simulated chrome: framed (desktop) only. GianOS's own glyphs — not iOS,
+   not Android. Light over the wallpaper, ink over app paper. */
+
+.statusbar {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 5;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1.4rem 0.4rem;
+  pointer-events: none;
+  color: var(--accent-ink);
+  transition: color calc(0.4s * var(--ms)) var(--ease);
+}
+html[data-screen="app"] .statusbar { color: var(--text); }
+/* the lock screen draws its own giant clock; don't show it twice */
+html[data-screen="lock"] .statusbar__time { visibility: hidden; }
+.statusbar__time {
+  font-family: var(--font-ui);
+  font-size: 0.88rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.statusbar__brand {
+  font-family: var(--font-label);
+  font-size: 0.66rem;
+  letter-spacing: 0.16em;
+  opacity: 0.75;
+}
+.statusbar__sys { display: inline-flex; align-items: center; gap: 0.45rem; }
+.statusbar__sys svg { fill: currentColor; }
+
+/* ------------------------------------------------------------ home handle */
+/* Framed only (a real phone draws its own). A real button: on the app
+   screen it goes home, mirroring the OS gesture. */
+
+.navind {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  z-index: 6;
+  transform: translateX(-50%);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 12rem;
+  padding: 0.6rem 0 0.5rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+.navind span {
+  display: block;
+  width: 38%;
+  height: 5px;
+  border-radius: 100px;
+  background: var(--accent-ink);
+  opacity: 0.55;
+  transition: background calc(0.4s * var(--ms)) var(--ease), transform calc(0.3s * var(--ms)) var(--spring);
+}
+html[data-screen="app"] .navind span { background: var(--text); opacity: 0.4; }
+.navind:hover span { transform: scaleX(1.12); }
+.navind:focus-visible { outline: 2px solid var(--accent-line); outline-offset: -2px; border-radius: 1rem; }
+
+/* =========================================================================
+   SHARE SHEET (Contact app)
+   One GianOS skin: grabber, identity header with circled ✕, a row of tonal
+   circular targets. Web Share API first; drag-to-dismiss.
+   ========================================================================= */
+
+.share-trigger {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  margin-top: 1rem; padding: 0.7rem 1.05rem;
+  font-family: var(--font-ui); font-size: 0.95rem; font-weight: 600;
+  color: var(--accent); background: var(--accent-soft);
+  border: 1px solid var(--accent-line); border-radius: 2rem; cursor: pointer;
+  transition: background calc(0.25s * var(--ms)) var(--ease), transform calc(0.25s * var(--ms)) var(--ease);
+}
+.share-trigger svg { width: 1.05rem; height: 1.05rem; }
+.share-trigger:hover { background: color-mix(in oklch, var(--accent) 20%, transparent); transform: translateY(-0.1rem); }
+.share-trigger:active { transform: translateY(0) scale(0.97); }
+.share-trigger:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 3px; }
+
+.sheet-scrim {
+  position: fixed; inset: 0; z-index: 40;
+  background: oklch(0.2 0.02 50 / 0.001);
+  opacity: 0; pointer-events: none;
+  transition: opacity calc(0.45s * var(--ms)) var(--ease), background calc(0.45s * var(--ms)) var(--ease);
+}
+.sheet-scrim.is-open { opacity: 1; pointer-events: auto; background: oklch(0.2 0.02 50 / 0.42); }
+
+.sheet {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 41;
+  width: var(--col);
+  max-width: 460px;
+  transform: translate(-50%, 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.5rem 1.05rem max(1.2rem, env(safe-area-inset-bottom));
+  background: var(--surface);
+  border-radius: 1.6rem 1.6rem 0 0;
+  box-shadow: 0 -0.5rem 2.5rem -1rem oklch(0.3 0.03 50 / 0.45);
+  touch-action: none;
+}
+.sheet.is-open { transform: translate(-50%, 0); }
+.sheet.is-dragging, .sheet.is-animating { will-change: transform; }
+.sheet:not(.is-dragging).is-animating { transition: transform calc(0.52s * var(--ms)) var(--ease); }
+.sheet[hidden], .sheet-scrim[hidden] { display: none; }
+
+.sheet__grip { align-self: center; width: 100%; max-width: 9rem; height: 1.5rem; border: none; background: none; cursor: grab; display: grid; place-items: center; padding: 0; }
+.sheet__grip::before { content: ""; width: 2.4rem; height: 0.3rem; border-radius: 1rem; background: var(--text-faint); opacity: 0.55; }
+.sheet.is-dragging .sheet__grip { cursor: grabbing; }
+
+.sheet__head { display: flex; align-items: center; gap: 0.85rem; padding: 0.1rem 0.35rem 0.2rem; }
+.sheet__avatar { flex: 0 0 auto; width: 3.1rem; height: 3.1rem; border-radius: 50%; overflow: hidden; box-shadow: 0 0.3rem 0.9rem -0.4rem oklch(0 0 0 / 0.5); }
+.sheet__avatar img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; transform: scaleX(-1); }
+.sheet__id { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.sheet__name { font-family: var(--font-display); font-weight: 700; font-size: 1.12rem; letter-spacing: -0.015em; line-height: 1.05; }
+.sheet__sub { font-size: 0.85rem; color: var(--text-muted); }
+
+.sheet__close {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  width: 1.9rem; height: 1.9rem;
+  border: none;
+  border-radius: 50%;
+  display: grid; place-items: center;
+  background: color-mix(in oklch, var(--text) 9%, transparent);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.sheet__close svg { width: 0.8rem; height: 0.8rem; }
+.sheet__close:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+
+.sheet__targets { display: flex; gap: 0.7rem; overflow-x: auto; scrollbar-width: none; padding: 0.3rem 0.35rem 0.2rem; scroll-snap-type: x proximity; }
+.sheet__targets::-webkit-scrollbar { display: none; }
+.sheet__target {
+  flex: 0 0 auto; scroll-snap-align: start;
+  display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  width: 4.1rem; padding: 0; border: none; background: none; cursor: pointer;
+  font-family: var(--font-ui); font-size: 0.7rem; color: var(--text-muted);
+}
+.sheet__ticon {
+  width: 3.3rem; height: 3.3rem; border-radius: 50%; display: grid; place-items: center;
+  color: var(--accent-ink); background: var(--accent);
+  box-shadow: 0 0.4rem 1rem -0.5rem var(--accent-strong);
+  transition: transform calc(0.4s * var(--ms)) var(--spring);
+}
+.sheet__ticon svg { width: 1.45rem; height: 1.45rem; }
+.sheet__target:active .sheet__ticon { transform: scale(0.88); }
+.sheet__target:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 3px; border-radius: 0.8rem; }
+.sheet__target--copy .sheet__ticon,
+.sheet__target--mail .sheet__ticon { background: var(--surface-3); color: var(--accent); border: 1px solid var(--line); }
+.sheet__target.is-done .sheet__tlabel { color: var(--accent); font-weight: 600; }
+
+/* on desktop the phone floats; pin the sheet inside the device so it slides
+   up within the mockup and clips to its rounded corners */
+@media (min-width: 1080px) {
+  .sheet-scrim { position: absolute; z-index: 40; }
+  .sheet { position: absolute; width: auto; left: 0; right: 0; max-width: none; transform: translateY(100%); }
+  .sheet.is-open { transform: translateY(0); }
+}
+
+/* =========================================================================
+   FRAMED MODE (desktop ≥1080px): the floating mockup with simulated chrome.
+   ========================================================================= */
+@media (min-width: 1080px) {
+  html:not([data-display="fullbleed"]) body { padding: 3vh 0; align-items: center; }
+  html:not([data-display="fullbleed"]) .device {
+    height: min(820px, calc(100dvh - 6vh));
+    margin: auto;
+    border-radius: 2.6rem;
+    /* soft paper-cradle: light bezel ring plus a long warm shadow */
+    box-shadow:
+      0 0 0 1px var(--line),
+      0 0 0 0.5rem oklch(0.97 0.006 86),
+      0 0 0 0.55rem var(--line),
+      0 2.5rem 5.5rem -1.5rem oklch(0.4 0.03 50 / 0.32);
+  }
+  html:not([data-display="fullbleed"]) .statusbar { display: flex; }
+  html:not([data-display="fullbleed"]) .navind    { display: flex; }
+}
+
+/* --------------------------------------------------- reduced motion (shell) */
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-scrim, .sheet { transition: none !important; }
+  .sheet.is-open { transform: translate(-50%, 0); }
+  @media (min-width: 1080px) {
+    .sheet.is-open { transform: translateY(0); }
+  }
+  .screen--lock.is-unlocking, .screen--home.is-entering { animation: none; }
+}

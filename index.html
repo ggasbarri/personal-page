@@ -3,185 +3,95 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Ask Gianfranco — Gianfranco Gasbarri</title>
-  <meta name="description" content="A short first-person page from Gianfranco Gasbarri about mobile systems, team alignment, tooling, economics, and Aveiro." />
+  <title>GianOS — Gianfranco Gasbarri</title>
+  <meta name="description" content="The personal page of Gianfranco Gasbarri, presented as a small mobile OS: lock screen, home screen, and apps about mobile systems, tooling, economics, and Aveiro." />
 
   <meta property="og:type" content="profile" />
-  <meta property="og:title" content="Ask Gianfranco" />
-  <meta property="og:description" content="A short first-person page about mobile systems, tooling, economics, and the kind of work Gian likes most." />
+  <meta property="og:title" content="GianOS — Gianfranco Gasbarri" />
+  <meta property="og:description" content="A personal page that boots like a phone: apps about mobile systems, tooling, economics, and the kind of work Gian likes most." />
   <meta property="og:locale" content="en" />
   <meta property="og:image" content="assets/gianfranco.jpg" />
-  <!-- kept in sync with the active skin + display mode by js/os.js -->
-  <meta name="theme-color" content="#f8f7f2" />
+  <!-- kept in sync with the visible screen + display mode by js/system.js -->
+  <meta name="theme-color" content="#7d3a26" />
 
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/base.css" />
-  <link rel="stylesheet" href="css/device.css" />
-  <link rel="stylesheet" href="css/ios.css" />
-  <link rel="stylesheet" href="css/android.css" />
+  <link rel="stylesheet" href="css/shell.css" />
+  <link rel="stylesheet" href="css/home.css" />
+  <link rel="stylesheet" href="css/apps.css" />
+  <link rel="stylesheet" href="css/dev.css" />
+  <!-- html.js gates the OS vs the no-JS fallback before first paint -->
+  <script>document.documentElement.classList.add("js");</script>
 </head>
-<body data-os="ios">
-  <!-- per-OS wallpaper behind the phone; crossfades on platform switch -->
-  <div class="stage-os stage-os--ios" aria-hidden="true"></div>
-  <div class="stage-os stage-os--android" aria-hidden="true"></div>
-
-  <!-- ambient stage decoration + story mood overlays -->
-  <div class="stage-grain" aria-hidden="true"></div>
+<body>
+  <!-- ambient stage decoration (desktop) -->
   <div class="stage-glow" aria-hidden="true"></div>
-  <div class="mood mood-cool" aria-hidden="true"></div>
-  <div class="mood mood-dim" aria-hidden="true"></div>
-  <div class="mood mood-bloom" aria-hidden="true"></div>
+  <div class="stage-grain" aria-hidden="true"></div>
   <div class="stage-mark" aria-hidden="true"><span>Gianfranco</span><span>Gasbarri</span></div>
+  <span class="stage-os-tag" aria-hidden="true">gianos 1.0</span>
 
-  <!-- SVG filter defs (zero-size, off-canvas):
-       lq-glass-* real Liquid Glass refraction filters are generated at runtime by
-                 js/glass.js, one per surface size, and injected into this <defs>.
-                 Each bends the backdrop with a geometry-aware convex-lens map
-                 (strong at the rounded rim, flat in the centre) plus a faint
-                 chromatic split. Wired via the --lq custom property; any browser
-                 that can't refract simply keeps the frosted base, so nothing
-                 breaks. -->
-  <svg class="goo-defs" width="0" height="0" aria-hidden="true" focusable="false">
-    <defs></defs>
-  </svg>
-
-  <main class="device" id="app">
-    <!-- status bar / slim header.
-         Fullbleed (real phones, narrow windows): collapses to a slim header
-         carrying only the Live Activity + story progress — the real device
-         already draws a clock and battery. Framed (desktop mockup): the full
-         simulated status bar shows. See css/device.css. -->
-    <header class="statusbar">
-      <span class="statusbar__time" id="clock">9:41</span>
-      <!-- Live Activity: iOS Dynamic Island / Android Live Update status chip. One element,
-           skinned per data-os. Tracks the broad story path. -->
-      <button class="liveact" id="liveact" type="button" aria-live="polite" aria-label="ask gianfranco, live">
-        <span class="liveact__shape" aria-hidden="true">
-          <span class="liveact__bg"></span>
-        </span>
-        <span class="liveact__content">
-          <span class="liveact__lead" aria-hidden="true">
-            <span class="liveact__dot dot dot--live"></span>
-            <svg class="liveact__ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 4v5h5"/></svg>
-          </span>
-          <span class="liveact__text">
-            <span class="liveact__title" id="liveactTitle">ask gianfranco</span>
-            <span class="liveact__sub" id="liveactSub" hidden></span>
-          </span>
-          <span class="liveact__trail" id="liveactTrail" hidden>
-            <svg class="liveact__ring" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-              <circle class="liveact__ringtrack" cx="12" cy="12" r="9" fill="none" stroke-width="3"/>
-              <circle class="liveact__ringfill" cx="12" cy="12" r="9" fill="none" stroke-width="3" stroke-linecap="round" pathLength="100"/>
-            </svg>
-            <span class="liveact__bar" aria-hidden="true"><span class="liveact__barfill"></span></span>
-          </span>
-        </span>
-        <span class="liveact__expand" id="liveactExpand" hidden></span>
-      </button>
-      <span class="statusbar__sys" aria-hidden="true">
-        <!-- iOS: signal bars, three-arc wifi, horizontal battery pill -->
-        <span class="sys sys--ios">
-          <svg class="sysg" viewBox="0 0 18 12" width="17" height="11"><rect x="0" y="7.5" width="3" height="4.5" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
-          <svg class="sysg" viewBox="0 0 16 12" width="16" height="11"><path d="M8 2.6c2.1 0 4.1.82 5.6 2.3l1.45-1.47A10 10 0 0 0 8 .6 10 10 0 0 0 .95 3.43L2.4 4.9A7.9 7.9 0 0 1 8 2.6z"/><path d="M8 6.3c1.1 0 2.16.44 2.94 1.22l1.45-1.46A6 6 0 0 0 8 4.3a6 6 0 0 0-4.39 1.76l1.45 1.46A4.15 4.15 0 0 1 8 6.3z"/><circle cx="8" cy="9.9" r="1.5"/></svg>
-          <svg class="sysg sysg--batt" viewBox="0 0 27 13" width="25" height="12"><rect x="0.6" y="0.6" width="22" height="11.8" rx="3.2" fill="none" stroke="currentColor" stroke-width="1"/><rect x="2.2" y="2.2" width="16" height="8.6" rx="1.6"/><path d="M24.6 4.2a2.1 2.1 0 0 1 0 4.6z"/></svg>
-        </span>
-        <!-- Android: triangle wifi + signal, battery %, upright battery -->
-        <span class="sys sys--android">
-          <svg class="sysg" viewBox="0 0 20 16" width="14" height="11"><path d="M10 15.4 19.4 4A12.6 12.6 0 0 0 10 .7 12.6 12.6 0 0 0 .6 4L10 15.4z"/></svg>
-          <svg class="sysg" viewBox="0 0 18 16" width="13" height="11"><path d="M2 14h14V2z"/></svg>
-          <span class="sys-pct">84%</span>
-          <svg class="sysg sysg--abatt" viewBox="0 0 14 24" width="9" height="13"><path d="M5 0h4a1 1 0 0 1 1 1v1.4H4V1a1 1 0 0 1 1-1z"/><rect x="1.5" y="2.2" width="11" height="21.4" rx="2.6"/></svg>
-        </span>
+  <main class="device" id="device">
+    <!-- simulated status bar: framed (desktop) mode only. GianOS's own
+         chrome — real phones draw their own clock and battery. -->
+    <header class="statusbar" aria-hidden="true">
+      <span class="statusbar__time" data-clock>9:41</span>
+      <span class="statusbar__brand">gianos</span>
+      <span class="statusbar__sys">
+        <svg viewBox="0 0 18 12" width="16" height="11"><rect x="0" y="7.5" width="3" height="4.5" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+        <svg viewBox="0 0 27 13" width="24" height="12"><rect x="0.6" y="0.6" width="22" height="11.8" rx="3.2" fill="none" stroke="currentColor" stroke-width="1"/><rect x="2.2" y="2.2" width="16" height="8.6" rx="1.6"/><path d="M24.6 4.2a2.1 2.1 0 0 1 0 4.6z"/></svg>
       </span>
-      <div class="story-progress" aria-hidden="true"><span class="story-progress__fill" id="progressFill"></span></div>
     </header>
 
-    <!-- chat thread -->
-    <div class="thread" id="thread">
-      <!-- hero answer is injected/animated by JS; markup below is the no-JS fallback content too -->
-      <div class="msg msg--in" id="hero-answer">
-        <div class="bubble bubble--in">
-          <p class="answer-lead">
-            Hey, I'm <strong>Gian</strong>. I build mobile products and the systems around them:
-            <span class="hl">architecture</span>, <span class="hl">tradeoffs</span>, tooling, and team decisions.
-          </p>
-          <p>
-            I am based in <span class="hl">Aveiro</span>, usually somewhere between native mobile,
-            and a conversation about why a tradeoff is worth it. I am also studying economics,
-            because incentives explain a suspicious amount of engineering.
-          </p>
-          <p class="hook-tail">The work gets interesting when <strong>"just build it"</strong> is too small.</p>
-        </div>
-        <div class="msg__meta"><span>answer</span><span class="sep">·</span><span>short version</span><span class="sep">·</span><span>Aveiro, PT</span></div>
-      </div>
+    <!-- wallpaper: two layers, parallaxed by js/lock.js -->
+    <div class="wall" aria-hidden="true"><span class="wall__a"></span><span class="wall__b"></span></div>
 
-      <!-- knowledge panel card -->
-      <section class="msg msg--in" id="facts" aria-label="Quick facts">
-        <div class="bubble bubble--in bubble--panel">
-          <div class="profile">
-            <span class="profile__ava">
-              <span class="profile__avaframe">
-                <img src="assets/gianfranco.jpg" alt="Gianfranco Gasbarri, smiling in sunglasses and a white shirt" width="800" height="800" loading="lazy" />
-              </span>
-              <span class="dot dot--live" aria-hidden="true"></span>
-            </span>
-            <div class="profile__id">
-              <p class="profile__name">Gianfranco Gasbarri</p>
-              <p class="profile__role">Mobile systems · Aveiro, PT</p>
-              <a class="profile__link" href="https://www.linkedin.com/in/ggasbarri/" target="_blank" rel="noopener">
-                <svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45zM22.22 0H1.77C.79 0 0 .77 0 1.73v20.54C0 23.22.79 24 1.77 24h20.45c.98 0 1.78-.78 1.78-1.73V1.73C24 .77 23.2 0 22.22 0z"/></svg>
-                View on LinkedIn
-              </a>
-            </div>
-          </div>
-          <div class="glance">
-            <div class="badges" role="list" aria-label="Quick facts">
-              <span class="badge badge--lead" role="listitem">mobile</span>
-              <span class="badge" role="listitem">systems</span>
-              <span class="badge" role="listitem">economics, ongoing</span>
-            </div>
-            <dl class="panel">
-              <div class="panel__row"><dt>now</dt><dd><strong>OLX Motors</strong></dd></div>
-              <div class="panel__row"><dt>tools</dt><dd><strong>Claude Code</strong> · Cursor · Copilot</dd></div>
-              <div class="panel__row"><dt>based</dt><dd>Aveiro, Portugal</dd></div>
-              <div class="panel__row panel__row--bg"><dt>mobile</dt><dd>Architecture · Kotlin · Swift · KMP</dd></div>
-              <div class="panel__row"><dt>speaks</dt><dd><span class="flags">🇪🇸 🇵🇹 🇬🇧</span></dd></div>
-            </dl>
-          </div>
-        </div>
-      </section>
-    </div>
+    <!-- the screen stack; html[data-screen] picks the visible one -->
+    <section class="screen screen--lock" id="lock" aria-label="Lock screen"></section>
+    <section class="screen screen--home" id="home" aria-label="Home screen"></section>
+    <section class="screen screen--app" id="appview"></section>
 
-    <!-- composer / suggested prompts -->
-    <div class="composer" id="composer">
-      <!-- OS selector: reskins the whole device. The one piece of meta UI. -->
-      <div class="os-switch" id="osSwitch" role="group" aria-label="Operating system to simulate">
-        <span class="os-switch__thumb" aria-hidden="true"></span>
-        <button class="os-switch__btn" type="button" data-os="ios" aria-pressed="true">
-          <svg class="os-switch__glyph" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M16.37 1.43c0 1.13-.49 2.26-1.18 3.07-.74.9-1.98 1.57-2.98 1.57-.12 0-.23-.02-.3-.03-.02-.06-.04-.22-.04-.39 0-1.14.57-2.26 1.2-2.97.8-.94 2.14-1.64 3.25-1.68.03.13.05.27.05.43zM20.93 17.14c-.03.07-.46 1.58-1.52 3.12-.94 1.34-1.94 2.7-3.43 2.7-1.51 0-1.9-.87-3.63-.87-1.7 0-2.3.9-3.67.9-1.38 0-2.33-1.25-3.43-2.79C3.79 19.6 2.96 16.8 2.96 14.15c0-4.28 2.8-6.55 5.55-6.55 1.45 0 2.67.95 3.6.95.86 0 2.22-1.01 3.9-1.01.61 0 2.88.06 4.37 2.19-.12.08-2.38 1.37-2.38 4.19 0 3.26 2.85 4.41 2.95 4.45z"/></svg>
-          <span>iOS</span>
-        </button>
-        <button class="os-switch__btn" type="button" data-os="android" aria-pressed="false">
-          <svg class="os-switch__glyph" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 18c0 .55.45 1 1 1h1v3.5a1.5 1.5 0 0 0 3 0V19h2v3.5a1.5 1.5 0 0 0 3 0V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8A1.5 1.5 0 0 0 2 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 3.5 8zm17 0a1.5 1.5 0 0 0-1.5 1.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 20.5 8zm-4.97-5.84l1.3-1.3a.5.5 0 0 0-.71-.71l-1.48 1.48A6.5 6.5 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15a.5.5 0 1 0-.71.71l1.31 1.31A6.47 6.47 0 0 0 6 7h12a6.47 6.47 0 0 0-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>
-          <span>Android</span>
-        </button>
-      </div>
-      <div class="suggest" id="suggest" role="list" aria-label="Suggested questions"></div>
-      <!-- gesture nav indicator: iOS home bar / Android handle -->
-      <div class="navind" aria-hidden="true"><span></span></div>
-    </div>
+    <!-- home handle (framed only): on the app screen it goes home -->
+    <button class="navind" id="homeHandle" type="button" aria-label="Go to home screen"><span></span></button>
   </main>
 
+  <!-- no-JS fallback: the real content as plain HTML. Hidden by html.js. -->
+  <section class="fallback" aria-label="About Gianfranco Gasbarri">
+    <img src="assets/gianfranco.jpg" alt="Gianfranco Gasbarri, smiling in sunglasses and a white shirt" width="800" height="800" />
+    <h1>Gianfranco Gasbarri</h1>
+    <p>
+      Hey, I'm <strong>Gian</strong>. I build mobile products and the systems around them:
+      <span class="hl">architecture</span>, <span class="hl">tradeoffs</span>, tooling, and team decisions.
+    </p>
+    <p>
+      I am based in <span class="hl">Aveiro</span>, usually somewhere between native mobile,
+      and a conversation about why a tradeoff is worth it. I am also studying economics,
+      because incentives explain a suspicious amount of engineering.
+    </p>
+    <p>The work gets interesting when <strong>"just build it"</strong> is too small.</p>
+    <ul>
+      <li><strong>now</strong> — OLX Motors, helping several teams line up behind a Flutter direction</li>
+      <li><strong>tools</strong> — Claude Code · Cursor · Copilot</li>
+      <li><strong>mobile</strong> — Architecture · Kotlin · Swift · KMP</li>
+      <li><strong>based</strong> — Aveiro, Portugal</li>
+      <li><strong>speaks</strong> — 🇪🇸 🇵🇹 🇬🇧</li>
+    </ul>
+    <p>
+      Want to talk? <a href="mailto:hey@ggasbarri.com">hey@ggasbarri.com</a> or
+      <a href="https://www.linkedin.com/in/ggasbarri/" rel="noopener">LinkedIn</a>.
+    </p>
+  </section>
+
   <script src="data.js"></script>
-  <script src="js/glass.js"></script>
   <script src="js/util.js"></script>
-  <script src="js/os.js"></script>
-  <script src="js/live-activity.js"></script>
+  <script src="js/system.js"></script>
   <script src="js/sheet.js"></script>
-  <script src="js/features.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/dev.js"></script>
+  <script src="js/lock.js"></script>
+  <script src="js/home.js"></script>
+  <script src="js/apps.js"></script>
+  <script src="js/boot.js"></script>
 </body>
 </html>

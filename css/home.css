@@ -1,0 +1,258 @@
+/* =========================================================================
+   GianOS — lock screen + home screen
+   The wallpaper screens: kinetic display type on the lock, tactile icon
+   grid + widgets + dock on home. Light (paper) text over the clay
+   wallpaper throughout.
+   ========================================================================= */
+
+/* ------------------------------------------------------------------ lock */
+
+.screen--lock {
+  justify-content: space-between;
+  align-items: stretch;
+  padding: max(2.2rem, calc(env(safe-area-inset-top) + 1.4rem)) 1.4rem max(1.2rem, env(safe-area-inset-bottom));
+  color: var(--accent-ink);
+  cursor: default;
+  user-select: none;
+  -webkit-user-select: none;
+}
+html[data-display="framed"] .screen--lock { padding-top: 3.4rem; }
+
+.lock__top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  animation: lock-fade calc(0.9s * var(--ms)) var(--ease) both;
+}
+.lock__date {
+  font-family: var(--font-label);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+.lock__clock {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(3.6rem, 19vw, 5.2rem);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+@keyframes lock-fade {
+  from { opacity: 0; transform: translateY(-0.6rem); }
+}
+
+.lock__hero { padding: 0 0.1rem; }
+.lock__name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  /* exaggerated hierarchy: display scale, tight leading, may kiss the edges */
+  font-size: clamp(2.7rem, 14.5vw, 4.1rem);
+  line-height: 0.92;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  margin-bottom: 0.8rem;
+}
+.lock__w { display: inline-flex; overflow: hidden; vertical-align: bottom; }
+.lock__l {
+  display: inline-block;
+  animation: lock-rise calc(0.65s * var(--ms)) var(--ease) both;
+  animation-delay: calc(var(--i) * 0.028s * var(--ms) + 0.15s * var(--ms));
+}
+@keyframes lock-rise {
+  from { transform: translateY(108%); }
+}
+.lock__line {
+  max-width: 24ch;
+  font-size: 1.02rem;
+  line-height: 1.45;
+  opacity: 0.92;
+  animation: lock-fade calc(0.8s * var(--ms)) var(--ease) both;
+  animation-delay: calc(0.55s * var(--ms));
+}
+.lock__tag {
+  margin-top: 0.5rem;
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+  animation: lock-fade calc(0.8s * var(--ms)) var(--ease) both;
+  animation-delay: calc(0.7s * var(--ms));
+}
+
+.lock__unlock {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  margin-top: 1.4rem;
+  padding: 0.6rem 1.6rem;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  animation: lock-fade calc(0.8s * var(--ms)) var(--ease) both;
+  animation-delay: calc(0.85s * var(--ms));
+}
+.lock__hint {
+  font-family: var(--font-label);
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+}
+.lock__handle {
+  width: 7.5rem;
+  height: 5px;
+  border-radius: 100px;
+  background: currentColor;
+  opacity: 0.7;
+  animation: lock-nudge calc(2.4s * var(--ms)) var(--ease) infinite;
+}
+@keyframes lock-nudge {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-0.3rem); }
+}
+.lock__unlock:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 4px; border-radius: 1rem; }
+
+/* ------------------------------------------------------------------ home */
+
+.screen--home {
+  padding: max(2rem, calc(env(safe-area-inset-top) + 1rem)) 1.15rem 0;
+  color: var(--accent-ink);
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.screen--home::-webkit-scrollbar { display: none; }
+html[data-display="framed"] .screen--home { padding-top: 3rem; }
+
+/* ------ widgets */
+
+.widgets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+  margin-bottom: 1.6rem;
+}
+.widget {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+  padding: 0.9rem 1rem;
+  border-radius: 1.4rem;
+  background: oklch(0.28 0.05 35 / 0.32);
+  -webkit-backdrop-filter: blur(10px) saturate(1.2);
+          backdrop-filter: blur(10px) saturate(1.2);
+  border: 1px solid oklch(0.98 0.01 80 / 0.14);
+}
+.widget__k {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-label);
+  font-size: 0.66rem;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+}
+.widget__k .dot--live { width: 0.42rem; height: 0.42rem; }
+.widget__v {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.18rem;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+.widget__v--flags { letter-spacing: 0.14em; font-size: 1.25rem; }
+.widget__s { font-size: 0.74rem; opacity: 0.8; line-height: 1.3; }
+
+/* ------ icon grid */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.1rem 0.4rem;
+  margin-bottom: 1.6rem;
+}
+.grid__item { display: flex; justify-content: center; }
+
+.icon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.42rem;
+  width: 4.6rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.icon__tile {
+  width: 3.7rem;
+  height: 3.7rem;
+  border-radius: 1.25rem; /* GianOS squircle */
+  display: grid;
+  place-items: center;
+  color: var(--accent-ink);
+  box-shadow:
+    inset 0 1px 0 oklch(0.99 0.01 80 / 0.25),
+    0 0.5rem 1.1rem -0.55rem oklch(0.2 0.05 35 / 0.55);
+  /* tactile press: squish down fast, spring back */
+  transition:
+    transform calc(0.35s * var(--ms)) var(--spring),
+    border-radius calc(0.35s * var(--ms)) var(--spring);
+}
+.icon__tile svg { width: 1.7rem; height: 1.7rem; }
+.icon:active .icon__tile { transform: scale(0.86); border-radius: 1.6rem; transition-duration: calc(0.12s * var(--ms)); }
+.icon:focus-visible { outline: none; }
+.icon:focus-visible .icon__tile { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+.icon__label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-shadow: 0 1px 6px oklch(0.2 0.05 35 / 0.4);
+  white-space: nowrap;
+}
+
+/* icon tints: harmonized, tiles only */
+.tint-clay    { background: linear-gradient(155deg, oklch(0.54 0.15 36), var(--tint-clay)); }
+.tint-apricot { background: linear-gradient(155deg, oklch(0.72 0.115 58), var(--tint-apricot)); }
+.tint-moss    { background: linear-gradient(155deg, oklch(0.58 0.095 138), var(--tint-moss)); }
+.tint-blue    { background: linear-gradient(155deg, oklch(0.58 0.07 248), var(--tint-blue)); }
+.tint-magenta { background: linear-gradient(155deg, oklch(0.61 0.16 348), var(--tint-magenta)); }
+.tint-neutral { background: linear-gradient(155deg, oklch(0.51 0.02 60), var(--tint-neutral)); }
+.tint-ink     { background: linear-gradient(155deg, oklch(0.36 0.018 52), var(--tint-ink)); }
+
+/* the Terminal icon springing onto the grid when developer mode unlocks */
+.grid__item--new { animation: icon-pop calc(0.55s * var(--ms)) var(--spring) both; }
+@keyframes icon-pop {
+  from { transform: scale(0.3); opacity: 0; }
+}
+
+/* ------ dock */
+
+.dock {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 0.3rem;
+  margin: auto -0.35rem 0;
+  padding: 0.7rem 0.6rem;
+  border-radius: 1.9rem 1.9rem 0 0;
+  background: oklch(0.28 0.05 35 / 0.38);
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+          backdrop-filter: blur(14px) saturate(1.25);
+  border: 1px solid oklch(0.98 0.01 80 / 0.12);
+  border-bottom: none;
+}
+html[data-display="framed"] .dock { padding-bottom: 1.4rem; } /* clears the handle */
+html[data-display="fullbleed"] .dock { padding-bottom: max(0.7rem, env(safe-area-inset-bottom)); }
+.dock .icon { width: auto; }
+.dock .icon__label { display: none; } /* dock icons are label-free, like the real thing */
+.dock .icon__tile { width: 3.5rem; height: 3.5rem; }

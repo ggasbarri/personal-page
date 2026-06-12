@@ -1,0 +1,151 @@
+/* =========================================================================
+   GianOS — Settings + developer mode
+   Grouped settings rows, the developer-options toggles, the layout-bounds
+   overlay, the FPS meter, and the Terminal app. Geist Mono appears only in
+   the terminal, where it is literally true.
+   ========================================================================= */
+
+/* ------------------------------------------------------------- settings */
+
+.set__group { margin-top: 1.2rem; max-width: 56ch; }
+.set__group:first-child { margin-top: 0.2rem; }
+.set__label {
+  display: block;
+  font-family: var(--font-label);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  margin: 0 0.2rem 0.45rem;
+}
+.set__rows {
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 1.1rem;
+  overflow: hidden;
+}
+.set__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  width: 100%;
+  padding: 0.82rem 1rem;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: var(--text);
+}
+.set__row + .set__row { border-top: 1px solid var(--line-soft); }
+.set__row--btn { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.set__row--btn:active { background: var(--surface-3); }
+.set__row--btn:focus-visible { outline: 2px solid var(--accent-line); outline-offset: -2px; }
+.set__k { font-weight: 500; }
+.set__v { color: var(--text-muted); font-size: 0.88rem; white-space: nowrap; }
+.set__hint {
+  margin: 0.5rem 0.2rem 0;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+}
+
+/* the toggle pill */
+.set__toggle {
+  position: relative;
+  flex: 0 0 auto;
+  width: 2.6rem;
+  height: 1.5rem;
+  border-radius: 1rem;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  transition: background calc(0.25s * var(--ms)) var(--ease), border-color calc(0.25s * var(--ms)) var(--ease);
+}
+.set__toggle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0.16rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  transform: translateY(-50%);
+  transition: transform calc(0.3s * var(--ms)) var(--spring);
+}
+.set__row.is-on .set__toggle { background: var(--accent); border-color: var(--accent-strong); }
+.set__row.is-on .set__toggle::after { transform: translate(1.05rem, -50%); }
+
+/* the developer group landing after the 7th tap */
+#devGroup:not([hidden]) { animation: devgroup-in calc(0.5s * var(--ms)) var(--ease) both; }
+@keyframes devgroup-in {
+  from { opacity: 0; transform: translateY(0.8rem); }
+}
+
+/* --------------------------------------------------------- layout bounds */
+/* The classic Android gag: outline every box. Scoped inside the device so
+   the page chrome stays sane. */
+
+html.dev-bounds #device * { outline: 1px solid oklch(0.55 0.18 195 / 0.55); }
+html.dev-bounds #device .icon__tile,
+html.dev-bounds #device .app__glyph { outline: 1px solid oklch(0.62 0.21 350 / 0.8); }
+
+/* -------------------------------------------------------------- fps meter */
+
+.fpsmeter {
+  position: absolute;
+  top: max(0.5rem, env(safe-area-inset-top));
+  right: 0.6rem;
+  z-index: 70;
+  padding: 0.18rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: oklch(0.85 0.16 150);
+  background: oklch(0.22 0.02 52 / 0.85);
+  border-radius: 0.45rem;
+  pointer-events: none;
+}
+html[data-display="framed"] .fpsmeter { top: 2.4rem; }
+.fpsmeter.is-low { color: oklch(0.78 0.16 65); }
+
+/* --------------------------------------------------------------- terminal */
+
+.app--terminal .app__scroll { display: flex; flex-direction: column; }
+.app--terminal .app__hero { padding-bottom: 0.5rem; }
+
+.term {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-top: 0.4rem;
+  padding: 0.9rem;
+  border-radius: 1rem;
+  background: oklch(0.24 0.015 52);
+  color: oklch(0.92 0.01 80);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  min-height: 16rem;
+  cursor: text;
+}
+.term__out { flex: 0 1 auto; }
+.term__txt {
+  font: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0 0 0.35rem;
+}
+.term__txt--echo { color: oklch(0.72 0.012 80); }
+.term__line { display: flex; align-items: baseline; gap: 0.45rem; }
+.term__ps1 { color: oklch(0.78 0.12 60); white-space: nowrap; }
+.term__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  caret-color: oklch(0.78 0.12 60);
+}
+.term__input:focus { outline: none; }
+.term__input:focus-visible { outline: none; }

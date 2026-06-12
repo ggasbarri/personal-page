@@ -1,34 +1,26 @@
 /* =========================================================================
-   Ask Gianfranco — share sheet (contact beat)
-   A real bottom sheet: slides up over the phone, drag-to-dismiss, and the
+   GianOS — share sheet (Contact app)
+   A real bottom sheet: slides up over the device, drag-to-dismiss, and the
    primary target calls the Web Share API (navigator.share) when available.
-
-   Layout follows the REAL platform sheets (CSS picks per body[data-os]):
-     iOS    — grabber, header row (avatar + name + circled ✕), one native
-              Share… circle, then a grouped inset list of action rows
-              (label left, icon right). No Cancel button — iOS dropped it
-              from share sheets in iOS 13.
-     Android— drag handle, "Share" title, a row of tonal circular targets,
-              28dp top corners.
-   Both platforms get every action; each skin hides the other's affordance
-   (iOS hides the copy/mail/linkedin circles, Android hides ✕ + the list).
+   One GianOS skin: grabber, identity header with a circled ✕, and a row of
+   tonal circular targets (Share… / Copy link / Email / LinkedIn).
    ========================================================================= */
-window.AskShareSheet = (function () {
+window.OSShareSheet = (function () {
   "use strict";
 
-  var U = window.AskUtil;
+  var U = window.OSUtil;
   var REDUCED = U.REDUCED;
   var el = U.el;
   var svg = U.svg;
   var escapeHtml = U.escapeHtml;
-  var haptic = window.AskOS.haptic;
+  var haptic = window.OSSystem.haptic;
 
   var scrim, sheet, built = false, lastTrigger = null;
   var dragging = false, startY = 0, dragY = 0, sheetH = 0, isDesk = false;
   var SHARE = {
-    title: "Ask Gianfranco",
+    title: "GianOS — Gianfranco Gasbarri",
     text: "Gianfranco Gasbarri, mobile systems, Aveiro.",
-    url: location.href
+    url: location.origin + location.pathname
   };
 
   function tIcon(name) {
@@ -44,8 +36,6 @@ window.AskShareSheet = (function () {
     return "<svg viewBox='0 0 24 24' width='16' height='16' aria-hidden='true' fill='currentColor'><path d='M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.6 0 4.27 2.37 4.27 5.46v6.28zM5.34 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13zM7.12 20.45H3.56V9h3.56v11.45z'/></svg>";
   }
 
-  /* shared action handlers: the circles (Android) and the grouped rows (iOS)
-     do exactly the same things */
   function doCopy(btn) {
     haptic("select");
     copyLink(SHARE.url, btn);
@@ -67,13 +57,6 @@ window.AskShareSheet = (function () {
     b.addEventListener("click", handler);
     return b;
   }
-  function actionRow(cls, label, inner, handler) {
-    var b = el("button", "sheet__action " + cls,
-      "<span class='sheet__alabel'>" + escapeHtml(label) + "</span>" + inner);
-    b.type = "button";
-    b.addEventListener("click", handler);
-    return b;
-  }
 
   function build() {
     scrim = el("div", "sheet-scrim"); scrim.hidden = true;
@@ -83,7 +66,6 @@ window.AskShareSheet = (function () {
     sheet.setAttribute("aria-label", "Share Gianfranco's page");
 
     var grip = el("button", "sheet__grip"); grip.type = "button"; grip.setAttribute("aria-label", "Close share sheet");
-    var title = el("span", "sheet__title", "Share"); // shown on Android only
 
     var head = el("div", "sheet__head",
       "<span class='sheet__avatar'><img src='assets/gianfranco.jpg' alt='' width='800' height='800'></span>" +
@@ -102,27 +84,16 @@ window.AskShareSheet = (function () {
         haptic("select");
         navigator.share(SHARE).then(function () { close(); }).catch(function () {});
       }));
-    } else {
-      // iOS skin shows only the native circle; without it the row collapses
-      targets.classList.add("sheet__targets--noshare");
     }
     targets.appendChild(target("sheet__target--copy", "Copy link", tIcon("copy"), function () { doCopy(this); }));
     targets.appendChild(target("sheet__target--mail", "Email", tIcon("mail"), doMail));
     targets.appendChild(target("sheet__target--li", "LinkedIn", liLogo(), doLinkedIn));
 
-    // grouped inset list (iOS layout; Android hides it)
-    var actions = el("div", "sheet__actions");
-    actions.appendChild(actionRow("sheet__action--copy", "Copy link", tIcon("copy"), function () { doCopy(this); }));
-    actions.appendChild(actionRow("sheet__action--mail", "Email", tIcon("mail"), doMail));
-    actions.appendChild(actionRow("sheet__action--li", "LinkedIn", liLogo(), doLinkedIn));
-
     sheet.appendChild(grip);
-    sheet.appendChild(title);
     sheet.appendChild(head);
     sheet.appendChild(targets);
-    sheet.appendChild(actions);
 
-    var device = document.getElementById("app");
+    var device = document.getElementById("device");
     device.appendChild(scrim);
     device.appendChild(sheet);
 
@@ -136,7 +107,7 @@ window.AskShareSheet = (function () {
   function copyLink(url, btn) {
     function done() {
       btn.classList.add("is-done");
-      var lbl = btn.querySelector(".sheet__tlabel, .sheet__alabel");
+      var lbl = btn.querySelector(".sheet__tlabel");
       if (lbl) { lbl.textContent = "Copied"; setTimeout(function () { lbl.textContent = "Copy link"; btn.classList.remove("is-done"); }, 1600); }
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -160,7 +131,7 @@ window.AskShareSheet = (function () {
       if (e.button != null && e.button !== 0) return;
       if (e.target.closest && e.target.closest(".sheet__close")) return; // ✕ taps never start a drag
       dragging = true; startY = e.clientY; dragY = 0;
-      isDesk = window.AskOS.isFramed();
+      isDesk = window.OSSystem.isFramed();
       sheetH = sheet.offsetHeight || 1;
       sheet.classList.add("is-dragging");
       sheet.classList.remove("is-animating");
@@ -192,7 +163,7 @@ window.AskShareSheet = (function () {
   function open(trigger) {
     if (!built) build();
     lastTrigger = trigger || null;
-    isDesk = window.AskOS.isFramed();
+    isDesk = window.OSSystem.isFramed();
     sheet.hidden = false; scrim.hidden = false;
     sheet.style.transform = "";
     haptic("open");
@@ -203,7 +174,7 @@ window.AskShareSheet = (function () {
     });
     document.addEventListener("keydown", onKey);
     setTimeout(function () {
-      var cands = sheet.querySelectorAll(".sheet__target, .sheet__action, .sheet__close, .sheet__grip");
+      var cands = sheet.querySelectorAll(".sheet__target, .sheet__close, .sheet__grip");
       for (var i = 0; i < cands.length; i++) {
         if (visible(cands[i])) { cands[i].focus(); break; }
       }
