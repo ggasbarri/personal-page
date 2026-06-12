@@ -23,8 +23,6 @@
   <link rel="stylesheet" href="css/home.css" />
   <link rel="stylesheet" href="css/apps.css" />
   <link rel="stylesheet" href="css/dev.css" />
-  <!-- html.js gates the OS vs the no-JS fallback before first paint -->
-  <script>document.documentElement.classList.add("js");</script>
 </head>
 <body>
   <!-- ambient stage decoration (desktop) -->
@@ -57,9 +55,12 @@
     <button class="navind" id="homeHandle" type="button" aria-label="Go to home screen"><span></span></button>
   </main>
 
-  <!-- no-JS fallback: the real content as plain HTML. Hidden by html.js. -->
+  <!-- fallback: the real content as plain HTML, shown whenever the OS does
+       not boot (no JS, or a script failed to load). Hidden the moment boot
+       sets html[data-screen]. The small width/height attributes keep the
+       photo sane even if the CSS never arrives. -->
   <section class="fallback" aria-label="About Gianfranco Gasbarri">
-    <img src="assets/gianfranco.jpg" alt="Gianfranco Gasbarri, smiling in sunglasses and a white shirt" width="800" height="800" />
+    <img src="assets/gianfranco.jpg" alt="Gianfranco Gasbarri, smiling in sunglasses and a white shirt" width="96" height="96" />
     <h1>Gianfranco Gasbarri</h1>
     <p>
       Hey, I'm <strong>Gian</strong>. I build mobile products and the systems around them:

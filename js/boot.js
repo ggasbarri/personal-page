@@ -3,8 +3,9 @@
    Orchestrates startup: system init, developer-mode restore, home render,
    app router, then the entry decision — a #appid deep link opens straight
    into that app, a returning visitor (sessionStorage) lands on home, and a
-   first visit gets the lock screen. The no-JS fallback content in
-   index.html is hidden by the html.js class set inline in <head>.
+   first visit gets the lock screen. Every path sets html[data-screen],
+   which is what hides the fallback content in index.html — so the fallback
+   shows whenever the OS fails to boot, not only when JS is off.
    ========================================================================= */
 (function () {
   "use strict";

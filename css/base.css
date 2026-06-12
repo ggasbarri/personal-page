@@ -191,11 +191,12 @@ strong { font-weight: 600; color: var(--text); }
 }
 .toast.is-on { opacity: 1; transform: translate(-50%, 0) scale(1); }
 
-/* --------------------------------------------------------- no-JS fallback */
-/* Real semantic content in index.html; html.js (set inline in <head>)
-   hides it once the OS boots. */
+/* --------------------------------------------------------- fallback content */
+/* Real semantic content in index.html. html[data-screen] is set by js/boot.js
+   the moment the OS actually boots — so the fallback shows not just without
+   JS, but also if any script fails to load. Fail-safe in every combination. */
 
-html.js .fallback { display: none; }
+html[data-screen] .fallback { display: none; }
 .fallback {
   position: relative;
   z-index: 2;
