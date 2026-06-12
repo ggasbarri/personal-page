@@ -31,7 +31,7 @@
     0 0 0 1px var(--line),
     0 2rem 4.5rem -2rem oklch(0.4 0.03 50 / 0.28);
 }
-html:not(.js) .device { display: none; } /* no JS: only the fallback renders */
+html:not([data-screen]) .device { display: none; } /* OS not booted: only the fallback renders */
 
 /* ------------------------------------------------------------- wallpaper */
 /* Two layers parallax at different rates (js/lock.js). Deep clay into
