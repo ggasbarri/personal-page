@@ -1,0 +1,304 @@
+/* =========================================================================
+   GianOS — Mail app styles
+   Committed light-blue palette (this app only). Neutral paper surface with
+   a sky-blue accent for the To-pill and Send button. Composed email format
+   with header fields as display-only rows, a pre-drafted body with a soft
+   underline accent, and two CTAs (Send filled, LinkedIn text link).
+
+   Scoped under .app-screen[data-app=mail] and body[data-app=mail] for the
+   statusbar override + app-head per-OS skin.
+
+   These tokens are fixed — they do not follow --seed (Mail's art direction
+   is deliberately immune to the theme toy, per plan).
+
+   Contrast: --mail-ink on --mail-surface ≥ 4.5:1. --mail-accent on
+   --mail-surface: AA for large text (button, pill). All OKLCH, no hex.
+
+   ARIA: the header fields (To, From, Subject) are display-only divs with
+   semantic labels and values. The body is a paragraph. Send is a <button>.
+   LinkedIn is an <a> with target="_blank" rel="noopener".
+   ========================================================================= */
+
+/* ---- sky-blue statusbar override when Mail is active --------------------- */
+body[data-app="mail"] {
+  --statusbar-ink: oklch(0.32 0.06 235);
+  --statusbar-bg:  oklch(0.96 0.012 240 / 0.88);
+}
+
+/* ---- scoped palette ----------------------------------------------------- */
+.app-screen[data-app="mail"] {
+  --mail-surface:      oklch(0.96 0.012 240);   /* paper-white, blue tint */
+  --mail-surface-card: oklch(0.985 0.008 238);  /* card lift: slightly brighter */
+  --mail-accent:       oklch(0.52 0.10 235);    /* sky blue — pill, button, blank underline */
+  --mail-accent-soft:  oklch(0.52 0.10 235 / 0.12); /* soft hover/focus tint */
+  --mail-ink:          oklch(0.22 0.03 240);    /* primary text */
+  --mail-muted:        oklch(0.44 0.04 238);    /* secondary / labels */
+  --mail-line:         oklch(0.88 0.014 238);   /* hairline separators */
+}
+
+/* ---- app body: the blue-tinted paper surface ------------------------------- */
+.app-screen[data-app="mail"] .app-body {
+  background: var(--mail-surface);
+  padding: 0;
+  gap: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---- app-head: keep light, blue-glass -------------------------------------- */
+.app-screen[data-app="mail"] .app-head {
+  background: color-mix(in oklch, var(--mail-surface) 88%, transparent);
+  border-bottom-color: oklch(0.84 0.02 238 / 0.55);
+}
+.app-screen[data-app="mail"] .app-head__title {
+  color: var(--mail-ink);
+}
+.app-screen[data-app="mail"] .app-head__back {
+  color: var(--mail-accent);
+}
+.app-screen[data-app="mail"] .app-head__back:hover {
+  background: var(--mail-accent-soft);
+}
+
+/* Android tonal head variant */
+body[data-os="android"] .app-screen[data-app="mail"] .app-head {
+  background: oklch(0.94 0.016 238);
+  backdrop-filter: none;
+}
+
+/* =========================================================================
+   COMPOSE CARD
+   A vertical stack: header fields, divider, body, CTAs, footer.
+   Centered in the screen with gentle shadow and rounded corners.
+   ========================================================================= */
+.mail-card {
+  width: 100%;
+  max-width: 22rem;
+  margin: 0 auto;
+  padding: 1.2rem;
+  background: var(--mail-surface-card);
+  border-radius: 1.2rem;
+  box-shadow:
+    0 0.1rem 0.3rem oklch(0.52 0.10 235 / 0.08),
+    0 0.4rem 1rem -0.3rem oklch(0.42 0.08 235 / 0.16);
+}
+
+/* iOS inset grouped card variant */
+body[data-os="ios"] .app-screen[data-app="mail"] .mail-card {
+  border-radius: 1.3rem;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.55),
+    0 0.4rem 1.2rem -0.3rem oklch(0.42 0.08 235 / 0.2);
+}
+
+/* Android M3 tonal card variant */
+body[data-os="android"] .app-screen[data-app="mail"] .mail-card {
+  border-radius: 1rem;
+  background: oklch(0.94 0.016 238);
+  box-shadow: none;
+}
+
+/* =========================================================================
+   HEADER FIELDS (To, From, Subject)
+   Display-only rows showing the compose envelope. To value is a pill.
+   ========================================================================= */
+.mail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--mail-line);
+}
+.mail-row:last-of-type:not(.mail-body) { border-bottom: none; }
+
+.mail-row__label {
+  flex-shrink: 0;
+  font-family: var(--font-label);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--mail-muted);
+  width: 3.2rem;
+}
+
+.mail-row__value {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--mail-ink);
+}
+
+/* To-field pill: sky-blue background, contrasting ink */
+.mail-row--to .mail-row__pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  background: var(--mail-accent);
+  border-radius: 999px;
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: oklch(0.96 0.012 240);  /* light ink on blue bg */
+}
+
+/* =========================================================================
+   DIVIDER
+   Subtle separator between header and body.
+   ========================================================================= */
+.mail-divider {
+  height: 1px;
+  background: var(--mail-line);
+  margin: 0.6rem 0;
+}
+
+/* =========================================================================
+   BODY / DRAFT TEXT
+   The pre-drafted message with a soft-underlined blank span.
+   ========================================================================= */
+.mail-body {
+  padding: 0.9rem 0 0;
+}
+
+.mail-body__text {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--mail-ink);
+}
+
+/* Soft underline on the blank span — subtle sky-blue underline */
+.mail-blank {
+  text-decoration: underline;
+  text-decoration-color: var(--mail-accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  opacity: 0.8;
+}
+
+/* =========================================================================
+   CTA SECTION
+   Primary button (Send) and secondary text link (LinkedIn).
+   ========================================================================= */
+.mail-cta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  padding-top: 1rem;
+  margin-top: 0.8rem;
+  border-top: 1px solid var(--mail-line);
+}
+
+/* Primary CTA: Send button — filled sky-blue, contrasting ink */
+.mail-btn {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  border: none;
+  border-radius: 0.65rem;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), transform 0.15s var(--ease);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mail-btn--primary {
+  padding: 0.5rem 1.2rem;
+  background: var(--mail-accent);
+  color: oklch(0.96 0.012 240);
+}
+.mail-btn--primary:hover {
+  background: oklch(0.48 0.095 235);
+}
+.mail-btn--primary:active {
+  transform: scale(0.96);
+}
+.mail-btn--primary:focus-visible {
+  outline: 2px solid var(--mail-accent);
+  outline-offset: 3px;
+}
+
+/* Secondary CTA: LinkedIn link (quiet text) */
+.mail-cta__or {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  color: var(--mail-muted);
+}
+
+.mail-link {
+  font-family: var(--font-ui);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--mail-accent);
+  text-decoration: none;
+  cursor: pointer;
+  border-radius: 0.35rem;
+  padding: 0.2rem 0.3rem;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.mail-link:hover {
+  background: var(--mail-accent-soft);
+  color: oklch(0.48 0.095 235);
+}
+.mail-link:focus-visible {
+  outline: 2px solid var(--mail-accent);
+  outline-offset: 2px;
+}
+
+.mail-cta__arrow {
+  font-size: 0.85rem;
+  color: var(--mail-muted);
+}
+
+/* =========================================================================
+   FOOTER TEXT
+   Small muted hint below the CTAs.
+   ========================================================================= */
+.mail-footer {
+  margin: 0.8rem 0 0;
+  padding-top: 0.8rem;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--mail-muted);
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* =========================================================================
+   POP ANIMATION
+   Reuses the global .pop / .in pattern from base.css (opacity + translateY).
+   Header fields, body, CTAs, and footer all stagger in on first open.
+   ========================================================================= */
+.mail-row.pop,
+.mail-body.pop,
+.mail-cta.pop,
+.mail-footer.pop {
+  opacity: 0;
+  transform: translateY(0.6rem);
+}
+.mail-row.pop.in,
+.mail-body.pop.in,
+.mail-cta.pop.in,
+.mail-footer.pop.in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mail-row.pop,
+  .mail-row.pop.in,
+  .mail-body.pop,
+  .mail-body.pop.in,
+  .mail-cta.pop,
+  .mail-cta.pop.in,
+  .mail-footer.pop,
+  .mail-footer.pop.in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

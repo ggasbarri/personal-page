@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="styles/apps/terminal.css" />
   <link rel="stylesheet" href="styles/apps/maps.css" />
   <link rel="stylesheet" href="styles/apps/ledger.css" />
+  <link rel="stylesheet" href="styles/apps/mail.css" />
   <!-- no-JS fallback strategy: this inline script flips <html> to .js immediately
        (before paint, no flash). Default CSS shows the Messages app content and
        hides the homescreen; .js CSS shows the homescreen and lets the Shell drive
@@ -381,6 +382,23 @@
       </button>
     </div>
 
+    <!-- ===================================================================
+         MAIL app — pre-drafted email composer to hey@ggasbarri.com + LinkedIn CTA.
+         One screen with header fields (To, From, Subject), pre-drafted body,
+         and two CTAs (Send mailto:, LinkedIn link). Built and mounted by mail.js
+         on first open.
+         =================================================================== -->
+    <section class="app-screen" data-app="mail" id="app-mail" aria-label="Mail">
+      <header class="app-head">
+        <button class="app-head__back" type="button" aria-label="Back to home">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <span class="app-head__title">Mail</span>
+      </header>
+      <!-- .app-body content is fully built by mail.js mount() -->
+      <div class="app-body"></div>
+    </section><!-- /.app-screen[mail] -->
+
     <!-- gesture nav indicator, promoted to a working Home control. iOS home bar /
          Android handle. Click / Escape / swipe-up returns to the home grid. -->
     <button class="navind" type="button" aria-label="Home"><span></span></button>
@@ -393,6 +411,7 @@
   <script src="js/apps/terminal.js"></script>
   <script src="js/apps/maps.js"></script>
   <script src="js/apps/ledger.js"></script>
+  <script src="js/apps/mail.js"></script>
   <script>GG.Shell.boot();</script>
 </body>
 </html>
