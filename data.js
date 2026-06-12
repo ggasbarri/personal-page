@@ -14,6 +14,109 @@
    job titles. Let scope imply level. Keep prose short; bold only the words
    that matter. Authored, trusted HTML only (see security note in main.js). */
 
+/* =========================================================================
+   APP_DATA — per-app content. Structured so each app is a sibling key.
+   Terminal owns the stack deep-dive; Maps will own path; Ledger owns econ.
+   All content follows the same voice rules as ASK_DATA (see header above):
+   accurate and understated, no titles, let scope imply level.
+   ========================================================================= */
+window.APP_DATA = {
+  terminal: {
+    user: "gian",
+    host: "aveiro",
+
+    suggested: [
+      "gian --stack",
+      "ls work/",
+      "cat now.txt",
+      "whoami",
+      "open mail",
+      "help"
+    ],
+
+    commands: {
+
+      "gian --stack": [
+        { text: "────────────────────────────────────────", cls: "dim" },
+        { text: "  gian  ·  stack snapshot", cls: "dim" },
+        { text: "────────────────────────────────────────", cls: "dim" },
+        "",
+        { text: "tools", cls: "amber" },
+        "  Claude Code   daily driver, agentic tasks",
+        "  Cursor        paired editing, refactors",
+        "  Copilot       inline completions",
+        "  Agents.md     context map, not guesswork",
+        "",
+        { text: "mobile", cls: "amber" },
+        "  Flutter       primary at OLX Motors",
+        "  Kotlin        Android native, Compose UI",
+        "  Swift         iOS native",
+        "  KMP           shared business logic layer",
+        "",
+        { text: "how I work", cls: "amber" },
+        "  RFCs & ADRs   decisions that stay decided",
+        "  DDD           define boundaries first",
+        "  team align    context before consensus",
+        "  A/B & rollouts gradual exposure, measured",
+        "  monitoring    observable by default",
+        "",
+        { text: "languages", cls: "amber" },
+        "  ES  Spanish   native",
+        "  PT  Portuguese fluent  ·  Aveiro",
+        "  EN  English   professional",
+        "",
+        { text: "────────────────────────────────────────", cls: "dim" }
+      ],
+
+      "ls work/": [
+        { text: "olx-motors/        gfi-altice/        nemobile/", cls: "amber" },
+        { text: "nepuntobiz/        freelance-android/", cls: "amber" }
+      ],
+
+      "cat now.txt": [
+        "helping teams line up behind a Flutter direction at OLX Motors.",
+        "3M+ daily app launches sit behind that work — context before decisions",
+        "get expensive. also: economics degree, evenings."
+      ],
+
+      "whoami": [
+        "gian — mobile systems, Aveiro.  exit code 0."
+      ],
+
+      "help": [
+        "available commands:",
+        "",
+        "  gian --stack     stack snapshot: tools, mobile, process, languages",
+        "  ls work/         career directories",
+        "  cat now.txt      current focus",
+        "  whoami           one line",
+        "  open mail        open Mail app",
+        "  help             this list",
+        "",
+        { text: "  sudo make me-a-coffee    (try it)", cls: "dim" }
+      ],
+
+      "sudo make me-a-coffee": [
+        "Permission granted. Brewing…",
+        "",
+        "       ( (",
+        "        ) )",
+        "     ........",
+        "     |      |]",
+        "     \\      /",
+        "      `----'",
+        "",
+        { text: "  ☕  done. no sudo required next time.", cls: "dim" }
+      ],
+
+      "__unknown__": [
+        { text: "zsh: command not found: {{cmd}}", cls: "err" },
+        { text: "  hint: try `help` for available commands", cls: "dim" }
+      ]
+    }
+  }
+};
+
 window.ASK_DATA = {
   hero: "who are you?",
 
@@ -191,31 +294,6 @@ window.ASK_DATA = {
             <span class="cta__body"><span class="cta__k">linkedin</span><span class="cta__v">in/ggasbarri</span></span>
             <span class="cta__go" aria-hidden="true">→</span>
           </a>
-        </div>`
-    },
-    {
-      id: "stack",
-      chip: "Your toolkit",
-      question: "what's in your toolkit?",
-      extra: true,
-      html: `
-        <div class="kit">
-          <div class="kit__row kit__row--lead pop">
-            <span class="kit__k">tools</span>
-            <span class="chips"><span class="badge badge--lead"><span class="badge__dot"></span>Claude Code</span><span class="badge">Cursor</span><span class="badge">Copilot</span><span class="badge badge--ghost">Agents.md context</span></span>
-          </div>
-          <div class="kit__row pop">
-            <span class="kit__k">mobile</span>
-            <span class="chips"><span class="badge">Flutter</span><span class="badge">Kotlin</span><span class="badge">Compose</span><span class="badge">Swift</span><span class="badge">KMP</span></span>
-          </div>
-          <div class="kit__row pop">
-            <span class="kit__k">how I work</span>
-            <span class="chips"><span class="badge">RFCs &amp; ADRs</span><span class="badge">DDD</span><span class="badge">team alignment</span><span class="badge">A/B &amp; rollouts</span><span class="badge">monitoring</span></span>
-          </div>
-          <div class="kit__row pop">
-            <span class="kit__k">languages</span>
-            <span class="chips"><span class="badge badge--flag">🇪🇸 Spanish</span><span class="badge badge--flag">🇵🇹 Portuguese</span><span class="badge badge--flag">🇬🇧 English</span></span>
-          </div>
         </div>`
     },
     {

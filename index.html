@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="styles/shell.css" />
   <link rel="stylesheet" href="styles/apps/messages.css" />
   <link rel="stylesheet" href="styles/apps/settings.css" />
+  <link rel="stylesheet" href="styles/apps/terminal.css" />
   <!-- no-JS fallback strategy: this inline script flips <html> to .js immediately
        (before paint, no flash). Default CSS shows the Messages app content and
        hides the homescreen; .js CSS shows the homescreen and lets the Shell drive
@@ -224,6 +225,22 @@
     </section><!-- /.app-screen[messages] -->
 
     <!-- ===================================================================
+         TERMINAL app — work/stack deep-dive as a fake shell. Dark in-fiction
+         palette (scoped, not global dark mode). Scrollback + prompt + chips
+         are all built and mounted by terminal.js on first open.
+         =================================================================== -->
+    <section class="app-screen" data-app="terminal" id="app-terminal" aria-label="Terminal">
+      <header class="app-head">
+        <button class="app-head__back" type="button" aria-label="Back to home">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <span class="app-head__title">Terminal</span>
+      </header>
+      <!-- .app-body content is fully built by terminal.js mount() -->
+      <div class="app-body"></div>
+    </section><!-- /.app-screen[terminal] -->
+
+    <!-- ===================================================================
          SETTINGS app — the theme toy + platform switch + about. Neutral palette,
          consumes the global accent (a brand app like Messages). Appearance group
          (hue slider + swatches) is built by settings.js and hidden when the
@@ -338,6 +355,7 @@
   <script src="js/os.js"></script>
   <script src="js/apps/messages.js"></script>
   <script src="js/apps/settings.js"></script>
+  <script src="js/apps/terminal.js"></script>
   <script>GG.Shell.boot();</script>
 </body>
 </html>
