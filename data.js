@@ -21,6 +21,32 @@
    accurate and understated, no titles, let scope imply level.
    ========================================================================= */
 window.APP_DATA = {
+  /* Maps — the Venezuela→Portugal journey. Stops are chronological; x/y are
+     0–1 fractions over the map viewBox (0,0 top-left → 1,1 bottom-right). They
+     sit along the route arc: the first on the Venezuela landmass (bottom-left),
+     the last on Iberia (top-right) near Aveiro, the middle ones spaced over the
+     ocean — chapters of a journey, not city claims. `place` is set only where
+     geography is certain; employers with unknown locations carry org + role
+     only (honest: no invented cities). `today:true` flags the live final stop.
+     Voice: understated, lowercase-ish, accurate. */
+  maps: {
+    routeCaption: "≈7,000 km, one direction",
+    stops: [
+      { id: "carabobo", x: 0.155, y: 0.80, place: "Valencia, Venezuela",
+        org: "Universidad de Carabobo", role: "telecom engineering, where it started", years: "until 2017" },
+      { id: "freelance", x: 0.305, y: 0.665,
+        org: "freelance Android", role: "first apps shipped to the Play Store", years: "2017–18" },
+      { id: "nepuntobiz", x: 0.45, y: 0.535,
+        org: "Grupo Nepuntobiz", role: "Android consultant, B2B e-learning", years: "2018–19" },
+      { id: "nemobile", x: 0.585, y: 0.435,
+        org: "Nemobile", role: "mobile + backend at a small AI startup", years: "2019–20" },
+      { id: "gfi", x: 0.71, y: 0.345,
+        org: "GFI / Altice Labs", role: "smart Wi-Fi apps for telecoms, both native platforms", years: "2020–21" },
+      { id: "olx", x: 0.83, y: 0.245, place: "Aveiro, Portugal", today: true,
+        org: "OLX Motors", role: "mobile systems across teams — today", years: "2021–now" }
+    ]
+  },
+
   terminal: {
     user: "gian",
     host: "aveiro",
@@ -295,19 +321,6 @@ window.ASK_DATA = {
             <span class="cta__go" aria-hidden="true">→</span>
           </a>
         </div>`
-    },
-    {
-      id: "path",
-      chip: "Your path",
-      question: "what's your path so far?",
-      extra: true,
-      html: `
-        <ol class="timeline">
-          <li class="timeline__item pop"><span class="timeline__when">2021 to now</span><span class="timeline__what"><strong>OLX Group · Motors</strong>, mobile systems and cross-team architecture</span></li>
-          <li class="timeline__item pop"><span class="timeline__when">2020 to 21</span><span class="timeline__what"><strong>GFI / Altice Labs</strong>, mobile product work</span></li>
-          <li class="timeline__item pop"><span class="timeline__when">2017 to 20</span><span class="timeline__what"><strong>Nemobile / Grupo Nepuntobiz</strong>, Flutter, Node, and Android</span></li>
-          <li class="timeline__item timeline__item--edu pop"><span class="timeline__when">2018</span><span class="timeline__what">Associate Android Developer certification, <strong>Google</strong></span></li>
-        </ol>`
     }
   ]
 };

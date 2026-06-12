@@ -1,0 +1,427 @@
+/* =========================================================================
+   GianOS — Maps app styles
+   Committed COOL BLUE palette (this app only). Stays in the site's light,
+   papery world — a light blue-paper ocean, warm sand landmasses, a deep blue
+   route. NOT saturated google-maps blue. All colors OKLCH only.
+
+   Scoped under .app-screen[data-app=maps] and body[data-app=maps] for the
+   statusbar override + app-head per-OS skin.
+
+   These tokens are fixed — they do not follow --seed (Maps' art direction is
+   deliberately immune to the theme toy, per plan).
+
+   Contrast: --map-card-text on --map-card-surface ≥ 4.5:1 (warm ink on near-
+   white sheet, ~9:1). --map-route on --map-ocean reads clearly (deep blue on
+   light blue-paper). Pin cores are white with a blue ring; the today pin uses
+   --mint for its live dot.
+   ========================================================================= */
+
+/* ---- light-blue statusbar override when Maps is active ------------------ */
+/* dark ink on the light blue ocean (defaults already fine; set explicitly) */
+body[data-app="maps"] {
+  --statusbar-ink: oklch(0.30 0.03 245);
+  --statusbar-bg:  oklch(0.93 0.02 230 / 0.86);
+}
+
+/* ---- scoped palette ----------------------------------------------------- */
+.app-screen[data-app="maps"] {
+  --map-ocean:        oklch(0.93 0.02 230);       /* light blue-paper sea */
+  --map-ocean-deep:   oklch(0.90 0.028 235);      /* subtle depth gradient end */
+  --map-land:         oklch(0.92 0.022 80);       /* warm sand / paper landmass */
+  --map-land-edge:    oklch(0.82 0.03 78);        /* coastline hairline */
+  --map-graticule:    oklch(0.66 0.03 235 / 0.28);/* faint lat lines */
+  --map-route:        oklch(0.50 0.13 240);       /* deep blue route line */
+  --map-pin-ring:     oklch(0.50 0.13 240);       /* blue ring around pin core */
+  --map-pin-core:     oklch(0.98 0.005 230);      /* white-ish pin core */
+  --map-place-dot:    oklch(0.50 0.13 240);       /* Aveiro marker */
+  --map-caption:      oklch(0.40 0.04 240);       /* route caption ink */
+
+  /* place card (per-OS skinned below) */
+  --map-card-surface: oklch(0.985 0.006 230);     /* near-white sheet */
+  --map-card-text:    oklch(0.28 0.025 245);      /* warm-cool ink, ≥4.5:1 */
+  --map-card-muted:   oklch(0.46 0.025 245);      /* secondary text */
+  --map-card-line:    oklch(0.88 0.014 235);
+  --map-scrim:        oklch(0.50 0.05 240 / 0.18);/* dim behind the sheet */
+}
+
+.app-screen[data-app="maps"] .app-body {
+  /* the ocean is the app background */
+  background:
+    radial-gradient(120% 80% at 50% 0%, var(--map-ocean), var(--map-ocean-deep) 90%);
+  padding: 0;
+  position: relative;
+}
+
+/* ---- app-head over the ocean: keep light, cool-tinted glass ------------- */
+.app-screen[data-app="maps"] .app-head {
+  background: color-mix(in oklch, var(--map-ocean) 88%, transparent);
+  border-bottom-color: oklch(0.80 0.03 235 / 0.5);
+}
+.app-screen[data-app="maps"] .app-head__title { color: oklch(0.28 0.03 245); }
+.app-screen[data-app="maps"] .app-head__back { color: var(--map-route); }
+.app-screen[data-app="maps"] .app-head__back:hover {
+  background: oklch(0.50 0.13 240 / 0.12);
+}
+
+/* Android tonal head variant — flat tinted surface */
+body[data-os="android"] .app-screen[data-app="maps"] .app-head {
+  background: oklch(0.91 0.025 232);
+  backdrop-filter: none;
+}
+
+/* =========================================================================
+   MAP SURFACE
+   ========================================================================= */
+.map-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.map-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* landmasses — warm sand blobs with a soft coastline edge */
+.map-land path {
+  fill: var(--map-land);
+  stroke: var(--map-land-edge);
+  stroke-width: 0.4;
+  stroke-linejoin: round;
+}
+
+/* graticule hint — faint curved lines across the ocean */
+.map-graticule path {
+  fill: none;
+  stroke: var(--map-graticule);
+  stroke-width: 0.35;
+  stroke-linecap: round;
+}
+
+/* Aveiro place dot on Iberia */
+.map-place-dot {
+  fill: var(--map-place-dot);
+  opacity: 0.85;
+}
+
+/* ---- the route line ---------------------------------------------------- */
+.map-route {
+  stroke: var(--map-route);
+  stroke-width: 1.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  /* normalized via pathLength=1; dash covers the whole length */
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;          /* hidden until drawn */
+  filter: drop-shadow(0 0.3px 0.6px oklch(0.50 0.13 240 / 0.25));
+}
+/* draw choreography: offset 1 → 0 over the duration set in JS (DRAW_MS) */
+.map-route--draw { stroke-dashoffset: 1; }
+.map-route--go {
+  transition: stroke-dashoffset 2.4s var(--ease);
+  stroke-dashoffset: 0;
+}
+/* pre-drawn / settled state (re-open, reduced motion) */
+.map-route--done { stroke-dashoffset: 0; transition: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .map-route--go { transition: none; stroke-dashoffset: 0; }
+}
+
+/* =========================================================================
+   PINS — HTML buttons layered over the SVG, positioned by left/top %.
+   White-core dot with a blue ring; the today pin gets a persistent pulse.
+   ========================================================================= */
+.map-pin {
+  position: absolute;
+  /* left/top set inline as %, translate centers the pin on its coordinate */
+  transform: translate(-50%, -50%) scale(0.4);
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 50%;
+  opacity: 0;
+  -webkit-tap-highlight-color: transparent;
+  z-index: 2;
+}
+/* pop-in: scale + fade, ease-out only (no bounce) */
+.map-pin--in {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+  transition: opacity 0.4s var(--ease), transform 0.5s var(--ease);
+}
+
+.map-pin__core {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 50%;
+  background: var(--map-pin-core);
+  box-shadow:
+    0 0 0 2.5px var(--map-pin-ring),
+    0 0.15rem 0.4rem -0.1rem oklch(0.40 0.10 240 / 0.5);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+
+/* hover / focus / active depress */
+.map-pin:hover .map-pin__core { transform: scale(1.18); }
+.map-pin:active .map-pin__core { transform: scale(0.92); }
+.map-pin:focus-visible { outline: none; }
+.map-pin:focus-visible .map-pin__core {
+  box-shadow:
+    0 0 0 2.5px var(--map-pin-ring),
+    0 0 0 5px oklch(0.50 0.13 240 / 0.35);
+}
+/* selected pin: filled blue core */
+.map-pin--active .map-pin__core {
+  background: var(--map-pin-ring);
+  box-shadow:
+    0 0 0 3px oklch(0.98 0.005 230),
+    0 0.2rem 0.5rem -0.1rem oklch(0.40 0.10 240 / 0.55);
+  transform: scale(1.12);
+}
+
+/* today pin: persistent soft pulse (reuses the dot--live pattern) */
+.map-pin--today .map-pin__core {
+  background: var(--mint);
+  box-shadow:
+    0 0 0 2.5px oklch(0.50 0.12 160),
+    0 0.15rem 0.4rem -0.1rem oklch(0.40 0.10 160 / 0.5);
+}
+.map-pin--today.map-pin--active .map-pin__core {
+  background: var(--mint);
+  box-shadow:
+    0 0 0 3px oklch(0.98 0.005 160),
+    0 0.2rem 0.5rem -0.1rem oklch(0.40 0.10 160 / 0.55);
+}
+.map-pin__pulse {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 0.72rem;
+  height: 0.72rem;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 0 oklch(0.58 0.135 150 / 0.5);
+  animation: map-pin-pulse 2.6s var(--ease) infinite;
+  pointer-events: none;
+}
+@keyframes map-pin-pulse {
+  0%   { box-shadow: 0 0 0 0 oklch(0.58 0.135 150 / 0.45); }
+  70%  { box-shadow: 0 0 0 0.85rem oklch(0.58 0.135 150 / 0); }
+  100% { box-shadow: 0 0 0 0 oklch(0.58 0.135 150 / 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-pin {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+    transition: none;
+  }
+  .map-pin__core { transition: none; }
+  .map-pin:hover .map-pin__core,
+  .map-pin:active .map-pin__core { transform: none; }
+  .map-pin--active .map-pin__core { transform: scale(1.1); }
+  .map-pin__pulse { animation: none; box-shadow: none; }
+}
+
+/* ---- endpoint place-name labels (Valencia / Aveiro) -------------------- */
+/* Tiny always-visible SVG text next to the two endpoint pins only.
+   Styled via SVG presentation attributes + this class for color + font.
+   aria-hidden on the group (pins carry the accessible labels). */
+.map-endpoint-labels {
+  pointer-events: none;
+}
+.map-label {
+  fill: var(--map-caption);
+  font-family: var(--font-label);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  dominant-baseline: auto;
+}
+.map-label--start {
+  text-anchor: start;   /* label grows right, away from the left edge */
+}
+.map-label--end {
+  text-anchor: end;     /* label grows left, away from the right edge */
+}
+
+/* ---- route caption — one quiet line (≈7,000 km) ------------------------ */
+.map-caption {
+  position: absolute;
+  left: 50%;
+  bottom: calc(1.4rem + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 1;
+  margin: 0;
+  font-family: var(--font-label);
+  font-size: 0.74rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--map-caption);
+  background: oklch(0.97 0.012 230 / 0.7);
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.25s var(--ease);
+}
+/* hide the caption while a place card is open (they share the bottom edge) */
+.map-wrap--carded .map-caption { opacity: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .map-caption { transition: none; }
+}
+
+/* =========================================================================
+   PLACE CARD — per-OS bottom sheet
+   iOS: rounded glass-ish sheet. Android: M3 tonal sheet. role=dialog.
+   Slides up from the bottom (transform/opacity only — no layout animation).
+   ========================================================================= */
+.map-card-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* a light scrim so the sheet reads as foreground; click-through dismiss */
+  background: var(--map-scrim);
+}
+.map-card-wrap[hidden] { display: none; }
+
+.map-card {
+  position: relative;
+  width: 100%;
+  max-width: 460px;
+  margin: 0 0.75rem calc(2rem + env(safe-area-inset-bottom));
+  background: var(--map-card-surface);
+  color: var(--map-card-text);
+  border-radius: 1.4rem;
+  padding: 0.9rem 1.1rem 1.2rem;
+  box-shadow:
+    0 0.2rem 0.6rem oklch(0.40 0.06 240 / 0.12),
+    0 1.2rem 2.6rem -0.8rem oklch(0.35 0.08 240 / 0.35);
+  /* slide-up entrance */
+  transform: translateY(115%);
+  opacity: 0;
+}
+.map-card[hidden] { display: none; }
+.map-card.map-card--in {
+  transform: translateY(0);
+  opacity: 1;
+  transition: transform 0.42s var(--ease), opacity 0.32s var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-card { transform: none; }
+  .map-card.map-card--in { transition: none; }
+}
+
+/* grabber handle */
+.map-card__grab {
+  display: block;
+  width: 2.2rem;
+  height: 0.28rem;
+  margin: 0 auto 0.7rem;
+  border-radius: 999px;
+  background: var(--map-card-line);
+}
+
+.map-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.map-card__titlewrap { min-width: 0; }
+.map-card__place {
+  margin: 0 0 0.15rem;
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--map-route);
+  text-transform: none;
+}
+.map-card__place[hidden] { display: none; }
+.map-card__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.18rem;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--map-card-text);
+}
+.map-card__close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-top: -0.1rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: oklch(0.94 0.012 235);
+  color: var(--map-card-muted);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.map-card__close:hover { background: oklch(0.90 0.018 235); }
+.map-card__close:active { transform: scale(0.9); }
+.map-card__close:focus-visible {
+  outline: 2px solid var(--map-route);
+  outline-offset: 2px;
+}
+
+.map-card__role {
+  margin: 0.6rem 0 0;
+  font-family: var(--font-ui);
+  font-size: 0.94rem;
+  line-height: 1.4;
+  color: var(--map-card-text);
+}
+.map-card__years {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--map-card-muted);
+}
+
+/* ---- iOS: liquid-glass-ish sheet --------------------------------------- */
+body[data-os="ios"] .app-screen[data-app="maps"] .map-card {
+  background: oklch(0.98 0.006 230 / 0.82);
+  backdrop-filter: blur(22px) saturate(1.6);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.5),
+    0 1.2rem 2.6rem -0.8rem oklch(0.35 0.08 240 / 0.4);
+}
+
+/* ---- Android: M3 tonal sheet ------------------------------------------- */
+body[data-os="android"] .app-screen[data-app="maps"] .map-card {
+  background: oklch(0.95 0.018 232);
+  border-radius: 1.75rem 1.75rem 0.6rem 0.6rem;
+  box-shadow:
+    0 0.2rem 0.5rem oklch(0.40 0.06 240 / 0.14),
+    0 1rem 2rem -0.6rem oklch(0.35 0.08 240 / 0.3);
+}
+body[data-os="android"] .app-screen[data-app="maps"] .map-card__close {
+  background: oklch(0.90 0.03 235);
+}
