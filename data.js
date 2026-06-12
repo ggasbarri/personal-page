@@ -47,6 +47,36 @@ window.APP_DATA = {
     ]
   },
 
+  /* Ledger — the Economics degree rendered as a banking app. Courses are
+     transactions, the degree completion is a savings goal. Content is real;
+     the joke is structural. Grades shown: only the 2-4 standout ones, as
+     required (never the full list). Pending entries are in-progress courses.
+     Voice: lowercase notes, dry, accurate. */
+  ledger: {
+    account: {
+      name: "Economics",
+      sub: "degree in progress · studied alongside work"
+    },
+    goal: {
+      label: "completion",
+      done: 19,
+      total: 24
+    },
+    transactions: [
+      { label: "Fallos del Mercado",   value: null,  note: "market failures — fitting",            pending: true  },
+      { label: "Finanzas I",           value: null,  note: null,                                   pending: true  },
+      { label: "Macroeconomía II",     value: null,  note: null,                                   pending: true  },
+      { label: "Matemáticas Financieras", value: 10.0, note: "compound interest, literally",        pending: false },
+      { label: "Historia de la Economía I", value: 9.9, note: null,                                pending: false },
+      { label: "Microeconomía II",     value: 9.8,  note: null,                                   pending: false },
+      { label: "Estadística II",       value: 9.5,  note: null,                                   pending: false },
+      { label: "Teoría de Juegos",     value: null,  note: "useful at work, suspiciously",         pending: false },
+      { label: "Derecho Mercantil",    value: null,  note: null,                                   pending: false },
+      { label: "Contabilidad de Costes", value: null, note: null,                                  pending: false }
+    ],
+    footer: "interest compounds. so does understanding."
+  },
+
   terminal: {
     user: "gian",
     host: "aveiro",

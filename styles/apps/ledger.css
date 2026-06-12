@@ -1,0 +1,390 @@
+/* =========================================================================
+   GianOS — Ledger app styles
+   Committed GREEN-TINTED palette (this app only). Stays in the site's light,
+   papery world — paper-white surfaces with a green tint, deep green accent
+   for values and the progress bar fill. Money-app typography: Geist Mono for
+   numeric values only; UI font elsewhere. NOT saturated fintech green.
+
+   Scoped under .app-screen[data-app=ledger] and body[data-app=ledger] for the
+   statusbar override + app-head per-OS skin.
+
+   These tokens are fixed — they do not follow --seed (Ledger's art direction
+   is deliberately immune to the theme toy, per plan).
+
+   Contrast: --ldg-ink on --ldg-surface ≥ 4.5:1 (deep ink on tinted white, ~9:1
+   at these OKLCH values). --ldg-accent on --ldg-surface: passes AA for large
+   text; grade values are 1rem+ so pass AA. --ldg-muted on --ldg-surface: ~5.5:1.
+
+   Progress bar: transform:scaleX from 0 → var(--bar-prog) with transform-origin
+   left, matching the .story-progress__fill pattern in base.css.
+   ========================================================================= */
+
+/* ---- green statusbar override when Ledger is active --------------------- */
+body[data-app="ledger"] {
+  --statusbar-ink: oklch(0.28 0.05 155);
+  --statusbar-bg:  oklch(0.96 0.012 160 / 0.88);
+}
+
+/* ---- scoped palette ----------------------------------------------------- */
+.app-screen[data-app="ledger"] {
+  --ldg-surface:      oklch(0.96 0.012 160);   /* paper-white, green tint */
+  --ldg-surface-card: oklch(0.985 0.008 158);  /* card lift: slightly brighter */
+  --ldg-surface-row:  oklch(0.975 0.01 159);   /* transaction row hover bg */
+  --ldg-accent:       oklch(0.45 0.12 155);    /* deep green — values, fill, links */
+  --ldg-accent-glow:  oklch(0.45 0.12 155 / 0.18); /* shimmer glow color */
+  --ldg-ink:          oklch(0.22 0.03 155);    /* primary text */
+  --ldg-muted:        oklch(0.44 0.04 158);    /* secondary / notes */
+  --ldg-faint:        oklch(0.60 0.03 158);    /* chip text, very muted */
+  --ldg-line:         oklch(0.88 0.014 158);   /* hairline separators */
+  --ldg-pending-bg:   oklch(0.94 0.018 155);   /* pending chip surface */
+  --ldg-pending-ink:  oklch(0.42 0.06 155);    /* pending chip text */
+}
+
+/* ---- app body: the green-tinted paper surface --------------------------- */
+.app-screen[data-app="ledger"] .app-body {
+  background: var(--ldg-surface);
+  padding: 0;
+  gap: 0;
+}
+
+/* ---- app-head: keep light, green-glass ---------------------------------- */
+.app-screen[data-app="ledger"] .app-head {
+  background: color-mix(in oklch, var(--ldg-surface) 88%, transparent);
+  border-bottom-color: oklch(0.84 0.02 158 / 0.55);
+}
+.app-screen[data-app="ledger"] .app-head__title {
+  color: var(--ldg-ink);
+}
+.app-screen[data-app="ledger"] .app-head__back {
+  color: var(--ldg-accent);
+}
+.app-screen[data-app="ledger"] .app-head__back:hover {
+  background: oklch(0.45 0.12 155 / 0.1);
+}
+
+/* Android tonal head variant */
+body[data-os="android"] .app-screen[data-app="ledger"] .app-head {
+  background: oklch(0.94 0.016 158);
+  backdrop-filter: none;
+}
+
+/* =========================================================================
+   ACCOUNT HEADER CARD
+   ========================================================================= */
+.ldg-header {
+  padding: 1.6rem 1.4rem 1.4rem;
+  background: var(--ldg-surface-card);
+  margin: 0.9rem 0.9rem 0;
+  border-radius: 1.2rem;
+  box-shadow:
+    0 0.1rem 0.3rem oklch(0.45 0.12 155 / 0.06),
+    0 0.4rem 1rem -0.3rem oklch(0.35 0.10 155 / 0.14);
+}
+
+/* iOS inset grouped card */
+body[data-os="ios"] .app-screen[data-app="ledger"] .ldg-header {
+  border-radius: 1.3rem;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.55),
+    0 0.4rem 1.2rem -0.3rem oklch(0.35 0.10 155 / 0.18);
+}
+
+/* Android M3 tonal card */
+body[data-os="android"] .app-screen[data-app="ledger"] .ldg-header {
+  border-radius: 1rem;
+  background: oklch(0.94 0.016 158);
+  box-shadow: none;
+}
+
+.ldg-header__name {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ldg-muted);
+}
+
+/* Balance readout: the big "19 / 24" with Geist Mono for numbers */
+.ldg-header__balance {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  margin: 0 0 0.45rem;
+  line-height: 1;
+}
+
+.ldg-header__count {
+  font-family: "Geist Mono", monospace;
+  font-size: 3.2rem;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  color: var(--ldg-accent);
+  line-height: 1;
+}
+
+.ldg-header__sep {
+  font-family: "Geist Mono", monospace;
+  font-size: 1.8rem;
+  font-weight: 400;
+  color: var(--ldg-muted);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.ldg-header__sub {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  color: var(--ldg-muted);
+  line-height: 1.4;
+}
+
+/* =========================================================================
+   SAVINGS-GOAL PROGRESS BAR
+   ========================================================================= */
+.ldg-goal {
+  padding: 0.9rem 1.4rem 0.95rem;
+  margin: 0.55rem 0.9rem 0;
+  background: var(--ldg-surface-card);
+  border-radius: 1rem;
+}
+
+body[data-os="ios"] .app-screen[data-app="ledger"] .ldg-goal {
+  border-radius: 1.1rem;
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5);
+}
+
+body[data-os="android"] .app-screen[data-app="ledger"] .ldg-goal {
+  background: oklch(0.94 0.016 158);
+  border-radius: 0.85rem;
+}
+
+.ldg-goal__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.55rem;
+}
+
+.ldg-goal__label {
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ldg-muted);
+}
+
+.ldg-goal__pct {
+  font-family: "Geist Mono", monospace;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--ldg-accent);
+  letter-spacing: -0.01em;
+}
+
+/* Bar track + fill — mirrors .story-progress__fill pattern (scaleX / transform-origin left) */
+.ldg-bar {
+  position: relative;
+  height: 0.42rem;
+  border-radius: 999px;
+  background: oklch(0.86 0.022 158);
+  overflow: hidden;
+}
+
+.ldg-bar__fill {
+  display: block;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--ldg-accent), oklch(0.55 0.13 155));
+  border-radius: 999px;
+  transform: scaleX(var(--bar-prog, 0));
+  transform-origin: left;
+  transition: transform 1.1s var(--ease);
+  box-shadow: 0 0 0.5rem oklch(0.45 0.12 155 / 0.35);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ldg-bar__fill { transition: none; }
+}
+
+/* =========================================================================
+   MOVEMENTS / TRANSACTION LIST
+   ========================================================================= */
+.ldg-movements {
+  margin: 0.75rem 0.9rem 0;
+  background: var(--ldg-surface-card);
+  border-radius: 1rem;
+  overflow: hidden;     /* rounds row corners */
+  flex-shrink: 0;       /* never collapse in the app-body column; the body scrolls instead */
+}
+
+body[data-os="ios"] .app-screen[data-app="ledger"] .ldg-movements {
+  border-radius: 1.1rem;
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5);
+}
+
+body[data-os="android"] .app-screen[data-app="ledger"] .ldg-movements {
+  background: oklch(0.94 0.016 158);
+  border-radius: 0.85rem;
+}
+
+.ldg-movements__h {
+  margin: 0;
+  padding: 0.7rem 1.1rem 0.4rem;
+  font-family: var(--font-label);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ldg-muted);
+}
+
+.ldg-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Transaction row */
+.ldg-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.72rem 1.1rem;
+  /* hairline separator between rows — full-width 1px, no side-stripe */
+  border-top: 1px solid var(--ldg-line);
+  transition: background 0.18s var(--ease);
+}
+
+.ldg-row:first-child { border-top: none; }
+
+.ldg-row__left {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.ldg-row__label {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ldg-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ldg-row__note {
+  font-family: var(--font-ui);
+  font-size: 0.74rem;
+  color: var(--ldg-muted);
+  font-style: italic;
+  line-height: 1.3;
+}
+
+.ldg-row__right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* Grade value — Geist Mono, deep green accent */
+.ldg-row__value {
+  font-family: "Geist Mono", monospace;
+  font-size: 0.98rem;
+  font-weight: 500;
+  color: var(--ldg-accent);
+  letter-spacing: -0.01em;
+}
+
+/* Pending row: muted label + chip */
+.ldg-row--pending .ldg-row__label {
+  color: var(--ldg-muted);
+}
+
+/* Pending chip — small pill */
+.ldg-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--ldg-pending-bg);
+  font-family: var(--font-label);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ldg-pending-ink);
+}
+
+/* =========================================================================
+   FOOTER LINE
+   ========================================================================= */
+.ldg-footer {
+  margin: 0.85rem 1.4rem 1.2rem;
+  font-family: var(--font-ui);
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--ldg-muted);
+  text-align: center;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* =========================================================================
+   FLOURISH — the +10.0 shimmer-once on first reveal.
+   A subtle horizontal shimmer sweep, played once, never replayed.
+   Reduced-motion safe: the class is never added when REDUCED is true.
+   ========================================================================= */
+@keyframes ldg-shimmer {
+  0%   { background-position: -200% center; opacity: 1; }
+  60%  { background-position: 200% center; opacity: 1; }
+  100% { background-position: 200% center; opacity: 1; }
+}
+
+.ldg-row__value--best {
+  /* base: same as .ldg-row__value — deep green */
+}
+
+.ldg-row__value--shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--ldg-accent) 20%,
+    oklch(0.70 0.14 148) 50%,
+    var(--ldg-accent) 80%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: ldg-shimmer 1.1s var(--ease) 1 forwards;
+}
+
+/* =========================================================================
+   POP ANIMATION
+   Reuses the global .pop / .in pattern from base.css (opacity + translateY).
+   Rows start hidden (.pop) and stagger to visible (.in) via revealPops.
+   ========================================================================= */
+.ldg-row.pop {
+  opacity: 0;
+  transform: translateY(0.6rem);
+}
+.ldg-row.pop.in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ldg-row.pop,
+  .ldg-row.pop.in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
