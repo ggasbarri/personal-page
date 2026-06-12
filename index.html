@@ -17,7 +17,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/apps/messages.css" />
 </head>
 <body>
   <!-- per-OS wallpaper behind the phone; crossfades on platform switch -->
@@ -164,6 +165,8 @@
   </main>
 
   <script src="data.js"></script>
-  <script src="main.js"></script>
+  <script src="js/os.js"></script>
+  <script src="js/apps/messages.js"></script>
+  <script>GG.Shell.boot();</script>
 </body>
 </html>
