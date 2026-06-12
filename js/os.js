@@ -250,6 +250,64 @@
       else this.openExpand();
     }
   };
+  // extend LA with discovery-mode and push/restore for in-app story beats
+  LA._discoverState = null;  // last applied discovery state {done,total}
+  LA._pushed = null;         // snapshot of last.* before Messages took over
+
+  // push(): called on app open; snapshots _discoverState and clears it so
+  // in-app fillExpand calls (story beats) use the original work template.
+  LA.push = function () {
+    this._pushed = this._discoverState || null;
+    this._discoverState = null;  // suppress discovery template while app is active
+  };
+
+  // restore(): called on app close; re-applies discovery state from Collection.
+  LA.restore = function () {
+    var c = Collection.count(); this.discover(c.done, c.total);
+  };
+
+  LA.discover = function (done, total) {
+    this._discoverState = { done: done, total: total };
+    var progress = total > 0 ? done / total : 0;
+    this.work({
+      progress: progress,
+      short: done + "/" + total,
+      label: "explored",
+      state: "exploring"
+    });
+  };
+
+  LA.discoverAll = function () {
+    if (!liveact) return;
+    this.bump("liveact--pulse");
+    // show expanded "all explored" state
+    var c = Collection.count();
+    this._discoverState = { done: c.done, total: c.total };
+    this.work({ progress: 1, short: c.done + "/" + c.total, label: "explored", state: "all explored", expand: true });
+  };
+
+  // override fillExpand to show discovery checklist when in discover mode
+  var _origFillExpand = LA.fillExpand.bind(LA);
+  LA.fillExpand = function () {
+    if (!this._discoverState) { _origFillExpand(); return; }
+    var ids = Apps.ids();
+    var done = this._discoverState.done, total = this._discoverState.total;
+    var isAll = done === total && total > 0;
+    var rows = ids.map(function (id) {
+      var def = Apps.get(id);
+      var name = def && def.label ? def.label : id;
+      var visited = Collection.isVisited(id);
+      return "<div class='liveact__erow'><span class='liveact__ev'>" + escapeHtml(name) + "</span><span class='liveact__es liveact__es--" + (visited ? "done" : "todo") + "'>" + (visited ? "✓" : "·") + "</span></div>";
+    }).join("");
+    setHtml(laExpand,
+      "<div class='liveact__ehead'><span>gianfranco-os</span><span>Live</span></div>" +
+      "<div class='liveact__etitle'>" + (isAll ? "all explored" : "exploring") + "</div>" +
+      "<div class='liveact__estate'>" + done + " of " + total + " apps visited</div>" +
+      "<div class='liveact__etrack' style='--pct:" + Math.round((done / Math.max(total, 1)) * 100) + "%'><span></span></div>" +
+      rows);
+    laExpand.hidden = false;
+  };
+
   if (liveact) liveact.addEventListener("click", function () { LA.toggle(); });
 
   // -- the OS module (Platform) -------------------------------------------
@@ -270,11 +328,16 @@
     set: function (os) {
       if (os === this.cur) return;
       this.apply(os);
-      try { localStorage.setItem("ask-os", os); } catch (e) {}
+      // persist into unified Collection state (Phase 2); old "ask-os" key is gone
+      try {
+        var cs = Collection.getState();
+        cs.os = os;
+        localStorage.setItem("gg-os-v1", JSON.stringify(cs));
+      } catch (e) {}
     },
     init: function () {
-      var saved = null;
-      try { saved = localStorage.getItem("ask-os"); } catch (e) {}
+      // os pref now lives in Collection state (migrated from "ask-os" by Collection.load())
+      var saved = Collection.getState().os || null;
       this.apply(saved || this.detect());
       var self = this;
       this.btns.forEach(function (b) {
@@ -283,6 +346,80 @@
     },
     hero: function () { LA.app(data.heroActivity); LA.wake(); }
   };
+
+  /* ===================================================================
+     Collection — meta-game state (Phase 2)
+     localStorage key: "gg-os-v1", shape: {visited:{}, hue:null, os:"ios"}
+     Migrates legacy "ask-os" key into state.os on first load.
+     Storage failures (private mode) are swallowed; state degrades to in-memory.
+     =================================================================== */
+  var Collection = (function () {
+    var KEY = "gg-os-v1";
+    var _state = { visited: {}, hue: null, os: "ios" };
+
+    function _save() {
+      try { localStorage.setItem(KEY, JSON.stringify(_state)); } catch (e) {}
+    }
+
+    function load() {
+      try {
+        var raw = localStorage.getItem(KEY);
+        if (raw) {
+          var parsed = JSON.parse(raw);
+          _state = parsed;
+        } else {
+          // migrate legacy platform key
+          var legacy = localStorage.getItem("ask-os");
+          if (legacy) { _state.os = legacy; try { localStorage.removeItem("ask-os"); } catch (e) {} _save(); }
+        }
+      } catch (e) {}
+    }
+
+    function isVisited(id) { return !!_state.visited[id]; }
+
+    function count() {
+      var ids = Apps.ids();
+      var done = 0;
+      ids.forEach(function (id) { if (_state.visited[id]) done++; });
+      return { done: done, total: ids.length };
+    }
+
+    // clears the badge with a small scale-pop, then updates LA discovery state
+    function _clearBadge(id) {
+      var icon = document.querySelector('.appicon[data-app="' + id + '"]');
+      if (!icon) return;
+      var badge = icon.querySelector(".appicon__badge");
+      if (!badge) return;
+      if (!REDUCED) {
+        badge.classList.add("badge--pop");
+        badge.addEventListener("animationend", function () { badge.remove(); }, { once: true });
+      } else {
+        badge.remove();
+      }
+      // update aria-label to remove notification count
+      icon.setAttribute("aria-label", icon.querySelector(".appicon__label").textContent);
+    }
+
+    function visit(id) {
+      if (_state.visited[id]) return; // idempotent
+      _state.visited[id] = true;
+      _save();
+      _clearBadge(id);
+      var c = count();
+      LA.discover(c.done, c.total);
+      if (c.done === c.total) reward();
+    }
+
+    function reward() {
+      // Phase 9 extension point: unhide Notes icon, flip expand card to "all explored"
+      // For now: pulse the LA and show "all explored" in the expanded state
+      LA.discoverAll();
+    }
+
+    function getState() { return _state; }
+
+    return { load: load, visit: visit, count: count, isVisited: isVisited, getState: getState };
+  })();
 
   /* ---------------------------------------------------------------- Apps */
   var _appsRegistry = {};
@@ -426,6 +563,8 @@
       if (fromId) {
         var def = Apps.get(fromId);
         if (def && def.onClose) def.onClose();
+        // restore LA discovery state now that story beats have no more control
+        LA.restore();
       }
       var restore = lastFocusedIcon;
       lastFocusedIcon = null;
@@ -459,6 +598,11 @@
       document.body.setAttribute("data-app", id);
 
       var vt = transitionTo(fromEl, toEl, icon, false);
+
+      // push discovery state before story beats (Messages etc.) can take over LA
+      LA.push();
+      // mark visited — clears badge, updates LA discovery, checks for reward
+      Collection.visit(id);
 
       current = id;
       if (def.onOpen) def.onOpen();
@@ -562,6 +706,30 @@
       });
     }
 
+    // Decorate unvisited app icons with notification badges.
+    // Messages: badge shows count "1" (in-fiction: 1 unread); others: dot only.
+    // Visited apps get no badge. Badges are aria-hidden (decorative) but the
+    // icon button gets an aria-label update when badged.
+    function decorateBadges() {
+      gridIcons.forEach(function (icon) {
+        var id = icon.getAttribute("data-app");
+        if (Collection.isVisited(id)) return; // already visited: no badge
+        var tile = icon.querySelector(".appicon__tile");
+        if (!tile) return;
+        var badge = el("span", "appicon__badge");
+        badge.setAttribute("aria-hidden", "true");
+        var isMessages = id === "messages";
+        badge.textContent = isMessages ? "1" : "";
+        tile.appendChild(badge);
+        // accessible label with notification count
+        var labelEl = icon.querySelector(".appicon__label");
+        var labelText = labelEl ? labelEl.textContent : id;
+        icon.setAttribute("aria-label", isMessages
+          ? labelText + ", 1 notification"
+          : labelText + ", new");
+      });
+    }
+
     // ---- home control: navind (click / Escape / swipe-up) -------------
     function wireHomeControl() {
       if (navind) {
@@ -595,9 +763,13 @@
     return {
       boot: function () {
         tick(); setInterval(tick, 15000);
+
+        // Collection must load before Platform.init() (Platform reads os from state)
+        Collection.load();
         Platform.init();
 
         syncGridHonesty();
+        decorateBadges();
         wireGrid();
         wireHomeControl();
 
@@ -609,6 +781,9 @@
           route(false);          // open directly, no zoom on first paint
         } else {
           showHome(null, false); // land on the home grid
+          // start discovery tracking on home screen (replaces heroActivity on home)
+          var c = Collection.count();
+          LA.discover(c.done, c.total);
         }
       },
 
@@ -650,6 +825,7 @@
     },
     Platform: Platform,
     LA: LA,
+    Collection: Collection,
     Apps: Apps,
     Shell: Shell
   };

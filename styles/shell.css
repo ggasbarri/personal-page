@@ -217,6 +217,17 @@ body[data-os="android"] .appicon__badge {
   transition: opacity 0.45s var(--ease), transform 0.55s var(--ease);
 }
 
+/* badge clear: scale-pop then fade (badge--pop class added by Collection.visit) */
+@keyframes badge-pop {
+  0%   { transform: scale(1); opacity: 1; }
+  40%  { transform: scale(1.45); opacity: 1; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.appicon__badge.badge--pop {
+  animation: badge-pop 0.28s var(--ease) forwards;
+  pointer-events: none;
+}
+
 /* =========================================================================
    APP SCREEN chrome
    Each .app-screen is a takeover with a per-OS header (.app-head) and an inner
@@ -388,6 +399,10 @@ body:not([data-app]) .navind span { opacity: 0.25; }
   body[data-app="messages"] .composer { padding-bottom: calc(4.6rem + max(0.3rem, env(safe-area-inset-bottom))); }
 }
 
+/* LA discover checklist: done rows slightly muted, todo dot lighter */
+.liveact__es--done { color: var(--accent); }
+.liveact__es--todo { opacity: 0.45; }
+
 /* =========================================================================
    reduced motion: no VT, no stagger, instant toggles
    ========================================================================= */
@@ -400,4 +415,5 @@ body:not([data-app]) .navind span { opacity: 0.25; }
   .navind span { transition: none; }
   .screen-enter { animation: none; }
   ::view-transition-group(app-zoom) { animation: none; }
+  .appicon__badge.badge--pop { animation: none; opacity: 0; }
 }

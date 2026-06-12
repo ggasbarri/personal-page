@@ -14,6 +14,7 @@
 
   GG.Apps.register({
     id: "messages",
+    label: "Messages",
 
     mount: function () {
       var REDUCED    = GG.REDUCED;
