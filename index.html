@@ -18,7 +18,13 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Schibsted+Grotesk:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles/base.css" />
+  <link rel="stylesheet" href="styles/shell.css" />
   <link rel="stylesheet" href="styles/apps/messages.css" />
+  <!-- no-JS fallback strategy: this inline script flips <html> to .js immediately
+       (before paint, no flash). Default CSS shows the Messages app content and
+       hides the homescreen; .js CSS shows the homescreen and lets the Shell drive
+       which screen is visible. JS off => visitor sees the readable Messages hero. -->
+  <script>document.documentElement.className += " js";</script>
 </head>
 <body>
   <!-- per-OS wallpaper behind the phone; crossfades on platform switch -->
@@ -85,9 +91,74 @@
           <svg class="sysg sysg--abatt" viewBox="0 0 14 24" width="9" height="13"><path d="M5 0h4a1 1 0 0 1 1 1v1.4H4V1a1 1 0 0 1 1-1z"/><rect x="1.5" y="2.2" width="11" height="21.4" rx="2.6"/></svg>
         </span>
       </span>
-      <div class="story-progress" aria-hidden="true"><span class="story-progress__fill" id="progressFill"></span></div>
     </header>
 
+    <!-- ===================================================================
+         HOME SCREEN — app grid. Every future app has an icon here; the Shell
+         hides any icon whose id is not in the GG.Apps registry, so the grid
+         stays honest each deploy (only Messages shows until later phases land).
+         Hidden by default (no-JS shows Messages content instead); .js + Shell
+         reveal it. Icons launch their app via the hash router (#m/<id>).
+         =================================================================== -->
+    <section class="homescreen" id="homescreen" aria-label="Home screen" hidden>
+      <div class="homescreen__wall" aria-hidden="true"></div>
+      <div class="appgrid" role="list" aria-label="Apps">
+        <button class="appicon" type="button" data-app="messages" role="listitem" hidden>
+          <span class="appicon__tile" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9 9 0 0 1-3.8-.8L3 21l1.9-5.2A8.5 8.5 0 0 1 4 11.5 8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z"/></svg>
+          </span>
+          <span class="appicon__label">Messages</span>
+        </button>
+        <button class="appicon" type="button" data-app="maps" role="listitem" hidden>
+          <span class="appicon__tile" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6.5-5.5-6.5-10.5A6.5 6.5 0 0 1 12 4a6.5 6.5 0 0 1 6.5 6.5C18.5 15.5 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.3"/></svg>
+          </span>
+          <span class="appicon__label">Maps</span>
+        </button>
+        <button class="appicon" type="button" data-app="ledger" role="listitem" hidden>
+          <span class="appicon__tile" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 4l9 5.5"/><path d="M4 9.5v9M20 9.5v9M9 11v6M15 11v6"/><path d="M2.5 20.5h19"/></svg>
+          </span>
+          <span class="appicon__label">Ledger</span>
+        </button>
+        <button class="appicon" type="button" data-app="terminal" role="listitem" hidden>
+          <span class="appicon__tile" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M13 15h4"/></svg>
+          </span>
+          <span class="appicon__label">Terminal</span>
+        </button>
+        <button class="appicon" type="button" data-app="settings" role="listitem" hidden>
+          <span class="appicon__tile" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 13.5a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </span>
+          <span class="appicon__label">Settings</span>
+        </button>
+        <button class="appicon" type="button" data-app="mail" role="listitem" hidden>
+          <span class="appicon__tile" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2.5"/><path d="m3 6 9 6 9-6"/></svg>
+          </span>
+          <span class="appicon__label">Mail</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         MESSAGES app — the chat thread. Lives in an .app-screen takeover with
+         its own scroller (.app-body) and per-OS chrome header (.app-head). All
+         original ids preserved. Shown by default with JS off (no-JS fallback);
+         the Shell hides it behind the homescreen once .js is active.
+         =================================================================== -->
+    <section class="app-screen" data-app="messages" id="app-messages" aria-label="Messages">
+      <header class="app-head">
+        <button class="app-head__back" type="button" aria-label="Back to home">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <span class="app-head__title">Messages</span>
+        <!-- story progress hairline: fills as the narrative advances (moved out of statusbar) -->
+        <div class="story-progress" aria-hidden="true"><span class="story-progress__fill" id="progressFill"></span></div>
+      </header>
+
+      <div class="app-body">
     <!-- chat thread -->
     <div class="thread" id="thread">
       <!-- hero answer is injected/animated by JS; markup below is the no-JS fallback content too -->
@@ -146,22 +217,30 @@
 
     <!-- composer / suggested prompts -->
     <div class="composer" id="composer">
-      <!-- OS selector: reskins the whole device. The one piece of meta UI. -->
-      <div class="os-switch" id="osSwitch" role="group" aria-label="Operating system to simulate">
-        <span class="os-switch__thumb" aria-hidden="true"></span>
-        <button class="os-switch__btn" type="button" data-os="ios" aria-pressed="true">
-          <svg class="os-switch__glyph" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M16.37 1.43c0 1.13-.49 2.26-1.18 3.07-.74.9-1.98 1.57-2.98 1.57-.12 0-.23-.02-.3-.03-.02-.06-.04-.22-.04-.39 0-1.14.57-2.26 1.2-2.97.8-.94 2.14-1.64 3.25-1.68.03.13.05.27.05.43zM20.93 17.14c-.03.07-.46 1.58-1.52 3.12-.94 1.34-1.94 2.7-3.43 2.7-1.51 0-1.9-.87-3.63-.87-1.7 0-2.3.9-3.67.9-1.38 0-2.33-1.25-3.43-2.79C3.79 19.6 2.96 16.8 2.96 14.15c0-4.28 2.8-6.55 5.55-6.55 1.45 0 2.67.95 3.6.95.86 0 2.22-1.01 3.9-1.01.61 0 2.88.06 4.37 2.19-.12.08-2.38 1.37-2.38 4.19 0 3.26 2.85 4.41 2.95 4.45z"/></svg>
-          <span>iOS</span>
-        </button>
-        <button class="os-switch__btn" type="button" data-os="android" aria-pressed="false">
-          <svg class="os-switch__glyph" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 18c0 .55.45 1 1 1h1v3.5a1.5 1.5 0 0 0 3 0V19h2v3.5a1.5 1.5 0 0 0 3 0V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8A1.5 1.5 0 0 0 2 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 3.5 8zm17 0a1.5 1.5 0 0 0-1.5 1.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 20.5 8zm-4.97-5.84l1.3-1.3a.5.5 0 0 0-.71-.71l-1.48 1.48A6.5 6.5 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15a.5.5 0 1 0-.71.71l1.31 1.31A6.47 6.47 0 0 0 6 7h12a6.47 6.47 0 0 0-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>
-          <span>Android</span>
-        </button>
-      </div>
       <div class="suggest" id="suggest" role="list" aria-label="Suggested questions"></div>
-      <!-- gesture nav indicator: iOS home bar / Android handle -->
-      <div class="navind" aria-hidden="true"><span></span></div>
     </div>
+      </div><!-- /.app-body -->
+    </section><!-- /.app-screen[messages] -->
+
+    <!-- OS selector: reskins the whole device. Lives at device level (not inside
+         a hideable screen) so it stays reachable on the home grid too, and so the
+         fixed desktop placement persists across screens. Phase 3 relocates it
+         into Settings. -->
+    <div class="os-switch" id="osSwitch" role="group" aria-label="Operating system to simulate">
+      <span class="os-switch__thumb" aria-hidden="true"></span>
+      <button class="os-switch__btn" type="button" data-os="ios" aria-pressed="true">
+        <svg class="os-switch__glyph" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M16.37 1.43c0 1.13-.49 2.26-1.18 3.07-.74.9-1.98 1.57-2.98 1.57-.12 0-.23-.02-.3-.03-.02-.06-.04-.22-.04-.39 0-1.14.57-2.26 1.2-2.97.8-.94 2.14-1.64 3.25-1.68.03.13.05.27.05.43zM20.93 17.14c-.03.07-.46 1.58-1.52 3.12-.94 1.34-1.94 2.7-3.43 2.7-1.51 0-1.9-.87-3.63-.87-1.7 0-2.3.9-3.67.9-1.38 0-2.33-1.25-3.43-2.79C3.79 19.6 2.96 16.8 2.96 14.15c0-4.28 2.8-6.55 5.55-6.55 1.45 0 2.67.95 3.6.95.86 0 2.22-1.01 3.9-1.01.61 0 2.88.06 4.37 2.19-.12.08-2.38 1.37-2.38 4.19 0 3.26 2.85 4.41 2.95 4.45z"/></svg>
+        <span>iOS</span>
+      </button>
+      <button class="os-switch__btn" type="button" data-os="android" aria-pressed="false">
+        <svg class="os-switch__glyph" viewBox="0 0 24 24" width="14" height="14" fill="currentColor" aria-hidden="true"><path d="M6 18c0 .55.45 1 1 1h1v3.5a1.5 1.5 0 0 0 3 0V19h2v3.5a1.5 1.5 0 0 0 3 0V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8A1.5 1.5 0 0 0 2 9.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 3.5 8zm17 0a1.5 1.5 0 0 0-1.5 1.5v7a1.5 1.5 0 0 0 3 0v-7A1.5 1.5 0 0 0 20.5 8zm-4.97-5.84l1.3-1.3a.5.5 0 0 0-.71-.71l-1.48 1.48A6.5 6.5 0 0 0 12 1c-.96 0-1.86.23-2.66.63L7.85.15a.5.5 0 1 0-.71.71l1.31 1.31A6.47 6.47 0 0 0 6 7h12a6.47 6.47 0 0 0-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/></svg>
+        <span>Android</span>
+      </button>
+    </div>
+
+    <!-- gesture nav indicator, promoted to a working Home control. iOS home bar /
+         Android handle. Click / Escape / swipe-up returns to the home grid. -->
+    <button class="navind" type="button" aria-label="Home"><span></span></button>
   </main>
 
   <script src="data.js"></script>

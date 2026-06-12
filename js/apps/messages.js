@@ -93,6 +93,19 @@
         container.appendChild(cta);
       }
 
+      // Final beat (contact): a softer CTA back to the home grid, styled like the
+      // continue button but outlined, inviting the visitor to explore the rest.
+      function appendExploreCTA(container) {
+        if (container.querySelector(".explore-cta")) return; // idempotent
+        var cta = el("button", "next-cta next-cta--out explore-cta",
+          "explore the rest<span class='next-cta__go' aria-hidden='true'>→</span>");
+        cta.type = "button";
+        cta.addEventListener("click", function () {
+          if (GG.Shell && GG.Shell.goHome) GG.Shell.goHome();
+        });
+        container.appendChild(cta);
+      }
+
       // -- Focus / Do Not Disturb (setback) -----------------------------------
       function setFocus(on) {
         document.body.classList.toggle("is-focus", on);
@@ -257,6 +270,9 @@
             inWrap.appendChild(answerMeta("from my work"));
             onBeatReveal(prompt, inWrap);
             if (prompt.next && prompt.hook) appendNextCTA(inWrap, prompt.next, prompt.hook);
+            // contact is the last story beat: there is no next chat beat, so the
+            // dopamine pull becomes an invitation to explore the rest of the OS.
+            else if (prompt.id === "contact") appendExploreCTA(inWrap);
             busy = false;
           });
         }

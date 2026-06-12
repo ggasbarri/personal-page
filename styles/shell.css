@@ -1,0 +1,403 @@
+/* =========================================================================
+   GianOS — shell layer
+   Home grid, app-screen chrome, app-head per-OS header, navind home control,
+   badge placeholders, per-OS wallpaper inside the device. OKLCH only; colors
+   derive from existing base.css tokens (no new palette).
+
+   Layering inside .device (z): statusbar 50, app-screen 30, homescreen 10,
+   LA expand 60. The device is a fixed-height, overflow-hidden viewport; each
+   screen is position:absolute inset:0 with its own inner scroller.
+   ========================================================================= */
+
+/* ------------------------------------------------------- device as viewport */
+/* The device becomes a clipped phone "screen": a fixed-height box whose children
+   (homescreen, app-screen) stack absolutely and scroll independently. The
+   statusbar stays as shared chrome on top. Desktop keeps its floating size
+   (set in base.css); mobile is full 100dvh. */
+.device {
+  /* override base.css flex column: screens are absolutely positioned now */
+  display: block;
+  height: 100dvh;
+  overflow: hidden;
+}
+@media (min-width: 1080px) {
+  /* desktop float keeps its base.css height (min(820px, ...)) — do not force dvh */
+  .device { height: min(820px, calc(100dvh - 6vh)); }
+}
+
+/* statusbar promoted to top chrome above both screens */
+.statusbar { z-index: 50; }
+
+/* ---- screens: absolute, full-bleed, each owns its own scroll ------------- */
+.homescreen,
+.app-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+.homescreen { z-index: 10; }
+.app-screen { z-index: 30; }
+
+/* statusbar is sticky inside base.css; here it sits over the screens, so give
+   each screen top padding equal to the statusbar height via a spacer instead.
+   The statusbar is rendered first in the DOM and is position:sticky/top:0, but
+   since screens are absolute siblings it would overlap — push screen content
+   below it with padding-top on the scrollers. */
+
+/* =========================================================================
+   Visibility model.
+
+   no-JS (no .js on <html>): the homescreen carries the `hidden` attribute in
+   markup, so it stays hidden; the Messages .app-screen has no `hidden`, so its
+   hero + facts stay readable. That is the whole no-JS fallback — no .js means
+   the rules below never apply.
+
+   JS on (.js set before paint): the Shell removes `hidden` from the homescreen
+   and marks exactly one screen active by adding `.screen--active` to it (the
+   homescreen when home, an .app-screen when an app is open). Everything else is
+   display:none. Screens stay mounted (display toggled, not removed) so state
+   restores free. The Shell also mirrors the open app onto body[data-app] for
+   theming/CSS hooks. Driving visibility off a class (not the data-app value)
+   keeps the selectors simple and generalizes to every later app screen.
+   ========================================================================= */
+.homescreen[hidden] { display: none; }
+
+html.js .homescreen,
+html.js .app-screen { display: none; }
+html.js .homescreen.screen--active { display: flex; }
+html.js .app-screen.screen--active { display: flex; }
+
+/* =========================================================================
+   HOME SCREEN
+   ========================================================================= */
+.homescreen {
+  align-items: stretch;
+  justify-content: flex-start;
+  /* clear the statusbar (which floats above) */
+  padding-top: calc(env(safe-area-inset-top) + 3.4rem);
+  overflow: hidden;
+}
+
+/* soft per-OS wallpaper inside the device, echoing the .stage-os palettes */
+.homescreen__wall {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+body[data-os="ios"] .homescreen__wall {
+  background:
+    radial-gradient(120% 60% at 78% -8%, oklch(0.86 0.07 255 / 0.6), transparent 60%),
+    radial-gradient(110% 60% at 6% 108%, oklch(0.88 0.06 200 / 0.5), transparent 60%),
+    linear-gradient(165deg, oklch(0.96 0.018 255), oklch(0.94 0.02 285));
+}
+body[data-os="android"] .homescreen__wall {
+  background:
+    radial-gradient(120% 60% at 84% -6%, oklch(0.88 0.10 45 / 0.55), transparent 60%),
+    radial-gradient(110% 60% at 4% 106%, oklch(0.90 0.08 75 / 0.5), transparent 60%),
+    linear-gradient(165deg, oklch(0.95 0.03 60), oklch(0.93 0.028 38));
+}
+
+/* the grid sits above the wallpaper, centered, generous spacing */
+.appgrid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.5rem 0.8rem;
+  align-content: start;
+  padding: 1.4rem 1.5rem max(1.4rem, env(safe-area-inset-bottom));
+}
+@media (max-width: 360px) {
+  .appgrid { gap: 1.2rem 0.5rem; padding-inline: 1.1rem; }
+}
+
+/* ------------------------------------------------------------- app icons */
+.appicon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.appicon[hidden] { display: none; }
+
+.appicon__tile {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  max-width: 3.8rem;
+  aspect-ratio: 1;
+  color: var(--accent-ink);
+  background: linear-gradient(155deg, var(--accent), var(--accent-strong));
+  box-shadow: 0 0.5rem 1.2rem -0.5rem oklch(0.4 0.08 33 / 0.55);
+  transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
+}
+.appicon__tile svg { width: 54%; height: 54%; }
+
+/* iOS: squircle-ish rounded square (~23% radius), label sentence case below */
+body[data-os="ios"] .appicon__tile { border-radius: 23%; }
+body[data-os="ios"] .appicon__label { text-transform: none; }
+
+/* Android Material You: circular icon container, M3-tinted */
+body[data-os="android"] .appicon__tile {
+  border-radius: 50%;
+  color: var(--m3-on-primary-container);
+  background: var(--m3-primary-container);
+  box-shadow: 0 0.3rem 0.9rem -0.4rem oklch(0.4 0.04 50 / 0.4);
+}
+body[data-os="android"] .appicon__label { text-transform: none; }
+
+.appicon__label {
+  font-family: var(--font-label);
+  font-size: 0.7rem;          /* ~11px */
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: 0;
+  color: var(--text);
+  text-align: center;
+  max-width: 5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* iOS labels lean a hair lighter to read like SpringBoard captions */
+body[data-os="ios"] .appicon__label { font-weight: 500; }
+
+/* pressed state: gentle depress, ease-out, no bounce */
+.appicon:active .appicon__tile { transform: scale(0.94); }
+.appicon:hover .appicon__tile { transform: translateY(-0.12rem); box-shadow: 0 0.8rem 1.6rem -0.5rem oklch(0.4 0.08 33 / 0.5); }
+body[data-os="android"] .appicon:hover .appicon__tile { box-shadow: 0 0.6rem 1.3rem -0.4rem oklch(0.4 0.04 50 / 0.45); }
+.appicon:focus-visible { outline: none; }
+.appicon:focus-visible .appicon__tile { outline: 2.5px solid var(--accent-line); outline-offset: 4px; }
+
+/* roving-tabindex grid: only the active icon is tabbable; arrows move focus */
+.appicon[tabindex="-1"] { /* still clickable, just skipped by Tab */ }
+
+/* badge placeholder (used Phase 2; styled now). Sits top-right of the tile. */
+.appicon__badge {
+  position: absolute;
+  top: -0.32rem;
+  right: -0.32rem;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.32rem;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-label);
+  font-size: 0.66rem;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-radius: 999px;
+  box-shadow: 0 0 0 2px var(--surface);
+}
+/* iOS: a small red dot/count badge top-right (already the default look) */
+body[data-os="ios"] .appicon__badge { background: oklch(0.58 0.20 25); box-shadow: 0 0 0 2px oklch(0.96 0.02 255); }
+/* Android M3: tonal badge */
+body[data-os="android"] .appicon__badge {
+  color: var(--m3-on-primary);
+  background: var(--m3-primary);
+  box-shadow: 0 0 0 2px var(--surface);
+}
+
+/* stagger-in on first home reveal (reuses the .pop idiom from base/messages) */
+.appicon.pop { opacity: 0; transform: translateY(0.9rem) scale(0.97); }
+.appicon.pop.in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.45s var(--ease), transform 0.55s var(--ease);
+}
+
+/* =========================================================================
+   APP SCREEN chrome
+   Each .app-screen is a takeover with a per-OS header (.app-head) and an inner
+   scroller (.app-body). The Messages composer sticks inside .app-body.
+   ========================================================================= */
+.app-screen {
+  background: var(--surface);
+}
+
+/* ---- app head: per-OS title bar ---------------------------------------- */
+.app-head {
+  position: relative;
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  /* clear the floating statusbar above */
+  padding: calc(env(safe-area-inset-top) + 3.1rem) 1rem 0.6rem;
+  background: color-mix(in oklch, var(--surface) 90%, transparent);
+  border-bottom: 1px solid var(--line-soft);
+}
+.app-head__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  border-radius: 50%;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.25s var(--ease), transform 0.25s var(--ease);
+}
+.app-head__back:hover { background: var(--accent-soft); }
+.app-head__back:active { transform: scale(0.92); }
+.app-head__back:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+.app-head__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.02rem;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+/* iOS: centered title, chevron left, no trailing spacer needed (grid balances) */
+body[data-os="ios"] .app-head__title { justify-self: center; }
+/* a phantom cell mirrors the back button width so the title truly centers */
+body[data-os="ios"] .app-head::after {
+  content: "";
+  width: 2.4rem;
+  grid-column: 3;
+}
+
+/* Android: left-aligned title beside an arrow (Material top app bar) */
+body[data-os="android"] .app-head { padding-bottom: 0.7rem; }
+body[data-os="android"] .app-head__title {
+  justify-self: start;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  font-size: 1.05rem;
+}
+
+/* story progress hairline now lives under the app-head */
+.app-head .story-progress {
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 2px;
+  background: var(--line-soft);
+  overflow: hidden;
+}
+
+/* ---- app body: the per-screen scroller --------------------------------- */
+.app-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+/* =========================================================================
+   VIEW TRANSITION zoom-from-icon
+   The Shell tags the launching icon and the target .app-screen with
+   viewTransitionName "app-zoom"; the group animates the morph. Names are
+   cleared on finish. Fallback (canMorph() false) is an instant toggle with a
+   short opacity/scale, no layout animation.
+   ========================================================================= */
+::view-transition-group(app-zoom) {
+  animation-duration: 0.45s;
+  animation-timing-function: var(--ease);
+}
+/* the rest of the page swaps instantly under the zooming element */
+::view-transition-old(root),
+::view-transition-new(root) { animation: none; }
+
+/* fallback entrance (no View Transitions / reduced motion handled separately):
+   when a screen opens without VT it gets .screen-enter for a brief fade/scale. */
+.screen-enter {
+  animation: screen-enter 0.3s var(--ease);
+}
+@keyframes screen-enter {
+  from { opacity: 0; transform: scale(0.985); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* =========================================================================
+   NAVIND — gesture nav indicator promoted to working Home control
+   ========================================================================= */
+.navind {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: 0;
+  z-index: 40;             /* above app-screen (30), below statusbar (50) + LA expand */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 1.6rem;
+  padding-bottom: max(0.35rem, env(safe-area-inset-bottom));
+  border: none;
+  background: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.navind span {
+  display: block;
+  height: 5px;
+  border-radius: 100px;
+  background: var(--text);
+  transition: width 0.3s var(--ease), opacity 0.3s var(--ease), transform 0.2s var(--ease);
+}
+body[data-os="ios"]     .navind span { width: 38%; max-width: 9.5rem; opacity: 0.4; }
+body[data-os="android"] .navind span { width: 25%; max-width: 7rem;  opacity: 0.5; }
+.navind:hover span { opacity: 0.7; }
+.navind:active span { transform: scaleX(0.92); }
+.navind:focus-visible { outline: none; }
+.navind:focus-visible span { outline: 2px solid var(--accent-line); outline-offset: 6px; opacity: 0.8; }
+
+/* On the home screen the indicator is just decoration (nothing to go back to);
+   keep it visible but it still triggers goHome() harmlessly (a no-op there). */
+body:not([data-app]) .navind span { opacity: 0.25; }
+
+/* =========================================================================
+   OS-SWITCH placement at device level.
+   The selector moved out of the (hideable) Messages composer to .device level
+   so it stays reachable on the home grid and persists across screens. On mobile
+   it floats just above the navind home bar, centered. On desktop (>=1080px,
+   base.css) it is position:fixed on the stage — that rule is unchanged, so this
+   placement is scoped to mobile widths only to avoid overriding it.
+   ========================================================================= */
+@media (max-width: 1079px) {
+  .os-switch {
+    position: absolute;
+    left: 50%;
+    bottom: calc(1.7rem + max(0.3rem, env(safe-area-inset-bottom)));
+    transform: translateX(-50%);
+    z-index: 45;          /* above app-screen (30) + navind (40), below statusbar */
+    margin: 0;
+  }
+  /* the selector overlays the composer's bottom edge; lift the Messages composer
+     chips a touch more so they do not sit under it. */
+  body[data-app="messages"] .composer { padding-bottom: calc(4.6rem + max(0.3rem, env(safe-area-inset-bottom))); }
+}
+
+/* =========================================================================
+   reduced motion: no VT, no stagger, instant toggles
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .appicon.pop { opacity: 1; transform: none; }
+  .appicon:active .appicon__tile,
+  .appicon:hover .appicon__tile { transform: none; }
+  .appicon__tile { transition: none; }
+  .app-head__back { transition: none; }
+  .navind span { transition: none; }
+  .screen-enter { animation: none; }
+  ::view-transition-group(app-zoom) { animation: none; }
+}

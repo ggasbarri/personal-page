@@ -247,7 +247,7 @@ body[data-os="android"] .sys--android { display: inline-flex; }
   }
   /* soft paper-cradle, a light bezel ring plus a long warm shadow */
   .device { box-shadow: 0 0 0 1px var(--line), 0 0 0 0.5rem oklch(0.97 0.006 86), 0 0 0 0.55rem var(--line), 0 2.5rem 5.5rem -1.5rem oklch(0.4 0.03 50 / 0.32); }
-  .thread { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+  /* the per-screen scroller (.app-body) owns scrolling now, not .thread */
   .statusbar { border-radius: 2.4rem 2.4rem 0 0; }
 }
 
@@ -485,7 +485,7 @@ body[data-os="ios"] .liveact--pulse .liveact__blob { opacity: 1; animation: live
   transform: translateX(-50%) translateY(-0.4rem) scale(0.96);
   transform-origin: top center;
   pointer-events: none;
-  z-index: 30;
+  z-index: 60;     /* above app-screen (30) + navind (40); shell layering */
   transition: opacity 0.35s var(--ease), transform 0.42s var(--ease);
 }
 .liveact--expanded .liveact__expand {
@@ -553,11 +553,10 @@ body[data-os="android"] .stage-os--android { opacity: 1; }
   .statusbar { border-radius: var(--radius-device) var(--radius-device) 0 0; }
 }
 
-/* ---- gesture nav indicator: iOS home bar / Android handle --------------- */
-.navind { display: flex; justify-content: center; align-items: center; padding-top: 0.5rem; }
-.navind span { display: block; height: 5px; border-radius: 100px; background: var(--text); }
-body[data-os="ios"]     .navind span { width: 38%; max-width: 9.5rem; opacity: 0.4; }
-body[data-os="android"] .navind span { width: 25%; max-width: 7rem;  opacity: 0.5; }
+/* ---- gesture nav indicator: iOS home bar / Android handle ----------------
+   The .navind interactive styling lives in shell.css now (it is a working Home
+   control, moved out of the composer to device level). The per-OS handle look
+   is defined there too. */
 
 /* ---- composer: Liquid Glass (iOS) / Material surface (Android) ---------- */
 /* The glass lives on a ::before layer, NOT the composer itself: a

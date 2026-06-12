@@ -564,7 +564,9 @@ strong { font-weight: 600; color: var(--text); }
   position: sticky;
   bottom: 0;
   z-index: 20;
-  padding: 0.7rem 1.0rem max(0.9rem, env(safe-area-inset-bottom));
+  /* extra bottom room so the chips clear the navind home bar (z40) that floats
+     over the device bottom edge, plus the iOS/Android safe-area inset */
+  padding: 0.7rem 1.0rem calc(1.5rem + max(0.3rem, env(safe-area-inset-bottom)));
   background: linear-gradient(to top, var(--surface) 62%, transparent);
   -webkit-backdrop-filter: blur(2px);
 }
