@@ -17,12 +17,36 @@
   --text-muted:   oklch(0.46 0.020 50);
   --text-faint:   oklch(0.60 0.018 52);
 
-  --accent:       oklch(0.47 0.155 33);   /* deep clay red, AA on paper */
-  --accent-strong:oklch(0.41 0.160 32);
-  --accent-ink:   oklch(0.975 0.012 80);  /* paper text on accent fills */
-  --accent-soft:  oklch(0.47 0.155 33 / 0.13);
-  --accent-line:  oklch(0.47 0.155 33 / 0.32);
-  --mint:         oklch(0.58 0.135 150);  /* online dot, deepened for light */
+  /* ----------------------------------------------------- seeded accent ----
+     --seed is the single hue source for the whole OS accent. Settings writes
+     it (hue only; L/C stay 0.47/0.155). Every seed-derived token is declared
+     TWICE: a literal clay-red first (the permanent fallback for browsers
+     without relative-color support), then the relative-color version that
+     follows --seed. Browsers that don't understand `oklch(from ...)` ignore
+     the second declaration and keep clay-red — so theming degrades cleanly.
+     Neutrals (--stage/--surface/--line/--text), --mint, glass, the island
+     near-black and AI transient colors NEVER re-seed: paper identity + text
+     contrast are guaranteed regardless of the chosen hue. */
+  --seed:         oklch(0.47 0.155 33);   /* deep clay red — the OS accent seed */
+
+  --accent:       oklch(0.47 0.155 33);   /* deep clay red, AA on paper (fallback) */
+  --accent:       oklch(from var(--seed) l c h);
+  --accent-strong:oklch(0.41 0.160 32);                                   /* fallback */
+  --accent-strong:oklch(from var(--seed) calc(l - 0.06) calc(c + 0.005) h);
+  --accent-ink:   oklch(0.975 0.012 80);  /* paper text on accent fills (fallback) */
+  --accent-ink:   oklch(from var(--seed) 0.975 0.012 h);
+  --accent-soft:  oklch(0.47 0.155 33 / 0.13);                            /* fallback */
+  --accent-soft:  oklch(from var(--seed) l c h / 0.13);
+  --accent-line:  oklch(0.47 0.155 33 / 0.32);                            /* fallback */
+  --accent-line:  oklch(from var(--seed) l c h / 0.32);
+  --mint:         oklch(0.58 0.135 150);  /* online dot, deepened for light — FIXED */
+
+  /* status-bar adaptation tokens (consumed by .statusbar; default = warm paper
+     chrome). Dark apps (e.g. Terminal, later phases) override these per
+     `body[data-app=...]` to flip the bar's ink + fill without touching the
+     global accent. */
+  --statusbar-ink: var(--text);
+  --statusbar-bg:  color-mix(in oklch, var(--surface) 82%, transparent);
 
   --font-display: "Bricolage Grotesque", system-ui, sans-serif;
   --font-ui:      "Schibsted Grotesk", system-ui, sans-serif;
@@ -165,7 +189,8 @@ body[data-mood="payoff"] .device { background: oklch(0.978 0.011 82); }
   align-items: center;
   gap: 0.5rem;
   padding: max(0.7rem, env(safe-area-inset-top)) 1.25rem 0.7rem;
-  background: color-mix(in oklch, var(--surface) 82%, transparent);
+  color: var(--statusbar-ink);
+  background: var(--statusbar-bg);
   backdrop-filter: blur(14px) saturate(1.4);
   border-bottom: 1px solid var(--line-soft);
 }
@@ -188,7 +213,7 @@ body[data-os="android"] .statusbar__time { font-weight: 500; font-size: 0.84rem;
   letter-spacing: -0.01em;
   white-space: nowrap;
 }
-.statusbar__sys { justify-self: end; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--text); }
+.statusbar__sys { justify-self: end; display: inline-flex; align-items: center; gap: 0.4rem; color: var(--statusbar-ink); }
 .statusbar__sys svg { fill: currentColor; }
 /* per-OS status glyph clusters: only the active platform's set shows */
 .sys { display: none; align-items: center; gap: 0.42rem; }
@@ -264,18 +289,32 @@ body[data-os="android"] .sys--android { display: inline-flex; }
    brand are untouched. Skinned by body[data-os="ios" | "android"].
    ========================================================================= */
 
-/* ---- Material You tonal palette, seeded from the clay-red (hue ~33) ----- */
-/* Authentic dynamic-color mechanics (a tonal palette from one seed) kept on
-   brand by seeding from --accent. Applied to Android chrome only. */
+/* ---- Material You tonal palette, seeded from --seed (authentic dynamic color)
+   The whole tonal palette is generated from ONE hue (the seed). Each token
+   keeps its hand-tuned L/C; only the hue follows --seed — this is exactly the
+   Material You mechanic (a tonal palette derived from a single source color),
+   so dragging the hue slider in Settings re-tints every Android surface live.
+   Declared as a fallback pair (literal clay-red first, relative second) so
+   non-supporting browsers keep the original clay palette. Applied to Android
+   chrome only. The neutral surfaces carry a faint seed tint by design (Material
+   surfaces are tinted toward the source color). */
 body[data-os="android"] {
-  --m3-primary:               oklch(0.47 0.155 33);
-  --m3-on-primary:            oklch(0.985 0.010 80);
-  --m3-primary-container:     oklch(0.885 0.052 42);
-  --m3-on-primary-container:  oklch(0.33 0.100 33);
-  --m3-surface:               oklch(0.975 0.006 70);
-  --m3-surface-container:     oklch(0.945 0.013 58);
-  --m3-surface-container-hi:  oklch(0.915 0.016 52);
-  --m3-outline:               oklch(0.78 0.020 58);
+  --m3-primary:               oklch(0.47 0.155 33);                /* fallback */
+  --m3-primary:               oklch(from var(--seed) 0.47 0.155 h);
+  --m3-on-primary:            oklch(0.985 0.010 80);               /* fallback */
+  --m3-on-primary:            oklch(from var(--seed) 0.985 0.010 h);
+  --m3-primary-container:     oklch(0.885 0.052 42);              /* fallback */
+  --m3-primary-container:     oklch(from var(--seed) 0.885 0.052 h);
+  --m3-on-primary-container:  oklch(0.33 0.100 33);               /* fallback */
+  --m3-on-primary-container:  oklch(from var(--seed) 0.33 0.100 h);
+  --m3-surface:               oklch(0.975 0.006 70);              /* fallback */
+  --m3-surface:               oklch(from var(--seed) 0.975 0.006 h);
+  --m3-surface-container:     oklch(0.945 0.013 58);              /* fallback */
+  --m3-surface-container:     oklch(from var(--seed) 0.945 0.013 h);
+  --m3-surface-container-hi:  oklch(0.915 0.016 52);              /* fallback */
+  --m3-surface-container-hi:  oklch(from var(--seed) 0.915 0.016 h);
+  --m3-outline:               oklch(0.78 0.020 58);               /* fallback */
+  --m3-outline:               oklch(from var(--seed) 0.78 0.020 h);
 }
 body[data-os="android"] .device { background: oklch(0.972 0.009 64); }
 
@@ -334,10 +373,12 @@ body[data-os="android"] .device { background: oklch(0.972 0.009 64); }
 }
 body[data-os="android"] .os-switch__thumb { transform: translateX(calc(100% + var(--switch-gap))); }
 
-/* desktop: lift the selector out of the phone, onto the stage (mirrors the
-   wordmark on the left). Stacks vertically; the thumb slides top/bottom. */
+/* desktop: lift the STAGE selector out of the phone, onto the stage (mirrors the
+   wordmark on the left). Stacks vertically; the thumb slides top/bottom. Scoped
+   to .os-switch--stage so the relocated Settings instance keeps its compact
+   horizontal segmented look on desktop too. */
 @media (min-width: 1080px) {
-  .os-switch {
+  .os-switch--stage {
     --switch-pad: 0.24rem;
     --switch-gap: 0rem;
     --switch-row: 2.62rem;
@@ -356,9 +397,9 @@ body[data-os="android"] .os-switch__thumb { transform: translateX(calc(100% + va
     border-radius: 2.15rem;
     box-shadow: 0 0.6rem 1.6rem -0.5rem oklch(0.35 0.03 50 / 0.4);
   }
-  .os-switch__btn { width: 100%; justify-content: flex-start; padding-inline: 1rem; }
-  .os-switch__btn:focus-visible { outline-offset: -4px; }
-  .os-switch__thumb {
+  .os-switch--stage .os-switch__btn { width: 100%; justify-content: flex-start; padding-inline: 1rem; }
+  .os-switch--stage .os-switch__btn:focus-visible { outline-offset: -4px; }
+  .os-switch--stage .os-switch__thumb {
     top: 0; left: 0; right: 0;
     bottom: auto;
     width: auto;
@@ -368,7 +409,7 @@ body[data-os="android"] .os-switch__thumb { transform: translateX(calc(100% + va
     border-radius: 2.15rem 2.15rem 1.05rem 1.05rem;
     transition: transform 0.42s var(--ease);
   }
-  body[data-os="android"] .os-switch__thumb {
+  body[data-os="android"] .os-switch--stage .os-switch__thumb {
     transform: translateY(var(--switch-row));
     border-top: 1px solid var(--line);
     border-bottom: 0;
@@ -376,7 +417,7 @@ body[data-os="android"] .os-switch__thumb { transform: translateX(calc(100% + va
   }
 }
 @media (min-width: 1320px) {
-  .os-switch { left: calc(50% + var(--col) / 2 + 3.5vw); }
+  .os-switch--stage { left: calc(50% + var(--col) / 2 + 3.5vw); }
 }
 
 /* =========================================================================
@@ -535,11 +576,19 @@ body[data-os="android"] {
     radial-gradient(95vw 70vh at 8% 112%, oklch(0.87 0.06 200 / 0.5), transparent 55%),
     linear-gradient(160deg, oklch(0.95 0.02 255), oklch(0.93 0.02 285));
 }
+/* Android wallpaper is the warm/clay one — it follows the seed hue (the stops
+   fan ~+12/-greek around the seed to keep the gradient's tonal spread). iOS's
+   cool-blue wallpaper above is FIXED art direction and never re-seeds.
+   Fallback pair: literal clay hues first, relative (seed-following) second. */
 .stage-os--android {
   background:
     radial-gradient(115vw 78vh at 86% -8%, oklch(0.86 0.10 45 / 0.6), transparent 55%),
     radial-gradient(92vw 70vh at 4% 108%, oklch(0.88 0.08 75 / 0.52), transparent 55%),
     linear-gradient(160deg, oklch(0.93 0.035 60), oklch(0.92 0.03 38));
+  background:
+    radial-gradient(115vw 78vh at 86% -8%, oklch(from var(--seed) 0.86 0.10 calc(h + 12) / 0.6), transparent 55%),
+    radial-gradient(92vw 70vh at 4% 108%, oklch(from var(--seed) 0.88 0.08 calc(h + 42) / 0.52), transparent 55%),
+    linear-gradient(160deg, oklch(from var(--seed) 0.93 0.035 calc(h + 27)), oklch(from var(--seed) 0.92 0.03 calc(h + 5)));
 }
 body[data-os="ios"] .stage-os--ios { opacity: 1; }
 body[data-os="android"] .stage-os--android { opacity: 1; }

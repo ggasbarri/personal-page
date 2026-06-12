@@ -188,7 +188,6 @@
   var laSub    = document.getElementById("liveactSub");
   var laTrail  = document.getElementById("liveactTrail");
   var laExpand = document.getElementById("liveactExpand");
-  var osSwitch = document.getElementById("osSwitch");
 
   // -- Live Activity controller (the story spine) -------------------------
   var LA = {
@@ -311,9 +310,12 @@
   if (liveact) liveact.addEventListener("click", function () { LA.toggle(); });
 
   // -- the OS module (Platform) -------------------------------------------
+  // btns spans EVERY .os-switch in the document: the device-level switch
+  // (desktop stage, ≥1080px) and the one relocated into Settings (mobile's
+  // in-fiction home for the control). Both stay in sync via apply().
   var Platform = {
     cur: "ios",
-    btns: osSwitch ? Array.prototype.slice.call(osSwitch.querySelectorAll(".os-switch__btn")) : [],
+    btns: Array.prototype.slice.call(document.querySelectorAll(".os-switch__btn")),
     detect: function () {
       var ua = navigator.userAgent || "";
       if (/Android/i.test(ua)) return "android";
@@ -345,6 +347,83 @@
       });
     },
     hero: function () { LA.app(data.heroActivity); LA.wake(); }
+  };
+
+  /* ===================================================================
+     Theme — the seed-driven recolor toy (Phase 3)
+
+     One hue (`--seed` in CSS) drives the whole OS accent: the --accent* family,
+     the Material You tonal palette, wallpaper tints, Live Activity fills, chips
+     and CTAs — every token routed through --seed in base.css recolors live.
+     No JS color math: setHue() only rewrites the seed string (L/C are pinned at
+     0.47/0.155, hue is the single variable). The hue persists in Collection
+     state (localStorage). Browsers without relative-color support keep clay-red
+     (the literal fallback in every seed-derived token); supported() gates the
+     Settings picker so those users never see a dead control.
+     =================================================================== */
+  var SEED_L = "0.47", SEED_C = "0.155";       // pinned lightness/chroma
+  var Theme = {
+    // build the seed oklch() string for a given hue
+    _seedStr: function (h) { return "oklch(" + SEED_L + " " + SEED_C + " " + h + ")"; },
+
+    // relative-color support gate (Settings hides the picker when false)
+    supported: function () {
+      try { return CSS.supports("color", "oklch(from red l c h)"); }
+      catch (e) { return false; }
+    },
+
+    // read persisted hue on boot; apply it if one was saved
+    init: function () {
+      var h = Collection.getState().hue;
+      if (h != null && h !== "") this._applyHue(h);
+    },
+
+    // write the seed (without persisting) — used by init + live slider drag
+    _applyHue: function (h) {
+      document.documentElement.style.setProperty("--seed", this._seedStr(h));
+      this._syncMeta();
+    },
+
+    // set + persist a hue (0..359). Called by the Settings slider / swatches.
+    setHue: function (h) {
+      this._applyHue(h);
+      try {
+        var cs = Collection.getState();
+        cs.hue = h;
+        Collection._save();
+      } catch (e) {}
+    },
+
+    // clear the hue: remove the inline seed (CSS falls back to clay-red) + persist
+    reset: function () {
+      document.documentElement.style.removeProperty("--seed");
+      try {
+        var cs = Collection.getState();
+        cs.hue = null;
+        Collection._save();
+      } catch (e) {}
+      this._syncMeta();
+    },
+
+    // current persisted hue, or null
+    hue: function () { var h = Collection.getState().hue; return (h == null || h === "") ? null : h; },
+
+    // mirror the computed accent into <meta name="theme-color"> so the browser
+    // UI (address bar, task switcher) tracks the chosen accent.
+    // getComputedStyle on a custom property returns the *unresolved* token (e.g.
+    // "oklch(from ... l c h)"), which is invalid for theme-color. So resolve it
+    // through a real used-value: paint a throwaway element with var(--accent) and
+    // read back the computed `color` (a resolved color string the browser accepts).
+    _syncMeta: function () {
+      var meta = document.querySelector('meta[name="theme-color"]');
+      if (!meta) return;
+      var probe = document.createElement("span");
+      probe.style.cssText = "position:absolute;width:0;height:0;color:var(--accent)";
+      document.body.appendChild(probe);
+      var c = getComputedStyle(probe).color;
+      probe.remove();
+      if (c) meta.setAttribute("content", c);
+    }
   };
 
   /* ===================================================================
@@ -418,7 +497,7 @@
 
     function getState() { return _state; }
 
-    return { load: load, visit: visit, count: count, isVisited: isVisited, getState: getState };
+    return { load: load, visit: visit, count: count, isVisited: isVisited, getState: getState, _save: _save };
   })();
 
   /* ---------------------------------------------------------------- Apps */
@@ -766,6 +845,7 @@
 
         // Collection must load before Platform.init() (Platform reads os from state)
         Collection.load();
+        Theme.init();        // apply persisted hue (if any) before first paint settles
         Platform.init();
 
         syncGridHonesty();
@@ -824,6 +904,7 @@
       canMorph: canMorph
     },
     Platform: Platform,
+    Theme: Theme,
     LA: LA,
     Collection: Collection,
     Apps: Apps,

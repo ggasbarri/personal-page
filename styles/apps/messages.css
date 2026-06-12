@@ -50,7 +50,9 @@
   font-weight: 600;
   line-height: 1.5;
   border-top-right-radius: 0.35rem;
+  /* outgoing-bubble shadow tints to the accent: clay fallback, seed-following second */
   box-shadow: 0 0.6rem 1.4rem -0.7rem oklch(0.45 0.13 33 / 0.5);
+  box-shadow: 0 0.6rem 1.4rem -0.7rem oklch(from var(--seed) 0.45 0.13 h / 0.5);
   /* light text on the deep accent fill: keep the smoothing */
   -webkit-font-smoothing: antialiased;
 }
@@ -263,7 +265,9 @@ strong { font-weight: 600; color: var(--text); }
   border: none;
   border-radius: 1.1rem;
   cursor: pointer;
+  /* next-CTA shadow tints to the accent: clay fallback, seed-following second */
   box-shadow: 0 0.7rem 1.6rem -0.7rem oklch(0.45 0.13 33 / 0.5);
+  box-shadow: 0 0.7rem 1.6rem -0.7rem oklch(from var(--seed) 0.45 0.13 h / 0.5);
   transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease), background 0.25s var(--ease);
 }
 .next-cta:hover { transform: translateY(-0.14rem); background: var(--accent-strong); box-shadow: 0 1rem 2.2rem -0.6rem var(--accent-strong); }

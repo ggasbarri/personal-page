@@ -92,11 +92,18 @@ body[data-os="ios"] .homescreen__wall {
     radial-gradient(110% 60% at 6% 108%, oklch(0.88 0.06 200 / 0.5), transparent 60%),
     linear-gradient(165deg, oklch(0.96 0.018 255), oklch(0.94 0.02 285));
 }
+/* Android homescreen wallpaper follows the seed hue (warm/clay family). iOS's
+   above is fixed cool-blue art direction. Fallback pair: literal clay first,
+   relative (seed-following) second so non-supporting browsers keep clay. */
 body[data-os="android"] .homescreen__wall {
   background:
     radial-gradient(120% 60% at 84% -6%, oklch(0.88 0.10 45 / 0.55), transparent 60%),
     radial-gradient(110% 60% at 4% 106%, oklch(0.90 0.08 75 / 0.5), transparent 60%),
     linear-gradient(165deg, oklch(0.95 0.03 60), oklch(0.93 0.028 38));
+  background:
+    radial-gradient(120% 60% at 84% -6%, oklch(from var(--seed) 0.88 0.10 calc(h + 12) / 0.55), transparent 60%),
+    radial-gradient(110% 60% at 4% 106%, oklch(from var(--seed) 0.90 0.08 calc(h + 42) / 0.5), transparent 60%),
+    linear-gradient(165deg, oklch(from var(--seed) 0.95 0.03 calc(h + 27)), oklch(from var(--seed) 0.93 0.028 calc(h + 5)));
 }
 
 /* the grid sits above the wallpaper, centered, generous spacing */
@@ -137,7 +144,9 @@ body[data-os="android"] .homescreen__wall {
   aspect-ratio: 1;
   color: var(--accent-ink);
   background: linear-gradient(155deg, var(--accent), var(--accent-strong));
+  /* tile drop-shadow tints to the accent: clay literal fallback, seed-following second */
   box-shadow: 0 0.5rem 1.2rem -0.5rem oklch(0.4 0.08 33 / 0.55);
+  box-shadow: 0 0.5rem 1.2rem -0.5rem oklch(from var(--seed) 0.4 0.08 h / 0.55);
   transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
 }
 .appicon__tile svg { width: 54%; height: 54%; }
@@ -173,7 +182,7 @@ body[data-os="ios"] .appicon__label { font-weight: 500; }
 
 /* pressed state: gentle depress, ease-out, no bounce */
 .appicon:active .appicon__tile { transform: scale(0.94); }
-.appicon:hover .appicon__tile { transform: translateY(-0.12rem); box-shadow: 0 0.8rem 1.6rem -0.5rem oklch(0.4 0.08 33 / 0.5); }
+.appicon:hover .appicon__tile { transform: translateY(-0.12rem); box-shadow: 0 0.8rem 1.6rem -0.5rem oklch(0.4 0.08 33 / 0.5); box-shadow: 0 0.8rem 1.6rem -0.5rem oklch(from var(--seed) 0.4 0.08 h / 0.5); }
 body[data-os="android"] .appicon:hover .appicon__tile { box-shadow: 0 0.6rem 1.3rem -0.4rem oklch(0.4 0.04 50 / 0.45); }
 .appicon:focus-visible { outline: none; }
 .appicon:focus-visible .appicon__tile { outline: 2.5px solid var(--accent-line); outline-offset: 4px; }
@@ -378,25 +387,19 @@ body[data-os="android"] .navind span { width: 25%; max-width: 7rem;  opacity: 0.
 body:not([data-app]) .navind span { opacity: 0.25; }
 
 /* =========================================================================
-   OS-SWITCH placement at device level.
-   The selector moved out of the (hideable) Messages composer to .device level
-   so it stays reachable on the home grid and persists across screens. On mobile
-   it floats just above the navind home bar, centered. On desktop (>=1080px,
-   base.css) it is position:fixed on the stage — that rule is unchanged, so this
-   placement is scoped to mobile widths only to avoid overriding it.
+   OS-SWITCH placement (Phase 3 relocation).
+   The platform switch now lives in TWO places:
+     - .os-switch--stage : the desktop stage control (≥1080px, position:fixed
+       off the right gutter — base.css owns that rule, unchanged). On MOBILE it
+       is hidden: the in-fiction home for the control is Settings → Platform.
+     - .os-switch--settings : the relocated in-app instance inside the Settings
+       Platform group (flows naturally in its row, styled in settings.css).
+   Both share the .os-switch__btn wiring and stay in sync via Platform.apply().
    ========================================================================= */
 @media (max-width: 1079px) {
-  .os-switch {
-    position: absolute;
-    left: 50%;
-    bottom: calc(1.7rem + max(0.3rem, env(safe-area-inset-bottom)));
-    transform: translateX(-50%);
-    z-index: 45;          /* above app-screen (30) + navind (40), below statusbar */
-    margin: 0;
-  }
-  /* the selector overlays the composer's bottom edge; lift the Messages composer
-     chips a touch more so they do not sit under it. */
-  body[data-app="messages"] .composer { padding-bottom: calc(4.6rem + max(0.3rem, env(safe-area-inset-bottom))); }
+  /* the stage control is a desktop affordance; on phones it is hidden and the
+     switch is discoverable in Settings instead. */
+  .os-switch--stage { display: none; }
 }
 
 /* LA discover checklist: done rows slightly muted, todo dot lighter */

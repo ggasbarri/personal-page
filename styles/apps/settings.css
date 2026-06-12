@@ -1,0 +1,283 @@
+/* =========================================================================
+   GianOS — Settings app styles
+   Neutral surface (consumes the global accent like Messages — a brand app).
+   Grouped list per platform: iOS inset-grouped tables vs Material 3 list. Hosts
+   the theme toy (hue slider + preset swatches), the relocated platform switch,
+   a read-only reduced-motion row, and a collapsible About specs sheet.
+   OKLCH only; colors derive from base.css tokens (the accent ones are seeded).
+   ========================================================================= */
+
+/* the settings screen reads as the OS Settings app: warm-paper surface, the
+   per-OS wallpaper does not bleed through (it is an app takeover). */
+.settings .app-body {
+  background: var(--surface);
+}
+
+/* ---- the grouped list -------------------------------------------------- */
+.settings__list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.6rem;
+  padding: 1.3rem 1.15rem calc(2.4rem + env(safe-area-inset-bottom));
+}
+
+/* a settings group: a labelled cluster of rows */
+.settings-group { display: flex; flex-direction: column; gap: 0.55rem; }
+.settings-group__h {
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding-inline: 0.4rem;
+}
+.settings-group__body {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  border-radius: 1.1rem;
+  overflow: hidden;
+}
+
+/* ---- a row ------------------------------------------------------------- */
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  min-height: 3.1rem;
+}
+.settings-row + .settings-row { border-top: 1px solid var(--line-soft); }
+.settings-row__main { display: flex; flex-direction: column; gap: 0.12rem; min-width: 0; }
+.settings-row__label {
+  font-size: 0.98rem;
+  font-weight: 600;
+  color: var(--text);
+}
+.settings-row__hint {
+  font-family: var(--font-label);
+  font-size: 0.74rem;
+  line-height: 1.3;
+  color: var(--text-muted);
+}
+.settings-row__state {
+  font-family: var(--font-label);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* a stacked row: label above, full-width control below (the hue slider) */
+.settings-row--stack { flex-direction: column; align-items: stretch; gap: 0.7rem; }
+.settings-row--switch .os-switch { flex: 0 0 auto; }
+
+/* =========================================================================
+   APPEARANCE — the theme toy
+   ========================================================================= */
+/* hue slider: a native range input painted with an oklch hue-gradient track at
+   the brand L/C so it previews the exact accent family it produces. The thumb
+   is a clean accent ring. Keyboard-operable for free (native range). */
+.hue-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 1.5rem;
+  margin: 0.1rem 0 0.2rem;
+  background: transparent;
+  cursor: pointer;
+}
+.hue-slider::-webkit-slider-runnable-track {
+  height: 0.7rem;
+  border-radius: 999px;
+  background: var(--hue-track);
+  border: 1px solid var(--line);
+}
+.hue-slider::-moz-range-track {
+  height: 0.7rem;
+  border-radius: 999px;
+  background: var(--hue-track);
+  border: 1px solid var(--line);
+}
+.hue-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: -0.38rem;       /* center on the 0.7rem track */
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--accent);
+  box-shadow: 0 0.2rem 0.5rem -0.2rem oklch(0.4 0.03 50 / 0.45);
+  transition: transform 0.2s var(--ease);
+}
+.hue-slider::-moz-range-thumb {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 3px solid var(--accent);
+  box-shadow: 0 0.2rem 0.5rem -0.2rem oklch(0.4 0.03 50 / 0.45);
+  transition: transform 0.2s var(--ease);
+}
+.hue-slider:active::-webkit-slider-thumb { transform: scale(1.08); }
+.hue-slider:active::-moz-range-thumb { transform: scale(1.08); }
+.hue-slider:focus-visible { outline: none; }
+.hue-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 4px var(--accent-line); }
+.hue-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 4px var(--accent-line); }
+
+/* ---- preset swatches --------------------------------------------------- */
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(3.4rem, 1fr));
+  gap: 0.6rem 0.5rem;
+  padding: 0.2rem 0.1rem 0.4rem;
+}
+.swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.32rem;
+  padding: 0.1rem;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.swatch__chip {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: 0 0.2rem 0.6rem -0.25rem oklch(0.4 0.03 50 / 0.4), inset 0 0 0 1px oklch(1 0 0 / 0.12);
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.swatch__star { color: oklch(0.985 0.01 90); font-size: 0.85rem; line-height: 1; }
+.swatch__name {
+  font-family: var(--font-label);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+.swatch:hover .swatch__chip { transform: translateY(-0.12rem); }
+.swatch:active .swatch__chip { transform: scale(0.93); }
+.swatch:focus-visible { outline: none; }
+.swatch:focus-visible .swatch__chip { box-shadow: 0 0 0 3px var(--accent-line), inset 0 0 0 1px oklch(1 0 0 / 0.12); }
+/* active preset: ring + lifted name */
+.swatch[aria-pressed="true"] .swatch__chip {
+  box-shadow: 0 0 0 2.5px var(--surface-2), 0 0 0 4.5px var(--accent), inset 0 0 0 1px oklch(1 0 0 / 0.12);
+}
+.swatch[aria-pressed="true"] .swatch__name { color: var(--text); font-weight: 600; }
+
+/* ---- reset affordance -------------------------------------------------- */
+.settings-reset {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  margin: 0.2rem 0.1rem 0.1rem;
+  padding: 0.42rem 0.8rem;
+  border: 1px solid var(--accent-line);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.22s var(--ease), transform 0.2s var(--ease);
+}
+.settings-reset:hover { background: var(--accent-line); }
+.settings-reset:active { transform: scale(0.96); }
+.settings-reset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* =========================================================================
+   ABOUT — a collapsible specs sheet (reuses .panel from messages.css)
+   ========================================================================= */
+.settings-about { width: 100%; }
+.settings-about__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  min-height: 3.1rem;
+  cursor: pointer;
+  list-style: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.settings-about__summary::-webkit-details-marker { display: none; }
+.settings-about__summary:focus-visible { outline: 2px solid var(--accent-line); outline-offset: -2px; }
+.settings-about__chev { color: var(--text-faint); transition: transform 0.25s var(--ease); flex: 0 0 auto; }
+.settings-about[open] .settings-about__chev { transform: rotate(90deg); }
+.settings-about__body {
+  padding: 0 1rem 1rem;
+  border-top: 1px solid var(--line-soft);
+}
+.settings-about__spec { margin-top: 0.85rem; }
+.settings-about__spec dt { text-transform: lowercase; }
+.settings-about__spec a { color: var(--accent); font-weight: 600; text-decoration: none; }
+.settings-about__spec a:hover { text-decoration: underline; }
+.settings-about__sep { color: var(--text-faint); margin: 0 0.4rem; }
+
+/* =========================================================================
+   PLATFORM SWITCH placement inside Settings
+   The relocated .os-switch--settings sits as a compact segmented control in its
+   row. The desktop stage switch (.os-switch--stage) keeps its base.css
+   placement; here we only style the in-app instance.
+   ========================================================================= */
+.os-switch--settings {
+  margin: 0;
+  align-self: center;
+}
+
+/* =========================================================================
+   PER-OS list skinning
+   iOS: inset grouped tables (rounded group cards, hairline insets). Android:
+   Material list (flatter, larger touch targets, tonal surfaces).
+   ========================================================================= */
+/* iOS inset grouped look — already close to the default; soften the radius and
+   lean on the warm surface. */
+body[data-os="ios"] .settings-group__body {
+  border-radius: 1.15rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+body[data-os="ios"] .settings-group__h {
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Android Material list — tonal surface, flatter rows, sentence-case group head */
+body[data-os="android"] .settings-group__body {
+  border-radius: 1.4rem;
+  background: var(--m3-surface-container);
+  border: 1px solid transparent;
+}
+body[data-os="android"] .settings-row + .settings-row,
+body[data-os="android"] .settings-about__body { border-top-color: var(--m3-outline); }
+body[data-os="android"] .settings-group__h {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.82rem;
+  color: var(--m3-on-primary-container);
+}
+
+/* =========================================================================
+   reduced motion: the slider thumb + chips rest static (no transitions). The
+   slider stays fully operable (it is a native range — value changes are not
+   animations). About chevron snaps instead of rotating with a transition.
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .hue-slider::-webkit-slider-thumb,
+  .hue-slider::-moz-range-thumb,
+  .swatch__chip,
+  .settings-reset,
+  .settings-about__chev { transition: none; }
+}
