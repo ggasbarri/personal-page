@@ -1,0 +1,154 @@
+/* =========================================================================
+   GianOS — Notes app styles (the completion reward)
+   Committed warm paper-yellow palette (this app only). One pinned note on a
+   sticky-note surface. Scoped under .app-screen[data-app=notes] and
+   body[data-app=notes] for the statusbar override + per-OS app-head skin.
+
+   Tokens are fixed — they do not follow --seed (Notes' art direction is
+   deliberately immune to the theme toy, like the other apps).
+
+   Contrast: --notes-ink on --notes-surface ≥ 4.5:1. All OKLCH, no hex.
+
+   ARIA: the note is an <article>; title is an <h2>; lines are paragraphs.
+   ========================================================================= */
+
+/* ---- warm statusbar override when Notes is active ----------------------- */
+body[data-app="notes"] {
+  --statusbar-ink: oklch(0.32 0.05 90);
+  --statusbar-bg:  oklch(0.95 0.03 95 / 0.9);
+}
+
+/* ---- scoped palette ----------------------------------------------------- */
+.app-screen[data-app="notes"] {
+  --notes-surface:      oklch(0.95 0.03 95);    /* paper yellow */
+  --notes-surface-card: oklch(0.975 0.035 96);  /* brighter note lift */
+  --notes-accent:       oklch(0.62 0.11 75);    /* amber — pin, meta */
+  --notes-ink:          oklch(0.27 0.03 80);    /* primary text */
+  --notes-muted:        oklch(0.46 0.04 82);    /* secondary / meta */
+  --notes-line:         oklch(0.86 0.03 92);    /* hairline */
+}
+
+.app-screen[data-app="notes"] .app-body {
+  background: var(--notes-surface);
+  padding: 1.1rem;
+  gap: 0;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* ---- app-head: warm paper glass ----------------------------------------- */
+.app-screen[data-app="notes"] .app-head {
+  background: color-mix(in oklch, var(--notes-surface) 88%, transparent);
+  border-bottom-color: oklch(0.82 0.04 92 / 0.6);
+}
+.app-screen[data-app="notes"] .app-head__title { color: var(--notes-ink); }
+.app-screen[data-app="notes"] .app-head__back  { color: var(--notes-accent); }
+
+/* Android tonal head variant */
+body[data-os="android"] .app-screen[data-app="notes"] .app-head {
+  background: oklch(0.93 0.035 94);
+  backdrop-filter: none;
+}
+
+/* =========================================================================
+   PINNED NOTE CARD
+   ========================================================================= */
+.note-card {
+  width: 100%;
+  max-width: 23rem;
+  margin: 0.6rem auto 0;
+  padding: 1.3rem 1.3rem 1.5rem;
+  background: var(--notes-surface-card);
+  border-radius: 0.5rem;   /* sticky-note: gently rounded */
+  box-shadow:
+    0 0.1rem 0.2rem oklch(0.62 0.11 75 / 0.1),
+    0 0.5rem 1.4rem -0.4rem oklch(0.5 0.08 75 / 0.22);
+}
+
+/* iOS: a touch more lift + inset highlight */
+body[data-os="ios"] .app-screen[data-app="notes"] .note-card {
+  border-radius: 0.7rem;
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.5),
+    0 0.5rem 1.5rem -0.4rem oklch(0.5 0.08 75 / 0.26);
+}
+
+/* Android M3 tonal card */
+body[data-os="android"] .app-screen[data-app="notes"] .note-card {
+  border-radius: 0.85rem;
+  background: oklch(0.93 0.035 94);
+  box-shadow: none;
+}
+
+.note-card__head {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin-bottom: 0.7rem;
+}
+.note-card__pin { color: var(--notes-accent); display: inline-flex; }
+.note-card__meta {
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: lowercase;
+  color: var(--notes-muted);
+}
+
+.note-card__title {
+  margin: 0 0 0.9rem;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--notes-ink);
+}
+
+.note-card__line {
+  margin: 0 0 0.85rem;
+  font-family: var(--font-ui);
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--notes-ink);
+}
+
+.note-card__sign {
+  margin: 1.1rem 0 0;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--notes-line);
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--notes-muted);
+}
+
+/* =========================================================================
+   POP ANIMATION — reuses the global .pop / .in idiom (opacity + translateY).
+   ========================================================================= */
+.note-card__head.pop,
+.note-card__title.pop,
+.note-card__line.pop,
+.note-card__sign.pop {
+  opacity: 0;
+  transform: translateY(0.6rem);
+}
+.note-card__head.pop.in,
+.note-card__title.pop.in,
+.note-card__line.pop.in,
+.note-card__sign.pop.in {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .note-card__head.pop,  .note-card__head.pop.in,
+  .note-card__title.pop, .note-card__title.pop.in,
+  .note-card__line.pop,  .note-card__line.pop.in,
+  .note-card__sign.pop,  .note-card__sign.pop.in {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}

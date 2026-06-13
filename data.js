@@ -33,7 +33,10 @@ window.APP_DATA = {
       { id: "ledger",   app: "Ledger",   icon: "hire",   title: "new transaction",               body: "Matemáticas Financieras  +10.0",     time: "2h"  },
       { id: "terminal", app: "Terminal", icon: "doc",    title: "1 job finished",                body: "gian --stack  exited 0",             time: "3h"  },
       { id: "settings", app: "Settings", icon: "guild",  title: "new wallpapers available",      body: "re-seed the whole OS",               time: "1d"  },
-      { id: "mail",     app: "Mail",     icon: "doc",    title: "draft saved",                   body: "to: hey@ggasbarri.com",              time: "1d"  }
+      { id: "mail",     app: "Mail",     icon: "doc",    title: "draft saved",                   body: "to: hey@ggasbarri.com",              time: "1d"  },
+      /* Notes is the completion reward: this teaser is filtered out until the
+         reward is earned (see Lock._buildStack + Collection.isRewarded). */
+      { id: "notes",    app: "Notes",    icon: "doc",    title: "1 pinned note",                 body: "for the curious",                    time: "now" }
     ]
   },
 
@@ -186,6 +189,20 @@ window.APP_DATA = {
         { text: "  hint: try `help` for available commands", cls: "dim" }
       ]
     }
+  },
+
+  /* Notes — the completion reward. One pinned note in Gian's voice. Shown only
+     after all six base apps are explored. Tone: human, dry, lowercase-leaning.
+     `lines` render as paragraphs; keep it short. */
+  notes: {
+    title: "things I'm thinking about",
+    meta: "pinned · just now",
+    lines: [
+      "why do reasonable people, looking at the same facts, choose different things? incentives, mostly. still chewing on it — that's what the economics is for.",
+      "lately: agents are compilers for intent. the context you give them is the source code. most of the work is writing that well.",
+      "ps — you opened everything. thanks for being curious; that's the whole point of this place."
+    ],
+    sign: "— gian"
   }
 };
 

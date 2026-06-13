@@ -6,7 +6,9 @@
 
 ## Color
 
-**Strategy:** Committed. Warm paper neutrals carry the page; one deep **clay-red** is the single accent (the visitor's own chat bubbles, the continue button, links, key numbers). Reference point: a confident printed specimen, warm Iberian clay instead of the dark-mode-with-neon-accent reflex. All neutrals tinted warm (~hue 50-86). OKLCH throughout, never `#000`/`#fff`. No glow halos.
+**Strategy:** Two-tier — fixed warm neutrals for the paper identity, one seed-derived accent family for everything interactive.
+
+**Fixed tokens (never re-seed):** warm paper neutrals carry the identity and guarantee contrast regardless of hue.
 
 ```
 --stage:        oklch(0.915 0.014 83)  /* warm ecru page behind the app */
@@ -19,14 +21,27 @@
 --text-muted:   oklch(0.46 0.020 50)   /* secondary */
 --text-faint:   oklch(0.60 0.018 52)   /* metadata */
 
---accent:       oklch(0.47 0.155 33)   /* deep clay red, AA on paper */
---accent-strong:oklch(0.41 0.160 32)   /* pressed / emphasis */
---accent-ink:   oklch(0.975 0.012 80)  /* paper text on accent fills */
---accent-soft:  oklch(0.47 0.155 33 / 0.13) /* tinted fills */
 --mint:         oklch(0.58 0.135 150)  /* tiny: "online" status dot only */
 ```
 
-Accent budget: clay-red carries the brand (the visitor's chat bubbles, the cursor, links, key numbers, the send button, the continue CTA). It is kept at L≈0.47 so even small text clears WCAG AA on paper. Mint appears only as the live-status dot. Ink is warm charcoal on paper.
+**Seed-derived tokens (recolor via Settings theme toy):** Settings writes `--seed` on `:root`; CSS relative color syntax derives the whole accent family without JS color math. Literal fallbacks ship first so pre-supporting browsers keep clay-red.
+
+```css
+--seed: oklch(0.47 0.155 33);                   /* Settings writes this */
+--accent: oklch(0.47 0.155 33);                  /* fallback */
+--accent: oklch(from var(--seed) l c h);         /* supported: mirrors seed */
+--accent-strong: oklch(from var(--seed) calc(l - 0.06) calc(c + 0.005) h);
+--accent-ink:   oklch(0.975 0.012 80);           /* fixed: paper text on fills */
+--accent-soft:  oklch(from var(--seed) l c h / 0.13);
+```
+
+Seed-recolored surfaces: `--accent*` family, entire `--m3-*` tonal palette (authentic Material You mechanic — L/C fixed, hue follows seed), Live Activity ring/bar fill, home/lock wallpaper tint, chips/CTAs/outgoing bubbles. The hue is persisted to `localStorage`.
+
+**Per-app committed palettes** (scoped to `.app-screen[data-app=...]`) are art-directed and immune to the seed: Maps (cool blue), Ledger (green-tinted), Terminal (dark terminal green/amber), Mail/Settings (neutral). These never recolor.
+
+**Status-bar ink tokens:** `--statusbar-ink` and `--statusbar-bg` are overridden per `body[data-app]`. Terminal, being a dark app, sets these to light values so the shared status bar (clock, glyphs, Live Activity) stays legible. JS updates `<meta name="theme-color">` on app open/close to match.
+
+Accent budget: clay-red (default seed) carries Messages — chat bubbles, cursor, links, key numbers, send button, continue CTA. L≈0.47 clears WCAG AA on paper. Mint appears only as the live-status dot. AI transient colors (Apple Intelligence / Gemini) are the only non-seed moments and resolve back to brand surfaces.
 
 ## Typography
 
@@ -39,25 +54,40 @@ Reflex-reject list respected (no Inter / DM Sans / Space Grotesk / IBM Plex / Ge
 
 Scale: fluid `clamp()`, ≥1.25 ratio between steps. Body ~16.5px, line-length capped ~60ch inside the app column.
 
+## Navigation model
+
+The experience is an OS, not a single view. Three layers stack inside `.device`:
+
+1. **Lock screen** (`z70`) — shown once per session to fresh visitors (skipped on deep links, skip-able via button for no-JS/reduced-motion). Wallpaper mirrors the home-screen gradients; a notification stack teases unvisited apps; clock live-updates. Per-OS unlock affordance (iOS home bar / Android lock-glyph button), always a real `<button>`.
+2. **Home screen** (`z10`) — app icon grid. iOS squircles vs Material circles, label casing per platform. Unvisited apps wear a badge dot that clears on first open. The Live Activity here acts as the global **discovery tracker** ("3/6 explored"), not a per-story spine.
+3. **App screens** (`z30`) — each a full-screen takeover with `position:absolute; inset:0; overflow-y:auto`. Apps stay mounted after close (state restores free; `hidden` toggle). A hash router (`#m/<appid>`) handles open/close so browser Back works; `startViewTransition` runs the zoom-from-icon animation (`viewTransitionName: "app-zoom"` set on the icon + screen pair, cleared on finish; fallback: instant toggle + opacity).
+
+The **nav indicator** (iOS home bar / Android handle) lives at device level and always navigates home. Escape key also closes the current app.
+
 ## Layout
 
 - A centered **app column**, max-width ~460px, is the phone screen. It sits on the warm-paper `--stage` with a soft light bezel and shadow (a "paper-cradle"), plus a faint paper-tooth grain. No glow.
-- A sticky, **per-OS status bar** at top: clock (system sans) left, the **Live Activity** (iOS Dynamic Island / Android promoted Live Update status chip) center, platform-specific signal/wifi/battery glyphs right (iOS bars + arc-wifi + horizontal battery pill; Android triangle wifi/signal + `84%` + upright battery). A hairline story-progress fill sits beneath it; Focus mode adds a moon glyph.
-- The body is one continuous **chat thread**: the assistant's streamed answers (left, on `--surface-2` bubbles) and the visitor's questions (right, clay-red bubbles). Knowledge panel and answers render as in-thread cards, not a separate grid.
-- A sticky **composer** at the bottom: a scroll-snapping row of suggested-prompt chips (clicking a chip centers it), and a **gesture-nav indicator** beneath (iOS home bar / Android handle). There is **no free-text input**; chips plus the per-answer "continue" button drive all navigation. The platform selector lives here on mobile.
-- Desktop grounds the floating phone with one oversize, very-low-contrast **wordmark** ("Gianfranco Gasbarri") off the left gutter, the **platform selector** off the right gutter (out of the phone), and a **per-OS wallpaper** behind the phone (cool gradient for iOS, warm Material You gradient for Android) that crossfades on switch. Mobile drops the stage and goes full-bleed: the app IS the viewport, and the OS reads through the chrome.
+- A sticky, **per-OS status bar** at top: clock (system sans) left, the **Live Activity** center, platform-specific signal/wifi/battery glyphs right. In the **Messages** app, a hairline story-progress bar sits beneath the status bar; Focus mode adds a moon glyph. In other apps the status bar is shared chrome.
+- **Messages app:** the body is a **chat thread** — the assistant's streamed answers (left, `--surface-2` bubbles) and the visitor's questions (right, clay-red bubbles). Chips + per-answer "continue" button drive navigation; no free-text input. Knowledge panel and answers render as in-thread cards.
+- **Other apps** each own their screen entirely (Maps SVG canvas, Ledger transaction list, Terminal scrollback, Settings panels, Mail composer, Notes card).
+- Desktop grounds the floating phone with one oversize, very-low-contrast **wordmark** off the left gutter, the **platform selector** off the right gutter, and a **per-OS wallpaper** that crossfades on switch. Mobile goes full-bleed.
 
-Cards used only where they're the right affordance (knowledge panel, project entries, stack groups). No nested cards. No identical icon-title-text grid.
+Cards used only where they're the right affordance. No nested cards. No identical icon-title-text grid.
 
 ## Motion
 
 Ease-out only, exponential curves (`cubic-bezier(0.16, 1, 0.3, 1)` / ease-out-expo). No bounce, no elastic. Never animate layout properties (animate transform/opacity; for thread height use `grid-template-rows`).
 
-- **Hero:** the first question types itself into the composer, "sends", a 3-dot typing indicator appears, then the answer **streams** in token-by-token with a clay block cursor; visual modules pop in staggered.
-- **Story arc:** the thread is sequenced (hook, challenge, development, setback, payoff). Each answer ends with a single "continue" button that **morphs into the question bubble** it becomes (View Transitions). A hairline progress bar fills; the paper's temperature shifts subtly per beat (cooler at the challenge, dimmer at the setback, warmer at the payoff).
+- **App launch / close:** icons zoom into their full-screen app via View Transitions API (`viewTransitionName: "app-zoom"` on the icon + screen pair; `startViewTransition`; name cleared on finish). Baseline support: Chrome 111+, Safari 18+, Firefox 144+. `canMorph()` check covers the rest with instant toggle + opacity fallback.
+- **Lock → home:** the lock screen dismisses and home icons stagger in (`.pop` pattern, ease-out-expo, no bounce).
+- **Messages — hero:** the first question types itself into the composer, "sends", a 3-dot typing indicator appears, then the answer **streams** in token-by-token with a clay block cursor; visual modules pop in staggered.
+- **Messages — story arc:** the thread is sequenced (hook, challenge, development, setback, payoff). Each answer ends with a single "continue" button that **morphs into the question bubble** it becomes (View Transitions). A hairline progress bar fills; the paper's temperature shifts subtly per beat (cooler at the challenge, dimmer at the setback, warmer at the payoff).
+- **Maps:** the SVG route draws itself via `stroke-dasharray` / `stroke-dashoffset`; pins pop in sequence. Reduced motion: pre-drawn.
+- **Ledger:** balance count-up via `animateCount`.
+- **Terminal:** text autotypes via `typeInto`; blinking block cursor.
 - **Idle:** the online dot has a slow pulse. Restrained, not busy.
-- **OS chrome:** the Live Activity wakes (spring-settle), the Dynamic Island merges via an SVG goo filter on state change and expands a detail card on the build beat; notifications cascade in staggered (ease-out, no bounce); the AI beat plays a transient Apple Intelligence edge-glow (iOS) / Circle-to-Search lasso + Gemini sheet (Android); the per-OS wallpaper and platform corner radius crossfade/morph on switch.
-- `prefers-reduced-motion`: no typewriter/streaming/morph, no count-up, no goo/glow/spring; everything renders in its final state immediately (the conclusion cascade falls back to static chips).
+- **OS chrome:** the Live Activity wakes (spring-settle), the Dynamic Island merges via an SVG goo filter on state change; notifications cascade in staggered (ease-out, no bounce); the AI beat plays a transient Apple Intelligence edge-glow (iOS) / Circle-to-Search lasso + Gemini sheet (Android); the per-OS wallpaper crossfades on switch.
+- `prefers-reduced-motion`: no typewriter/streaming/morph/route-draw/VT zoom, no count-up, no goo/glow/spring; everything renders in its final state immediately (the conclusion cascade falls back to static chips; the Maps route is pre-drawn).
 
 ## Imagery
 
@@ -73,8 +103,9 @@ The device behaves like a real OS, skinned by `body[data-os="ios" | "android"]`.
 
 - **iOS, Liquid Glass.** Translucent frosted surfaces: `backdrop-filter: blur(~22px) saturate(1.8)`, a low-opacity fill, a bright semi-transparent top edge (specular highlight via `inset 0 1px 0`), soft shadow. Applied to the composer (on a `::before` layer, so the composer itself stays filter-free and doesn't trap the fixed selector), notifications, and chips. Dynamic Island stays opaque near-black; its expanded card is dark liquid glass. Larger device corner radius (~3rem). Home-bar gesture indicator.
 - **Android, Material 3 Expressive.** Opaque tonal surfaces, larger/pill shapes, a hair of elevation. The Material You tonal palette (`--m3-primary`, `--m3-primary-container`, `--m3-surface-container`, ...) is **seeded from the clay-red** (hue ~33) so dynamic color stays on-brand. Promoted Live Update status chip, progress notification card, heads-up notifications with round icons, Quick Share sheet. Tighter device corner radius (~2rem). Wider/shorter handle gesture indicator.
-- **Live Activity spine.** One persistent activity tracks the broader story path (`.liveact`): compact in the status bar, expandable, progress as a ring (iOS) / bar (Android). Per-beat states live in `data.js` (`activity: {state, label, progress}`). It should read as "work in motion" or "clear path", not as one specific workstream.
+- **Live Activity spine.** Outside Messages the LA is the **discovery tracker**: ring/bar fills as apps are visited ("3/6 explored"); expand card shows a per-app checklist. Inside Messages the LA reverts to the story-beat spine (per-beat `activity` state from `data.js`), then restores to discovery on close. It should read as "work in motion" or "clear path", not as one specific workstream.
 - **Per-beat features** (`feature` in `data.js`): `ai` (Apple Intelligence edge-glow / Circle-to-Search + Gemini), `focus` (Do Not Disturb dim + silenced notification), `cascade` (the marquee, a staggered stack of notifications crediting other people), `poster` (Contact Poster / Quick Share). Transient AI-feature colors are the only non-clay moments and resolve back to brand surfaces.
-- **Per-OS wallpaper** (`.stage-os--ios` / `.stage-os--android`): two fixed gradient layers behind the phone that crossfade by opacity on switch (cool blue/lavender for iOS, warm clay/peach for Android). Visible on desktop around the floating phone; under the full-bleed device on mobile.
-- **Selector** (`.os-switch`): auto-detected (UA), persisted (`localStorage["ask-os"]`). Equal-width segmented buttons so the thumb aligns. Inside the composer on mobile; `position: fixed` on the right stage at ≥1080px.
-- **Accessibility:** every component rests in a complete, visible state under `prefers-reduced-motion`; the gesture indicators and status glyphs are `aria-hidden`; the selector is keyboard-focusable with `aria-pressed`.
+- **Per-OS wallpaper** (`.stage-os--ios` / `.stage-os--android`): two fixed gradient layers behind the phone that crossfade by opacity on switch (cool blue/lavender for iOS, warm clay/peach for Android). The wallpaper tint is also derived from `--seed` so it shifts with the theme toy.
+- **Selector** (`.os-switch`): auto-detected (UA), persisted in `localStorage` (`gg-os-v1`). Equal-width segmented buttons so the thumb aligns. On mobile lives in Settings (relocated from the composer); `position: fixed` on the right stage at ≥1080px.
+- **Status-bar ink adaptation.** `--statusbar-ink` and `--statusbar-bg` tokens are overridden per `body[data-app]`. Dark apps (Terminal) set these to light values; JS updates `<meta name="theme-color">` on app open/close.
+- **Accessibility:** every component rests in a complete, visible state under `prefers-reduced-motion`; the gesture indicators and status glyphs are `aria-hidden`; the selector is keyboard-focusable with `aria-pressed`; the lock screen always exposes a real `<button>` unlock affordance.

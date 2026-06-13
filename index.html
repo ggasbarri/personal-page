@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="styles/apps/maps.css" />
   <link rel="stylesheet" href="styles/apps/ledger.css" />
   <link rel="stylesheet" href="styles/apps/mail.css" />
+  <link rel="stylesheet" href="styles/apps/notes.css" />
   <!-- no-JS fallback strategy: this inline script flips <html> to .js immediately
        (before paint, no flash). Default CSS shows the Messages app content and
        hides the homescreen; .js CSS shows the homescreen and lets the Shell drive
@@ -183,6 +184,14 @@
           </span>
           <span class="appicon__label">Mail</span>
         </button>
+        <!-- Notes: the completion reward. Registered with bonus:true; stays
+             hidden until all six base apps are visited, then wakes onto the grid. -->
+        <button class="appicon" type="button" data-app="notes" role="listitem" hidden>
+          <span class="appicon__tile" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3.5h14a1 1 0 0 1 1 1V21l-3-2-3 2-3-2-3 2V4.5a1 1 0 0 1 1-1z"/><path d="M8.5 8.5h7M8.5 12h7M8.5 15.5h4"/></svg>
+          </span>
+          <span class="appicon__label">Notes</span>
+        </button>
       </div>
     </section>
 
@@ -271,7 +280,7 @@
          map, route path, stop pins, and bottom place card are all built and
          mounted by maps.js on first open. Committed cool-blue ocean palette.
          =================================================================== -->
-    <section class="app-screen" data-app="maps" id="app-maps" aria-label="Maps">
+    <section class="app-screen" data-app="maps" id="app-maps" aria-label="Maps" hidden>
       <header class="app-head">
         <button class="app-head__back" type="button" aria-label="Back to home">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
@@ -288,7 +297,7 @@
          palette, committed. Account header, progress bar, and transaction
          list are all built and mounted by ledger.js on first open.
          =================================================================== -->
-    <section class="app-screen" data-app="ledger" id="app-ledger" aria-label="Ledger">
+    <section class="app-screen" data-app="ledger" id="app-ledger" aria-label="Ledger" hidden>
       <header class="app-head">
         <button class="app-head__back" type="button" aria-label="Back to home">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
@@ -304,7 +313,7 @@
          palette (scoped, not global dark mode). Scrollback + prompt + chips
          are all built and mounted by terminal.js on first open.
          =================================================================== -->
-    <section class="app-screen" data-app="terminal" id="app-terminal" aria-label="Terminal">
+    <section class="app-screen" data-app="terminal" id="app-terminal" aria-label="Terminal" hidden>
       <header class="app-head">
         <button class="app-head__back" type="button" aria-label="Back to home">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
@@ -323,7 +332,7 @@
          iOS/Android switch (mobile's in-fiction home for it). About is a quiet
          specs-sheet, lowercase keys, no title inflation.
          =================================================================== -->
-    <section class="app-screen settings" data-app="settings" id="app-settings" aria-label="Settings">
+    <section class="app-screen settings" data-app="settings" id="app-settings" aria-label="Settings" hidden>
       <header class="app-head">
         <button class="app-head__back" type="button" aria-label="Back to home">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
@@ -427,7 +436,7 @@
          and two CTAs (Send mailto:, LinkedIn link). Built and mounted by mail.js
          on first open.
          =================================================================== -->
-    <section class="app-screen" data-app="mail" id="app-mail" aria-label="Mail">
+    <section class="app-screen" data-app="mail" id="app-mail" aria-label="Mail" hidden>
       <header class="app-head">
         <button class="app-head__back" type="button" aria-label="Back to home">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
@@ -437,6 +446,22 @@
       <!-- .app-body content is fully built by mail.js mount() -->
       <div class="app-body"></div>
     </section><!-- /.app-screen[mail] -->
+
+    <!-- ===================================================================
+         NOTES app — the completion reward (bonus app). One pinned note in
+         Gian's voice. Hidden until all six base apps are explored. Built and
+         mounted by notes.js on first open.
+         =================================================================== -->
+    <section class="app-screen" data-app="notes" id="app-notes" aria-label="Notes" hidden>
+      <header class="app-head">
+        <button class="app-head__back" type="button" aria-label="Back to home">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+        <span class="app-head__title">Notes</span>
+      </header>
+      <!-- .app-body content is fully built by notes.js mount() -->
+      <div class="app-body"></div>
+    </section><!-- /.app-screen[notes] -->
 
     <!-- gesture nav indicator, promoted to a working Home control. iOS home bar /
          Android handle. Click / Escape / swipe-up returns to the home grid. -->
@@ -451,6 +476,7 @@
   <script src="js/apps/maps.js"></script>
   <script src="js/apps/ledger.js"></script>
   <script src="js/apps/mail.js"></script>
+  <script src="js/apps/notes.js"></script>
   <script>GG.Shell.boot();</script>
 </body>
 </html>

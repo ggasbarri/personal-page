@@ -48,10 +48,11 @@
 /* =========================================================================
    Visibility model.
 
-   no-JS (no .js on <html>): the homescreen carries the `hidden` attribute in
-   markup, so it stays hidden; the Messages .app-screen has no `hidden`, so its
-   hero + facts stay readable. That is the whole no-JS fallback — no .js means
-   the rules below never apply.
+   no-JS (no .js on <html>): the homescreen AND every app-screen except Messages
+   carry the `hidden` attribute in markup, so they stay hidden; the Messages
+   .app-screen has no `hidden`, so its hero + facts stay readable. That is the
+   whole no-JS fallback — no .js means the rules below never apply. (With JS,
+   Shell.boot strips those `hidden` attributes so .screen--active governs.)
 
    JS on (.js set before paint): the Shell removes `hidden` from the homescreen
    and marks exactly one screen active by adding `.screen--active` to it (the
@@ -61,7 +62,11 @@
    theming/CSS hooks. Driving visibility off a class (not the data-app value)
    keeps the selectors simple and generalizes to every later app screen.
    ========================================================================= */
+/* Explicit author rules: the `.app-screen`/`.homescreen` base display would
+   otherwise beat the UA `[hidden]{display:none}` (author > UA), so the no-JS
+   `hidden` attribute needs an author-level counterpart to actually hide. */
 .homescreen[hidden] { display: none; }
+.app-screen[hidden] { display: none; }
 
 html.js .homescreen,
 html.js .app-screen { display: none; }

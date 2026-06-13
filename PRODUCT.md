@@ -2,11 +2,11 @@
 
 ## Product
 
-**Ask Gianfranco** — the personal page of Gianfranco Gasbarri, presented as a personal AI app. A single-page showcase site framed as a short first-person chat: a mobile app interface where visitors ask "who are you?", Gian answers directly, and suggested-prompt chips walk through his story.
+**GianOS** — the personal page of Gianfranco Gasbarri, built as an explorable fake phone OS. Visitors arrive at a lock screen, unlock to a home grid, and open full-screen apps that each cover a different aspect of who he is: career story (Messages), journey (Maps), side study (Ledger), stack (Terminal), contact (Mail), and a theme toy (Settings). A hidden bonus app (Notes) unlocks when all six are visited.
 
-**Register:** brand. Design IS the product. This is a portfolio; the visitor's impression is the deliverable. The content is intentionally light (a bio, a few real work projects, a stack), so the design and interaction carry the weight.
+**Register:** brand. Design IS the product. This is a portfolio; the visitor's impression is the deliverable. The content is intentionally light (a bio, a few real work projects, a stack), so the design and the exploration loop carry the weight.
 
-**Signature mechanic (the hook):** the page is a working phone, and it behaves like a real OS. The visitor picks the platform (iOS or Android) and each beat of the story demonstrates a genuine native feature of that OS, recreated by hand in the browser. This does double duty: it advances the narrative and proves the craft of a senior mobile engineer. See **OS-feature layer** below, and DESIGN.md for the visual spec.
+**Signature mechanic (the hook):** the site is a working phone OS — explorable, not scrolled through. The visitor picks iOS or Android; the whole device re-skins (Liquid Glass vs Material 3 Expressive). A collection meta-game (badge dots, Live Activity discovery tracker, completion reward) rewards curiosity. The Messages app preserves the original streaming chat story as the narrative spine. This does double duty: it demonstrates the scope of Gian's work and proves the craft of a senior mobile engineer — because mobile engineers know exactly how these surfaces should look. See **OS-feature layer** below, and DESIGN.md for the visual and navigation spec.
 
 ## Users
 
@@ -43,29 +43,31 @@ Tone in copy: first person, as Gian answering directly. Confident and specific, 
 
 ## Strategic principles
 
-- The interaction is the hook. Asking, streaming, and tapping prompts must feel alive on first load.
+- The exploration is the hook. The lock screen, badge dots, discovery tracker, and completion reward are the interaction — not just the chat. Every app opened should feel like a reward.
 - Specific beats grand. Real work ideas, real metrics where they add context, real tools, stated honestly (see Positioning rules). Avoid internal OLX project names in visible copy.
 - Minimal text; the design and the visual modules carry the weight, not paragraphs.
 - It must read as hand-built, not generated. The bar is "how was this made?", not "which AI made this?"
-- Fast and frictionless. Static, no build step, loads instantly, works on a phone first.
-- **The phone must read as a *real* phone.** Platform chrome (status bar, Live Activity, notifications, gesture nav, materials, wallpaper) must resemble the *actual current* OS, iOS 26 Liquid Glass and Android Material 3 Expressive, not a generic approximation. Research the current OS design when unsure: wrong-looking native UI is worse than none, because the audience includes mobile engineers who know exactly how these surfaces should look.
-- **Chips drive the story; no free-text input.** Navigation is the suggested-prompt chips plus the per-answer "continue" button. The earlier free-text composer input was removed (read as crowded/useless); the opening question now types itself into the outgoing bubble.
+- Fast and frictionless. Static, no build step, loads instantly, works on a phone first. Hash router enables deep-linking into any app.
+- **The phone must read as a *real* phone.** Platform chrome (status bar, Live Activity, notifications, gesture nav, materials, wallpaper, icon shapes) must resemble the *actual current* OS, iOS 26 Liquid Glass and Android Material 3 Expressive, not a generic approximation. Research the current OS design when unsure: wrong-looking native UI is worse than none, because the audience includes mobile engineers who know exactly how these surfaces should look.
+- **Messages:** chips drive the story; no free-text input. Navigation is the suggested-prompt chips plus the per-answer "continue" button. The opening question types itself into the outgoing bubble. The final beat includes a "explore the rest →" CTA back to the home grid.
 
-## OS-feature layer (overdrive)
+## OS-feature layer
 
-The page is a phone that behaves like a real OS. A platform selector (iOS / Android) reskins the whole device, and each story beat fires that platform's signature native surface as a *diegetic* storytelling device, never a gratuitous demo. Requirements:
+The site is a phone OS with multiple launchable apps. A platform selector (iOS / Android) reskins the whole device; the reskin touches only chrome (status bar, Live Activity, notifications, icon shapes, materials, wallpaper) — app content keeps the brand type and clay-red accent. Requirements:
 
-- **Platform selector.** iOS / Android, auto-detected from the visitor's device, switchable, and remembered (localStorage). On desktop it sits *outside* the phone, on the stage (mirrors the wordmark); on mobile it stays a compact control in the composer.
-- **One continuity spine.** A persistent **Live Activity** (iOS Dynamic Island / Android promoted Live Update status chip) tracks the broader story path, so the per-beat features never read as a disconnected reel. It should read as "work in motion" or "clear path", not as one specific workstream.
-- **A native feature per beat**, chosen for narrative meaning:
+- **Platform selector.** iOS / Android, auto-detected from the visitor's device, switchable, and remembered (`localStorage`, key `gg-os-v1`). On desktop it sits *outside* the phone on the right stage; on mobile it lives in Settings.
+- **Navigation.** Boot → lock screen (once per session, skipped on deep links) → home grid → app (View Transition zoom-from-icon). Nav indicator always goes home. Hash router (`#m/<appid>`) enables direct deep-linking.
+- **Collection meta-game.** Each app icon wears a badge until first open. The Live Activity acts as a discovery tracker outside Messages ("3/6 explored", expand card with checklist). All 6 visited → LA pulses, Notes icon appears on the grid. State in `localStorage`.
+- **Live Activity spine (Messages).** Inside Messages the LA reverts to the story-beat role (tracks the chat arc, wakes/expands/shows per-beat state). On Messages close it restores to the discovery tracker.
+- **A native feature per Messages beat**, chosen for narrative meaning:
   - hero, the activity *wakes*; challenge, it *starts* (blocked); build, it *expands* (long-press detail).
   - ai, **Apple Intelligence** edge-glow (iOS) / **Circle-to-Search → Gemini** (Android), tied to his AI-tooling work.
-  - setback, **Focus / Do Not Disturb** dims the room and silences a notification (the quiet work that rarely demos).
-  - conclusion (**the marquee**), a cascade of notifications framed as outcomes: clearer constraints, reusable patterns, fewer bespoke exceptions, and decisions that stay decided.
+  - setback, **Focus / Do Not Disturb** dims the room and silences a notification.
+  - conclusion (**the marquee**), a cascade of notifications framed as outcomes: clearer constraints, reusable patterns, fewer bespoke exceptions, decisions that stay decided.
   - contact, **Contact Poster** (iOS) / **Quick Share** sheet (Android).
-- **Fidelity is the point** (see Strategic principles): Liquid Glass vs Material 3 Expressive, real status-bar glyphs per platform, gesture-nav indicators, platform corner radii, and a per-OS wallpaper that animates on switch.
-- **On-brand, not cartoonish.** The OS skin reskins only the *chrome*; the chat content keeps the brand type and clay-red accent. Android's Material You tonal palette is **seeded from the clay-red** so dynamic color stays on-brand. The transient AI-feature colors (Apple Intelligence / Gemini) are the only non-clay moments and resolve back to brand surfaces.
-- **Accessible.** Every feature has a still, complete `prefers-reduced-motion` end state (no goo/glow/spring; the cascade falls back to static chips).
+- **Theme toy (Settings).** A hue slider and preset swatches re-seed `--seed` on `:root`, re-deriving the accent family, M3 tonal palette, and wallpaper tint live via CSS relative color syntax. Per-app committed palettes (Maps blue, Ledger green, Terminal dark) are immune. Hue persists.
+- **Fidelity is the point** (see Strategic principles): Liquid Glass vs Material 3 Expressive, real status-bar glyphs per platform, gesture-nav indicators, platform corner radii, wallpaper that animates on switch.
+- **Accessible.** Lock screen always has a real button. Every feature has a complete `prefers-reduced-motion` end state (no goo/glow/spring/route-draw/VT; cascade falls back to static chips; Maps route pre-drawn).
 
 ## Anti-references
 

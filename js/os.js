@@ -467,12 +467,22 @@
 
     function isVisited(id) { return !!_state.visited[id]; }
 
+    // Discovery tracker counts only the base apps. Bonus apps (Notes, the
+    // completion reward) sit outside the count so "all explored" stays true at
+    // 6/6 and the reward itself never inflates the denominator.
     function count() {
       var ids = Apps.ids();
-      var done = 0;
-      ids.forEach(function (id) { if (_state.visited[id]) done++; });
-      return { done: done, total: ids.length };
+      var done = 0, total = 0;
+      ids.forEach(function (id) {
+        var def = Apps.get(id);
+        if (def && def.bonus) return;
+        total++;
+        if (_state.visited[id]) done++;
+      });
+      return { done: done, total: total };
     }
+
+    function isRewarded() { return !!_state.rewarded; }
 
     // clears the badge with a small scale-pop, then updates LA discovery state
     function _clearBadge(id) {
@@ -501,14 +511,18 @@
     }
 
     function reward() {
-      // Phase 9 extension point: unhide Notes icon, flip expand card to "all explored"
-      // For now: pulse the LA and show "all explored" in the expanded state
-      LA.discoverAll();
+      if (_state.rewarded) return;   // fire once
+      _state.rewarded = true;
+      _save();
+      LA.discoverAll();              // pulse + flip expand card to "all explored"
+      // wake the hidden bonus app (Notes) onto the home grid. Shell is assigned
+      // by boot time, well before any visit() can trigger this.
+      if (typeof Shell !== "undefined" && Shell.revealBonus) Shell.revealBonus("notes");
     }
 
     function getState() { return _state; }
 
-    return { load: load, visit: visit, count: count, isVisited: isVisited, getState: getState, _save: _save };
+    return { load: load, visit: visit, count: count, isVisited: isVisited, isRewarded: isRewarded, getState: getState, _save: _save };
   })();
 
   /* ===================================================================
@@ -590,7 +604,10 @@
 
       // filter to unvisited apps; cap at 5
       var unvisited = allNotifs.filter(function (nt) {
-        return nt.id && !Collection.isVisited(nt.id);
+        if (!nt.id || Collection.isVisited(nt.id)) return false;
+        // the Notes teaser only exists once the reward has been earned
+        if (nt.id === "notes" && !Collection.isRewarded()) return false;
+        return true;
       }).slice(0, 5);
 
       if (unvisited.length === 0) {
@@ -787,6 +804,7 @@
     var hasPending = false;    // a hashchange arrived mid-transition; re-route after
     var homeShown = false;     // first home reveal triggers the stagger-in
     var lastFocusedIcon = null;// icon to restore focus to on close
+    var wakePending = null;    // a freshly-revealed bonus icon to wake on next home show
 
     function screenForApp(id) {
       return document.querySelector('.app-screen[data-app="' + id + '"]');
@@ -880,6 +898,11 @@
       if (!homeShown) {
         homeShown = true;
         staggerHomeIcons();
+      }
+      // a bonus app revealed while an app was foreground wakes now, on return
+      if (wakePending) {
+        var w = wakePending; wakePending = null;
+        requestAnimationFrame(function () { requestAnimationFrame(function () { w.classList.add("in"); }); });
       }
       // notify the app it closed, then restore focus to its icon. Defer the
       // focus call past the (async) View Transition swap so the icon is visible
@@ -978,21 +1001,30 @@
       gridIcons = [];
       all.forEach(function (icon) {
         var id = icon.getAttribute("data-app");
-        if (Apps.get(id)) { icon.hidden = false; gridIcons.push(icon); }
+        var def = Apps.get(id);
+        // unregistered -> hidden. A bonus app (Notes) stays hidden until the
+        // reward unlocks it, so the grid never advertises the reward early.
+        if (def && (!def.bonus || Collection.isRewarded())) { icon.hidden = false; gridIcons.push(icon); }
         else { icon.hidden = true; }
       });
     }
 
+    // Idempotent: safe to call again after revealBonus adds an icon. Per-icon
+    // listeners bind once (_wired flag); the grid keydown binds once too.
     function wireGrid() {
       gridIcons.forEach(function (icon, i) {
         icon.setAttribute("tabindex", i === 0 ? "0" : "-1");
+        if (icon._wired) return;
+        icon._wired = true;
         icon.addEventListener("click", function () {
           lastFocusedIcon = icon;
           GG.Shell.open(icon.getAttribute("data-app"));
         });
-        icon.addEventListener("focus", function () { setRoving(i); });
+        icon.addEventListener("focus", function () { setRoving(gridIcons.indexOf(icon)); });
       });
 
+      if (homescreen._kwired) return;
+      homescreen._kwired = true;
       // roving tabindex: arrow keys move focus across the grid; Enter/Space open
       homescreen.addEventListener("keydown", function (e) {
         if (!gridIcons.length) return;
@@ -1028,6 +1060,25 @@
         icon.classList.add("pop");
         setTimeout(function () { icon.classList.add("in"); }, 60 + i * 55);
       });
+    }
+
+    // Reward: wake a previously-hidden bonus app (Notes) onto the grid. Called
+    // by Collection.reward() at 6/6. Re-syncs the grid set, wires the new icon,
+    // badges it, and plays a scale+fade wake (instant under reduced motion).
+    function revealBonus(id) {
+      var icon = iconForApp(id);
+      if (!icon || !icon.hidden) return;   // missing or already shown
+      syncGridHonesty();                   // re-include the now-unlocked icon
+      wireGrid();                          // bind the new icon (idempotent)
+      decorateBadges();                    // give it a discovery dot
+      if (REDUCED) return;                 // appears instantly, already visible
+      icon.classList.add("pop");           // initial scaled/transparent state
+      var homeVisible = homeShown && !document.body.hasAttribute("data-app");
+      if (homeVisible) {
+        requestAnimationFrame(function () { requestAnimationFrame(function () { icon.classList.add("in"); }); });
+      } else {
+        wakePending = icon;                // play it when the user returns home
+      }
     }
 
     // Decorate unvisited app icons with notification badges.
@@ -1088,6 +1139,14 @@
       boot: function () {
         tick(); setInterval(tick, 15000);
 
+        // No-JS fallback shows ONLY the Messages screen: every other app-screen
+        // carries `hidden` in markup so a JS-off visitor never sees stacked
+        // screens (the last in DOM would otherwise paint on top). Now that JS
+        // owns visibility (via .screen--active), strip those attributes so the
+        // CSS class governs display and active screens stay exposed to AT.
+        var hiddenScreens = document.querySelectorAll(".app-screen[hidden]");
+        Array.prototype.forEach.call(hiddenScreens, function (s) { s.hidden = false; });
+
         // Collection must load before Platform.init() (Platform reads os from state)
         Collection.load();
         Theme.init();        // apply persisted hue (if any) before first paint settles
@@ -1145,7 +1204,9 @@
         // hashchange -> route() -> the app closes with a reverse zoom.
         if (!targetFromHash()) { route(true); return; }
         location.hash = "";
-      }
+      },
+      // called by Collection.reward() to wake the bonus app onto the grid
+      revealBonus: revealBonus
     };
   })();
 
