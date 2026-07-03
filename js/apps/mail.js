@@ -8,6 +8,15 @@
    blank for the visitor to fill in mentally. Two CTAs: a primary "Send"
    button that opens mailto:, and a secondary "or LinkedIn →" link.
 
+   Tablet split view (@container device 700px, see mail.css): an iPad-Mail
+   style layout — a mailbox sidebar (Drafts, Sent, Trash) on the left, the
+   compose card on the right. Built additively here, same idiom as
+   messages.js's buildSplitView: purely new DOM, inert on the phone tier
+   (mail.css hides .mail-sidebar and unwraps .mail-pane below the
+   breakpoint), so the phone experience is untouched. Sent/Trash are one
+   interaction deep — clicking a mailbox swaps the pane to a tiny empty
+   state with a way back to the draft; Drafts is always the way back.
+
    Security note: ALL content is authored, trusted static strings. No user
    input is persisted or transmitted. The "blank" is a visual affordance
    (styled <span>), not a form input. Dynamic theme-color meta is synced
@@ -35,9 +44,119 @@
   // DOM refs — populated once during mount()
   // -------------------------------------------------------------------------
   var screenEl = null;
+  var paneEl = null;      // .mail-pane — holds the compose card OR a mailbox empty state
+  var draftCard = null;   // the compose card itself, re-shown when a visitor comes back
 
   // state
   var opened = false;    // has Mail been opened at least once?
+  var activeBox = "drafts";
+
+  // -------------------------------------------------------------------------
+  // Mailbox sidebar (tablet split view only — inert on phone, see mail.css)
+  // Drafts is the one real mailbox; Sent and Trash are one interaction deep,
+  // dry-wit empty states with a way back. Purely additive DOM, same idiom as
+  // messages.js's buildSplitView.
+  // -------------------------------------------------------------------------
+  var MAILBOXES = [
+    { id: "drafts", label: "Drafts", count: "1", empty: null },
+    { id: "sent",   label: "Sent",   count: "0",
+      empty: { title: "Nothing sent yet", body: "That part's on you." } },
+    { id: "trash",  label: "Trash",  count: "0",
+      empty: { title: "Empty", body: "As it should be." } }
+  ];
+
+  var sidebarRows = {}; // id -> row element, for the active-state toggle
+
+  function buildSidebar(appBody) {
+    var sidebar = document.createElement("aside");
+    sidebar.className = "mail-sidebar";
+    sidebar.setAttribute("aria-label", "Mailboxes");
+
+    var head = document.createElement("div");
+    head.className = "mail-sidebar__head";
+    head.textContent = "Mail";
+    sidebar.appendChild(head);
+
+    var list = document.createElement("div");
+    list.className = "mail-boxes";
+    list.setAttribute("role", "list");
+
+    MAILBOXES.forEach(function (box) {
+      var row = document.createElement("button");
+      row.type = "button";
+      row.className = "mail-box" + (box.id === "drafts" ? " mail-box--active" : "");
+      row.setAttribute("role", "listitem");
+      row.setAttribute("aria-current", box.id === "drafts" ? "true" : "false");
+
+      var label = document.createElement("span");
+      label.className = "mail-box__label";
+      label.textContent = box.label;
+      row.appendChild(label);
+
+      var count = document.createElement("span");
+      count.className = "mail-box__count";
+      count.textContent = box.count;
+      row.appendChild(count);
+
+      row.addEventListener("click", function () { selectBox(box.id); });
+      list.appendChild(row);
+      sidebarRows[box.id] = row;
+    });
+
+    sidebar.appendChild(list);
+    appBody.appendChild(sidebar);
+  }
+
+  function selectBox(id) {
+    if (id === activeBox) return;
+    activeBox = id;
+
+    Object.keys(sidebarRows).forEach(function (boxId) {
+      var row = sidebarRows[boxId];
+      var isActive = boxId === id;
+      row.classList.toggle("mail-box--active", isActive);
+      row.setAttribute("aria-current", isActive ? "true" : "false");
+    });
+
+    if (!paneEl) return;
+    if (id === "drafts") {
+      showDraft();
+      return;
+    }
+    var box = MAILBOXES.filter(function (b) { return b.id === id; })[0];
+    showMailboxEmpty(box);
+  }
+
+  function showDraft() {
+    paneEl.innerHTML = "";
+    paneEl.appendChild(draftCard);
+  }
+
+  function showMailboxEmpty(box) {
+    paneEl.innerHTML = "";
+
+    var wrap = document.createElement("div");
+    wrap.className = "mail-empty";
+
+    var title = document.createElement("p");
+    title.className = "mail-empty__title";
+    title.textContent = box.empty.title;
+    wrap.appendChild(title);
+
+    var body = document.createElement("p");
+    body.className = "mail-empty__body";
+    body.textContent = box.empty.body;
+    wrap.appendChild(body);
+
+    var back = document.createElement("button");
+    back.type = "button";
+    back.className = "mail-empty__back";
+    back.textContent = "← Back to the draft";
+    back.addEventListener("click", function () { selectBox("drafts"); });
+    wrap.appendChild(back);
+
+    paneEl.appendChild(wrap);
+  }
 
   // -------------------------------------------------------------------------
   // Build DOM (mount — called once on first open)
@@ -50,6 +169,15 @@
 
     bodyEl.innerHTML = "";
 
+    // ---- sidebar (tablet only; CSS keeps this display:none on phone) ------
+    buildSidebar(bodyEl);
+
+    // ---- pane wrapper (tablet only; CSS keeps this display:contents on
+    // phone, so the card sits directly in .app-body's flow like before) ----
+    paneEl = document.createElement("div");
+    paneEl.className = "mail-pane";
+    bodyEl.appendChild(paneEl);
+
     // ---- compose card wrapper ---------------------------------------------
     var card = document.createElement("div");
     card.className = "mail-card";
@@ -60,7 +188,7 @@
 
     var toLabel = document.createElement("span");
     toLabel.className = "mail-row__label";
-    toLabel.textContent = "To:";
+    toLabel.textContent = "to:";
 
     var toPill = document.createElement("span");
     toPill.className = "mail-row__pill";
@@ -76,7 +204,7 @@
 
     var fromLabel = document.createElement("span");
     fromLabel.className = "mail-row__label";
-    fromLabel.textContent = "From:";
+    fromLabel.textContent = "from:";
 
     var fromValue = document.createElement("span");
     fromValue.className = "mail-row__value";
@@ -92,7 +220,7 @@
 
     var subjectLabel = document.createElement("span");
     subjectLabel.className = "mail-row__label";
-    subjectLabel.textContent = "Subject:";
+    subjectLabel.textContent = "subject:";
 
     var subjectValue = document.createElement("span");
     subjectValue.className = "mail-row__value";
@@ -115,7 +243,7 @@
     bodyText.className = "mail-body__text";
 
     // Build the body text with a soft-underlined blank span (authored, trusted HTML)
-    var part1 = document.createTextNode("Hi Gian — saw your OS. Want to talk about ");
+    var part1 = document.createTextNode("Hi Gian, saw your OS. Want to talk about ");
     bodyText.appendChild(part1);
 
     var blank = document.createElement("span");
@@ -172,7 +300,8 @@
 
     card.appendChild(footer);
 
-    bodyEl.appendChild(card);
+    draftCard = card;
+    paneEl.appendChild(card);
 
     // Store the pop elements for reveal choreography
     screenEl._mailPops = Array.prototype.slice.call(card.querySelectorAll(".pop"));

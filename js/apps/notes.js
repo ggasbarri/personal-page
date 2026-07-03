@@ -8,6 +8,14 @@
    itself is one pinned note in Gian's voice — the quiet payoff for opening
    everything.
 
+   Tablet tier (@container device (min-width: 700px), see notes.css): an
+   iPad-Notes-style split view. A sidebar list row (title/snippet/date, one
+   real note, already "selected") sits beside the note itself. The sidebar
+   is built here so the markup exists at both tiers; CSS grid places it
+   beside .note-card on wide screens and hides it on phone via display:none
+   (no layout it would otherwise occupy). Same DOM, same mount, no JS
+   branching on width — matches the Ledger tablet-tier pattern.
+
    Security note: ALL content is authored, trusted static strings from
    APP_DATA.notes. No user input. Theme-color meta synced on open/close
    matching the other apps' pattern.
@@ -39,6 +47,54 @@
     if (!bodyEl) return;
 
     bodyEl.innerHTML = "";
+
+    // ---- tablet sidebar: the notes list (one real, pinned, selected row) --
+    // Phone ignores this (display:none below the container threshold); it
+    // costs nothing there. See notes.css TABLET TIER for the split-view grid.
+    var sidebar = document.createElement("nav");
+    sidebar.className = "notes-sidebar";
+    sidebar.setAttribute("aria-label", "Notes list");
+
+    var list = document.createElement("ul");
+    list.className = "notes-sidebar__list";
+
+    var item = document.createElement("li");
+    var row = document.createElement("div");
+    row.className = "notes-row notes-row--selected";
+    row.setAttribute("role", "note");
+    row.setAttribute("aria-current", "true");
+
+    var rowPin = document.createElement("span");
+    rowPin.className = "notes-row__pin";
+    rowPin.setAttribute("aria-hidden", "true");
+    rowPin.innerHTML = "<svg viewBox='0 0 24 24' width='11' height='11' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='M12 17v5'/><path d='M9 10.8V4h6v6.8l2 3.2H7l2-3.2z'/></svg>";
+    row.appendChild(rowPin);
+
+    var rowMain = document.createElement("div");
+    rowMain.className = "notes-row__main";
+
+    var rowTop = document.createElement("div");
+    rowTop.className = "notes-row__top";
+    var rowTitle = document.createElement("span");
+    rowTitle.className = "notes-row__title";
+    rowTitle.textContent = nd.title || "a note";
+    var rowDate = document.createElement("span");
+    rowDate.className = "notes-row__date";
+    rowDate.textContent = nd.meta || "pinned";
+    rowTop.appendChild(rowTitle);
+    rowTop.appendChild(rowDate);
+
+    var rowSnippet = document.createElement("p");
+    rowSnippet.className = "notes-row__snippet";
+    rowSnippet.textContent = (nd.lines && nd.lines[0]) || "";
+
+    rowMain.appendChild(rowTop);
+    rowMain.appendChild(rowSnippet);
+    row.appendChild(rowMain);
+    item.appendChild(row);
+    list.appendChild(item);
+    sidebar.appendChild(list);
+    bodyEl.appendChild(sidebar);
 
     // ---- the pinned note card ---------------------------------------------
     var note = document.createElement("article");

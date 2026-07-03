@@ -3,9 +3,17 @@
    Vanilla JS, no dependencies. Registers the Terminal app with GG.Apps.
 
    A fake shell: scrollback log + prompt row + suggested-command chips.
-   Supports physical keyboard input when the terminal is focused: keydown
-   builds a buffer rendered into the prompt display span; Enter executes,
-   Backspace works, Tab cycles suggestions.
+   Physical keyboard input is captured by a real, focusable <input> that
+   IS the prompt line. It sits transparently over the prompt row (its own
+   text/caret/background are invisible); what you see is the display span
+   plus the block cursor mirroring the input's value. Keydown on the input
+   builds the command: Enter executes, Backspace works, Tab cycles
+   suggestions (native Tab only when the buffer is empty, so keyboard users
+   can still move focus off the input). Because handling lives on the input
+   (not the document), Tab is only intercepted while the input has focus —
+   the back button and command chips stay reachable by Tab (WCAG 2.1.2), and
+   the input carries a real accessible label so AT users know typing works.
+   Clicking anywhere in the output focuses the input (terminal convention).
 
    On first open: autotypes `gian --stack` via GG.Util.typeInto then prints
    output line-by-line (staggered 30ms/line; instant under reduced motion).
@@ -44,7 +52,8 @@
   // -------------------------------------------------------------------------
   var screenEl    = null;  // .app-screen[data-app=terminal]
   var scrollback  = null;  // .term-scrollback  (role=log)
-  var bufferSpan  = null;  // .term-input-buffer
+  var bufferSpan  = null;  // .term-input-buffer  (visual mirror, aria-hidden)
+  var inputEl     = null;  // .term-input  (real focusable input, the input home)
   var chipsRow    = null;  // .term-chips
 
   // state
@@ -99,6 +108,24 @@
   function scrollEnd() {
     if (!scrollback) return;
     scrollback.scrollTop = scrollback.scrollHeight;
+  }
+
+  // Weekday/time stamp for the synthetic "last login" boot line — cheap
+  // realism, no timezone math needed (matches the shell prompt's own clock).
+  var BOOT_DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  function bootStamp() {
+    var d = new Date();
+    var h = d.getHours(), m = d.getMinutes();
+    return BOOT_DAYS[d.getDay()] + " " + (h < 10 ? "0" + h : h) + ":" + (m < 10 ? "0" + m : m);
+  }
+
+  // The scrollback stays role="log" always, but aria-live is toggled: "off"
+  // while the first-open auto-demo streams its ~30 staggered lines (so AT
+  // users aren't flooded with an uninterruptible announcement queue), then
+  // "polite" once the demo hands the caret to the user. User-run commands
+  // (chips/Enter) always announce normally.
+  function setAriaLive(state) {
+    if (scrollback) scrollback.setAttribute("aria-live", state);
   }
 
   function trimScrollback() {
@@ -167,51 +194,54 @@
 
   // -------------------------------------------------------------------------
   // Keyboard input
+  //
+  // The real <input> (inputEl) is the source of truth for the command buffer;
+  // keyBuf mirrors it and the display span (bufferSpan) mirrors keyBuf so the
+  // phosphor look + block cursor stay pixel-identical. setBuffer() writes all
+  // three at once.
   // -------------------------------------------------------------------------
-  function updateBuffer() {
-    if (bufferSpan) bufferSpan.textContent = keyBuf;
+  function setBuffer(val) {
+    keyBuf = val;
+    if (inputEl && inputEl.value !== val) inputEl.value = val;
+    if (bufferSpan) bufferSpan.textContent = val;
   }
 
-  function handleKey(e) {
-    // only handle when the terminal screen is active
-    if (!screenEl || !screenEl.classList.contains("screen--active")) return;
+  // Sync the display span from the input after native edits (typing, paste,
+  // native Backspace, IME composition, etc.).
+  function syncFromInput() {
+    keyBuf = inputEl ? inputEl.value : "";
+    if (bufferSpan) bufferSpan.textContent = keyBuf;
+    tabIdx = -1;
+  }
 
+  // Keydown handler bound to the INPUT only — so Tab and typing are captured
+  // exclusively while the input is focused. Elsewhere in the Terminal screen
+  // (back button, chips) keys behave natively and normal Tab order works.
+  function handleKey(e) {
     var suggestions = td.suggested || [];
 
     switch (e.key) {
       case "Enter":
         e.preventDefault();
         var cmd = keyBuf;
-        keyBuf = ""; tabIdx = -1; updateBuffer();
+        setBuffer(""); tabIdx = -1;
         execute(cmd);
         break;
 
-      case "Backspace":
-        e.preventDefault();
-        if (keyBuf.length > 0) {
-          keyBuf = keyBuf.slice(0, -1);
-          updateBuffer();
-        }
-        break;
-
       case "Tab":
+        // Autocomplete only when there is something to complete OR a cycle is
+        // in progress. On an empty, untouched buffer let Tab move focus away
+        // natively (keyboard users can escape the input) — WCAG 2.1.2.
+        if (!suggestions.length) return;
+        if (keyBuf.length === 0 && tabIdx === -1) return;  // native focus move
         e.preventDefault();
-        if (!suggestions.length) break;
         tabIdx = (tabIdx + 1) % suggestions.length;
-        keyBuf = suggestions[tabIdx];
-        updateBuffer();
+        setBuffer(suggestions[tabIdx]);
         break;
 
+      // Backspace and printable characters are handled natively by the input;
+      // the `input` event (syncFromInput) mirrors them into the display span.
       default:
-        // printable single characters
-        if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
-          // Space would otherwise activate a focused chip button (re-running
-          // its command and clearing the buffer) or scroll the page.
-          if (e.key === " ") e.preventDefault();
-          tabIdx = -1;
-          keyBuf += e.key;
-          updateBuffer();
-        }
         break;
     }
   }
@@ -220,8 +250,74 @@
   // Chip interaction
   // -------------------------------------------------------------------------
   function runChip(cmd) {
-    keyBuf = ""; tabIdx = -1; updateBuffer();
+    setBuffer(""); tabIdx = -1;
     execute(cmd);
+  }
+
+  // Matches touch/stylus-primary devices — used to withhold *automatic*
+  // focus so opening/autotyping the terminal doesn't pop the soft keyboard
+  // over the scrollback. Deliberate taps (see the mouseup handler below)
+  // bypass this check, since summoning the keyboard is exactly what a tap
+  // on the prompt should do.
+  var COARSE_POINTER = window.matchMedia && window.matchMedia("(pointer: coarse)");
+
+  // Focus the command input without yanking the page (preventScroll where
+  // supported). Used on output-area clicks — the usual terminal convention
+  // — and after onOpen/autotype. Pass auto=true for the latter: on
+  // coarse-pointer (touch) devices this skips the focus call so the soft
+  // keyboard doesn't ambush the user; explicit clicks (auto omitted) always
+  // focus so tapping the terminal still summons the keyboard on purpose.
+  function focusInput(auto) {
+    if (!inputEl) return;
+    if (auto && COARSE_POINTER && COARSE_POINTER.matches) return;
+    try { inputEl.focus({ preventScroll: true }); }
+    catch (err) { inputEl.focus(); }
+  }
+
+  // -------------------------------------------------------------------------
+  // Tablet-tier info pane — a static, framed kv panel to the right of the
+  // scrollback (tmux-split idiom). Content comes from td.info (data.js) and
+  // is deliberately complementary to `gian --stack`, not a repeat of it:
+  // session framing (status/base/focus) rather than the tools/mobile/process
+  // breakdown that streams in on open. Purely additive DOM; CSS keeps it
+  // display:none below @container device 700px so phone is untouched.
+  // -------------------------------------------------------------------------
+  function buildInfoPane(body) {
+    var info = td.info;
+    if (!info) return;
+
+    var pane = document.createElement("aside");
+    pane.className = "term-info";
+    pane.setAttribute("aria-label", "Session info");
+
+    var head = document.createElement("div");
+    head.className = "term-info__head";
+    head.setAttribute("aria-hidden", "true");
+    head.textContent = info.title || "session";
+    pane.appendChild(head);
+
+    var kv = document.createElement("dl");
+    kv.className = "term-info__kv";
+    (info.rows || []).forEach(function (row) {
+      var dt = document.createElement("dt");
+      dt.className = "term-info__k";
+      dt.textContent = row.k;
+      var dd = document.createElement("dd");
+      dd.className = "term-info__v";
+      dd.textContent = row.v;
+      kv.appendChild(dt);
+      kv.appendChild(dd);
+    });
+    pane.appendChild(kv);
+
+    if (info.note) {
+      var note = document.createElement("div");
+      note.className = "term-info__note";
+      note.textContent = info.note;
+      pane.appendChild(note);
+    }
+
+    body.appendChild(pane);
   }
 
   // -------------------------------------------------------------------------
@@ -237,13 +333,24 @@
     // clear any placeholder content (the static HTML shell is minimal)
     body.innerHTML = "";
 
+    // --- main column (scrollback + prompt) ---------------------------------
+    // Wrapper exists purely for the tablet split (see buildInfoPane below):
+    // on phone it is display:contents so scrollback + promptRow sit directly
+    // in the .app-body flow, pixel-identical to before this wrapper existed.
+    var main = document.createElement("div");
+    main.className = "term-main";
+    body.appendChild(main);
+
     // --- scrollback log ---------------------------------------------------
     scrollback = document.createElement("div");
     scrollback.className = "term-scrollback";
     scrollback.setAttribute("role", "log");
-    scrollback.setAttribute("aria-live", "polite");
+    // Starts "off" — the first-open auto-demo runs next and would otherwise
+    // flood AT users with ~30 staggered announcements. onOpen flips this to
+    // "polite" once the demo finishes (or immediately, for re-opens).
+    scrollback.setAttribute("aria-live", "off");
     scrollback.setAttribute("aria-label", "Terminal output");
-    body.appendChild(scrollback);
+    main.appendChild(scrollback);
 
     // --- prompt row -------------------------------------------------------
     var promptRow = document.createElement("div");
@@ -256,17 +363,42 @@
 
     bufferSpan = document.createElement("span");
     bufferSpan.className = "term-input-buffer";
-    bufferSpan.setAttribute("aria-hidden", "true");  // screen reader uses role=log
+    bufferSpan.setAttribute("aria-hidden", "true");  // visual mirror only; the input is the AT affordance
     bufferSpan.textContent = "";
 
     var cursor = document.createElement("span");
     cursor.className = "term-cursor";
     cursor.setAttribute("aria-hidden", "true");
 
+    // The real, focusable input home. Transparent (own text/caret/bg invisible)
+    // so the phosphor display span + block cursor remain the only visible
+    // affordance, but it carries native focus, a real caret for AT, and a
+    // proper label. Autocomplete/spellcheck off — this is a fake shell prompt.
+    inputEl = document.createElement("input");
+    inputEl.type = "text";
+    inputEl.className = "term-input";
+    inputEl.setAttribute("aria-label", "Terminal command input");
+    inputEl.setAttribute("autocomplete", "off");
+    inputEl.setAttribute("autocapitalize", "off");
+    inputEl.setAttribute("autocorrect", "off");
+    inputEl.setAttribute("spellcheck", "false");
+    inputEl.addEventListener("keydown", handleKey);
+    inputEl.addEventListener("input", syncFromInput);
+
     promptRow.appendChild(prefix);
     promptRow.appendChild(bufferSpan);
     promptRow.appendChild(cursor);
-    body.appendChild(promptRow);
+    promptRow.appendChild(inputEl);
+    main.appendChild(promptRow);
+
+    // Clicking anywhere in the output area focuses the prompt input, matching
+    // real terminal-emulator behaviour (casual typing "just works"). Skip when
+    // the user is selecting text so copy still works.
+    scrollback.addEventListener("mouseup", function () {
+      var sel = window.getSelection && window.getSelection();
+      if (sel && sel.toString().length) return;
+      focusInput();
+    });
 
     // --- suggested chips row -----------------------------------------------
     chipsRow = document.createElement("div");
@@ -287,8 +419,14 @@
 
     body.appendChild(chipsRow);
 
-    // keyboard listener on the document — only acts when terminal is active
-    document.addEventListener("keydown", handleKey);
+    // --- tablet info pane ---------------------------------------------------
+    // Inert on phone (CSS hides it below @container device 700px); on tablet
+    // it becomes a static right-hand panel, tmux-split style, beside `main`.
+    buildInfoPane(body);
+
+    // No document-level keydown: input is captured on inputEl only, so Tab
+    // stays native everywhere else in the screen and nothing leaks when the
+    // app is closed (the listener lives on the input, mounted once).
   }
 
   // -------------------------------------------------------------------------
@@ -304,15 +442,30 @@
       syncMetaDark();
 
       if (opened) {
-        // re-open: just scroll to bottom (state preserved)
+        // re-open: scroll to bottom (state preserved) and restore the caret
+        // to the prompt so keyboard/AT users can type immediately. aria-live
+        // is already "polite" from the end of the first open.
         scrollEnd();
+        focusInput(true);
         return;
       }
       opened = true;
 
-      // first open: autotype `gian --stack` then print its output
+      // first open: autotype `gian --stack` then print its output. Keep
+      // aria-live "off" for the whole demo (mount() already set it) so the
+      // ~30 staggered lines don't flood AT users; flip to "polite" right
+      // before handing the caret to the user, same moment in both branches.
       var firstCmd = "gian --stack";
       var def = td.commands && td.commands[firstCmd];
+
+      // Cold-load fix: a fresh dark screen with only a blinking cursor reads
+      // as broken for the ~0.5-0.9s the autotype takes to finish "gian
+      // --stack" (typeInto is 38-68ms/char). Print a boot line into the
+      // scrollback synchronously, same tick as mount, so first paint always
+      // shows live content — the typewriter then plays out underneath it,
+      // not into an empty room.
+      appendLine("last login: " + bootStamp() + " on ttys000", "dim");
+      scrollEnd();
 
       if (REDUCED) {
         // instant mode: dump everything immediately
@@ -326,23 +479,31 @@
           appendSpacer();
         }
         scrollEnd();
+        setAriaLive("polite");
+        focusInput(true);
         return;
       }
 
       // animate: typeInto the prompt buffer, then print output line by line.
       // Joins the exec queue so chips tapped mid-autotype wait their turn.
+      // The boot line above already gave first paint real content, so the
+      // typewriter reads as "a session picking up", brisk not draggy.
       if (!bufferSpan) return;
       execChain = execChain.then(function () {
         return GG.Util.typeInto(bufferSpan, firstCmd).then(function () {
           // brief pause, then clear buffer and execute
-          return new Promise(function (r) { setTimeout(r, 180); });
+          return new Promise(function (r) { setTimeout(r, 120); });
         }).then(function () {
-          keyBuf = ""; bufferSpan.textContent = "";
+          setBuffer("");
           appendSpacer();
           return printOutput(firstCmd, def || []);
         }).then(function () {
           appendSpacer();
           trimScrollback();
+          // Autotype done — hand the caret to the user for real input, and
+          // start announcing output live from here on.
+          setAriaLive("polite");
+          focusInput(true);
         });
       });
     },

@@ -7,6 +7,8 @@
      mood    drives the ambient temperature of the whole app
      next    id of the next beat
      hook    cliffhanger label for the "continue" button (opens the next loop)
+     meta    answer-bubble footer label (e.g. "from my work"); optional,
+             falls back to "from my work" in messages.js when absent
    Beats flagged extra:true (toolkit, timeline) sit off the story rail.
 
    Voice: accurate and understated. Gian collaborates, aligns, and shapes
@@ -28,7 +30,7 @@ window.APP_DATA = {
      intriguing — each card is a door, not a spoiler. */
   lock: {
     notifications: [
-      { id: "messages", app: "Messages", icon: "doc",    title: "Gian — 1 new message",          body: "who are you?",                       time: "now" },
+      { id: "messages", app: "Messages", icon: "doc",    title: "Gian · 1 new message",          body: "who are you?",                       time: "now" },
       { id: "maps",     app: "Maps",     icon: "mentee", title: "a ≈7,000 km route",             body: "Valencia → Aveiro",                  time: "1h"  },
       { id: "ledger",   app: "Ledger",   icon: "hire",   title: "new transaction",               body: "Matemáticas Financieras  +10.0",     time: "2h"  },
       { id: "terminal", app: "Terminal", icon: "doc",    title: "1 job finished",                body: "gian --stack  exited 0",             time: "3h"  },
@@ -62,7 +64,7 @@ window.APP_DATA = {
       { id: "gfi", x: 0.71, y: 0.345,
         org: "GFI / Altice Labs", role: "smart Wi-Fi apps for telecoms, both native platforms", years: "2020–21" },
       { id: "olx", x: 0.83, y: 0.245, place: "Aveiro, Portugal", today: true,
-        org: "OLX Motors", role: "mobile systems across teams — today", years: "2021–now" }
+        org: "OLX Motors", role: "mobile systems across teams, today", years: "2021–now" }
     ]
   },
 
@@ -82,7 +84,7 @@ window.APP_DATA = {
       total: 24
     },
     transactions: [
-      { label: "Fallos del Mercado",   value: null,  note: "market failures — fitting",            pending: true  },
+      { label: "Fallos del Mercado",   value: null,  note: "market failures (fitting)",            pending: true  },
       { label: "Finanzas I",           value: null,  note: null,                                   pending: true  },
       { label: "Macroeconomía II",     value: null,  note: null,                                   pending: true  },
       { label: "Matemáticas Financieras", value: 10.0, note: "compound interest, literally",        pending: false },
@@ -99,6 +101,23 @@ window.APP_DATA = {
   terminal: {
     user: "gian",
     host: "aveiro",
+
+    /* Tablet-tier only: static kv summary for the right-hand info pane
+       (tmux-style split, see terminal.js buildInfoPane). Complementary to
+       the streamed `gian --stack` output, not a repeat of it — session
+       framing rather than the tools/mobile/process/languages breakdown. */
+    info: {
+      title: "session",
+      rows: [
+        { k: "status",  v: "online" },
+        { k: "base",    v: "Aveiro, PT" },
+        { k: "role",    v: "mobile systems" },
+        { k: "focus",   v: "Flutter direction @ OLX Motors" },
+        { k: "uptime",  v: "8y" },
+        { k: "shell",   v: "zsh" }
+      ],
+      note: "type `help` for commands"
+    },
 
     suggested: [
       "gian --stack",
@@ -150,12 +169,12 @@ window.APP_DATA = {
 
       "cat now.txt": [
         "helping teams line up behind a Flutter direction at OLX Motors.",
-        "3M+ daily app launches sit behind that work — context before decisions",
+        "3M+ daily app launches sit behind that work: context before decisions",
         "get expensive. also: economics degree, evenings."
       ],
 
       "whoami": [
-        "gian — mobile systems, Aveiro.  exit code 0."
+        "gian, mobile systems, Aveiro.  exit code 0."
       ],
 
       "help": [
@@ -198,11 +217,11 @@ window.APP_DATA = {
     title: "things I'm thinking about",
     meta: "pinned · just now",
     lines: [
-      "why do reasonable people, looking at the same facts, choose different things? incentives, mostly. still chewing on it — that's what the economics is for.",
+      "why do reasonable people, looking at the same facts, choose different things? incentives, mostly. still chewing on it: that's what the economics is for.",
       "lately: agents are compilers for intent. the context you give them is the source code. most of the work is writing that well.",
-      "ps — you opened everything. thanks for being curious; that's the whole point of this place."
+      "ps: you opened everything. thanks for being curious; that's the whole point of this place."
     ],
-    sign: "— gian"
+    sign: "gian"
   }
 };
 
@@ -326,6 +345,7 @@ window.ASK_DATA = {
       mood: "setback",
       activity: { kind: "work", state: "aligning", label: "quiet focus", progress: 0.72 },
       feature: "focus",
+      meta: "off the clock",
       silenced: { app: "Focus", icon: "doc", title: "Decision thread paused", body: "Good inputs need a clear next step.", time: "now" },
       next: "lands",
       hook: "What actually lands?",
@@ -370,6 +390,7 @@ window.ASK_DATA = {
       mood: "warm",
       activity: { kind: "app", state: "contact", label: "contact gian", short: "talk" },
       feature: "poster",
+      meta: "say hi",
       html: `
         <p class="answer-lead">Want to talk? Email or LinkedIn is easiest.</p>
         <div class="contact">

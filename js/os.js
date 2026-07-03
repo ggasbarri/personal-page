@@ -17,6 +17,7 @@
   var clockEl   = document.getElementById("clock");
   var lockTimeEl = document.getElementById("lockTime");
   var lockDateEl = document.getElementById("lockDate");
+  var statusDateEl = document.getElementById("statusDate");
 
   /* ---------------------------------------------------------------- clock */
   // Day abbreviations for the lock-screen date line (locked screen shows date).
@@ -32,6 +33,9 @@
     if (lockDateEl) {
       lockDateEl.textContent = DAYS[d.getDay()] + ", " + MONTHS[d.getMonth()] + " " + d.getDate();
     }
+    if (statusDateEl) {
+      statusDateEl.textContent = DAYS[d.getDay()] + " " + MONTHS[d.getMonth()] + " " + d.getDate();
+    }
   }
 
   /* ----------------------------------------------------------- utilities */
@@ -44,7 +48,23 @@
     if (markup != null) setHtml(n, markup);
     return n;
   }
-  function delay(ms) { return new Promise(function (r) { setTimeout(r, REDUCED ? 0 : ms); }); }
+  // `skip` is an optional { on: boolean } signal, shared by reference: the
+  // caller can flip skip.on = true after the call starts (e.g. from a tap
+  // handler) to fast-forward. Checked live, not just at call time, so it
+  // works whether the flag flips before or during the wait.
+  function delay(ms, skip) {
+    return new Promise(function (r) {
+      if (REDUCED || (skip && skip.on)) { r(); return; }
+      var done = false;
+      var id = setTimeout(function () { done = true; r(); }, ms);
+      if (!skip) return;
+      (function watch() {
+        if (done) return;
+        if (skip.on) { done = true; clearTimeout(id); r(); return; }
+        requestAnimationFrame(watch);
+      })();
+    });
+  }
 
   function scrollInto(node) {
     if (!node) return;
@@ -99,14 +119,16 @@
   /* ---------------- progressive text reveal over an authored fragment ---- */
   // Walk text nodes, blank them, then refill in small chunks with a trailing
   // block cursor. Markup (highlights, cards, links) stays intact.
-  function streamText(rootEl, anchor) {
+  // `skip` is the same optional { on: boolean } signal as delay()/typeInto():
+  // flipping it mid-stream paints the remaining text and pops on the next tick.
+  function streamText(rootEl, anchor, skip) {
     return new Promise(function (resolve) {
       // Visual modules marked .pop are held back during the text stream, then
       // revealed as whole units afterward for a staggered payoff.
       var pops = Array.prototype.slice.call(rootEl.querySelectorAll(".pop"));
 
       function finish() {
-        revealPops(pops, anchor || rootEl);
+        revealPops(pops, anchor || rootEl, skip);
         resolve();
       }
 
@@ -131,32 +153,54 @@
       var cursor = el("span", "stream-cursor");
       rootEl.appendChild(cursor);
 
-      var i = 0, pos = 0;
-      (function step() {
-        if (i >= nodes.length) {
+      // Time-based reveal: compute how many characters *should* be shown from
+      // elapsed wall-clock time (~90 chars/sec), not a fixed +3 per tick. If a
+      // background tab throttles timers, each resumed tick still catches up to
+      // the correct position instead of crawling at 1 char/frame.
+      var CHARS_PER_SEC = 90;
+      var total = full.reduce(function (a, s) { return a + s.length; }, 0);
+      var start = null;
+
+      // reveal up to `shown` total characters across the flat node list
+      function paint(shown) {
+        var remaining = shown, i;
+        for (i = 0; i < nodes.length; i++) {
+          var len = full[i].length;
+          if (remaining >= len) { nodes[i].nodeValue = full[i]; remaining -= len; }
+          else { nodes[i].nodeValue = full[i].slice(0, Math.max(0, remaining)); remaining = 0; }
+        }
+      }
+
+      (function step(t) {
+        if (start == null) start = t || performance.now();
+        var elapsed = (t || performance.now()) - start;
+        var shown = (skip && skip.on) ? total : Math.floor((elapsed / 1000) * CHARS_PER_SEC);
+        if (shown >= total) {
+          paint(total);
           cursor.remove();
           rootEl.querySelectorAll("[data-count]").forEach(animateCount);
           finish();
           return;
         }
-        var s = full[i], end = Math.min(pos + 3, s.length);
-        nodes[i].nodeValue = s.slice(0, end);
-        pos = end;
-        if (pos >= s.length) { i++; pos = 0; }
+        paint(shown);
         scrollInto(anchor || rootEl);
-        setTimeout(function () { requestAnimationFrame(step); }, 13);
+        requestAnimationFrame(step);
       })();
     });
   }
 
   // Stagger-reveal the visual modules of an answer, counting up any numbers.
-  function revealPops(pops, anchor) {
+  // `skip` (same { on: boolean } signal): when already on, pop in at once
+  // instead of staggering, so a mid-stream tap doesn't leave a residual
+  // trickle of modules landing after the tap.
+  function revealPops(pops, anchor, skip) {
+    var instant = REDUCED || (skip && skip.on);
     pops.forEach(function (p, idx) {
       setTimeout(function () {
         p.classList.add("in");
         p.querySelectorAll("[data-count]").forEach(animateCount);
         scrollInto(anchor);
-      }, REDUCED ? 0 : 90 + idx * 110);
+      }, instant ? 0 : 90 + idx * 110);
     });
   }
 
@@ -164,12 +208,15 @@
   // Type a string into an element character by character. The opening
   // question appears to type itself straight into the outgoing bubble
   // (the chat is chip-driven now, so there is no text input to type into).
-  function typeInto(node, text) {
+  // `skip` is the same optional { on: boolean } signal as delay() (see above):
+  // flipping it mid-run paints the full text immediately on the next tick.
+  function typeInto(node, text, skip) {
     return new Promise(function (resolve) {
-      if (REDUCED) { node.textContent = text; resolve(); return; }
+      if (REDUCED || (skip && skip.on)) { node.textContent = text; resolve(); return; }
       node.textContent = "";
       var i = 0;
       (function t() {
+        if (skip && skip.on) { node.textContent = text; resolve(); return; }
         if (i > text.length) { resolve(); return; }
         node.textContent = text.slice(0, i++);
         scrollInto(node);
@@ -199,11 +246,35 @@
   var laSub    = document.getElementById("liveactSub");
   var laTrail  = document.getElementById("liveactTrail");
   var laExpand = document.getElementById("liveactExpand");
+  var laDisclose = document.getElementById("liveactDisclose");
+  var laSeg      = document.getElementById("liveactSeg");
 
   // -- Live Activity controller (the story spine) -------------------------
   var LA = {
     last: null,
     setProg: function (p) { if (liveact) liveact.style.setProperty("--prog", p || 0); },
+    // Fill the discovery segmented arc: light the first `done` of the arc's
+    // ticks (mapped onto the arc's own tick count when the totals differ). The
+    // lit tick uses --accent in CSS, so it re-tints live with the theme seed.
+    setSeg: function (done, total) {
+      if (!laSeg) return;
+      var ticks = laSeg.querySelectorAll(".liveact__segd");
+      var n = ticks.length || 1;
+      // map done/total onto the tick count; guarantee 0 stays 0 and full fills all
+      var lit = (total > 0) ? Math.round((done / total) * n) : 0;
+      if (done <= 0) lit = 0;
+      if (total > 0 && done >= total) lit = n;
+      Array.prototype.forEach.call(ticks, function (t, i) {
+        t.classList.toggle("liveact__segd--on", i < lit);
+      });
+    },
+    // Toggle the discovery-mode disclosure cue (chevron). On in discovery mode so
+    // the chip reads as expandable; off during Messages story beats (not a menu).
+    setDiscoverCue: function (on) {
+      if (!liveact) return;
+      liveact.classList.toggle("liveact--discover", !!on);
+      if (laDisclose) laDisclose.hidden = !on;
+    },
     bump: function (cls) { if (REDUCED || !liveact) return; liveact.classList.remove(cls); void liveact.offsetWidth; liveact.classList.add(cls); },
     wake: function () { this.bump("liveact--wake"); },
     app: function (a) {
@@ -213,6 +284,7 @@
       laTitle.textContent = (a && a.short) || "ask";
       laSub.hidden = true; laTrail.hidden = true;
       this.setProg(0);
+      this.setDiscoverCue(false);
       liveact.setAttribute("aria-label", label + ", live");
     },
     work: function (a) {
@@ -269,6 +341,7 @@
   LA.push = function () {
     this._pushed = this._discoverState || null;
     this._discoverState = null;  // suppress discovery template while app is active
+    this.setDiscoverCue(false);  // story beats are not an expandable menu
   };
 
   // restore(): called on app close; re-applies discovery state from Collection.
@@ -279,12 +352,22 @@
   LA.discover = function (done, total) {
     this._discoverState = { done: done, total: total };
     var progress = total > 0 ? done / total : 0;
+    // Copy nudge: one before completion, swap the count for a quiet prod so the
+    // tracker reads as progress-toward-something, not just a fraction.
+    var oneToGo = total > 0 && done === total - 1;
     this.work({
       progress: progress,
-      short: done + "/" + total,
+      short: oneToGo ? "one to go" : done + "/" + total,
       label: "explored",
       state: "exploring"
     });
+    this.setSeg(done, total);
+    this.setDiscoverCue(true);
+    // aria-label states what expanding reveals (the checklist), so a screen
+    // reader user knows the chip is actionable, not just a status readout.
+    liveact.setAttribute("aria-label",
+      "Discovery progress: " + done + " of " + total +
+      " apps explored. Show checklist");
   };
 
   LA.discoverAll = function () {
@@ -293,7 +376,57 @@
     // show expanded "all explored" state
     var c = Collection.count();
     this._discoverState = { done: c.done, total: c.total };
-    this.work({ progress: 1, short: c.done + "/" + c.total, label: "explored", state: "all explored", expand: true });
+    this.work({ progress: 1, short: "all explored", label: "explored", state: "all explored", expand: true });
+    this.setSeg(c.done, c.total);
+    this.setDiscoverCue(true);
+    liveact.setAttribute("aria-label",
+      "Discovery complete: all " + c.total +
+      " apps explored. Show checklist");
+  };
+
+  // Auto-peek: one-shot reveal of the checklist card so the visitor learns the
+  // chip expands. Fired on the first genuine home show of a session. Never
+  // steals focus (no .focus() here). Under reduced motion the caller routes to
+  // autoPeekStatic() instead (final state, no spring). Returns true if it
+  // opened, so the caller can mark peeked only when the card actually showed.
+  LA.autoPeek = function () {
+    if (REDUCED || !liveact) return false;
+    if (!this._discoverState) return false;      // only in discovery mode
+    if (!liveact.classList.contains("liveact--progress")) return false;
+    this.fillExpand();
+    var r = liveact;
+    requestAnimationFrame(function () { r.classList.add("liveact--expanded"); });
+    clearTimeout(this._ct);                       // share the expand timer slot
+    var self = this;
+    this._ct = setTimeout(function () { self.closeExpand(); }, 2500);
+    return true;
+  };
+
+  // Static peek: the reduced-motion counterpart of autoPeek. Renders the
+  // checklist card in its final, expanded state with no animation (the global
+  // reduced-motion rule zeroes the transition), so reduced-motion / deep-link
+  // visitors still learn the chip expands. Collapses on the FIRST user
+  // interaction anywhere (click/keydown, once) or after ~4s, whichever comes
+  // first. Returns true if it actually opened (so the caller can mark peeked).
+  LA.autoPeekStatic = function () {
+    if (!liveact) return false;
+    if (!this._discoverState) return false;        // only in discovery mode
+    if (!liveact.classList.contains("liveact--progress")) return false;
+    this.fillExpand();
+    liveact.classList.add("liveact--expanded");     // final state, no transition
+    var self = this;
+    function collapse() {
+      document.removeEventListener("click", collapse, true);
+      document.removeEventListener("keydown", collapse, true);
+      clearTimeout(self._ct);
+      self.closeExpand();
+    }
+    clearTimeout(this._ct);                         // share the expand timer slot
+    this._ct = setTimeout(collapse, 4000);
+    // capture-phase, once: any click or key anywhere dismisses it
+    document.addEventListener("click", collapse, true);
+    document.addEventListener("keydown", collapse, true);
+    return true;
   };
 
   // override fillExpand to show discovery checklist when in discover mode
@@ -309,16 +442,63 @@
       var visited = Collection.isVisited(id);
       return "<div class='liveact__erow'><span class='liveact__ev'>" + escapeHtml(name) + "</span><span class='liveact__es liveact__es--" + (visited ? "done" : "todo") + "'>" + (visited ? "✓" : "·") + "</span></div>";
     }).join("");
+    // Footer hints the reward without spoiling it: dry, lowercase, no punctuation
+    // theatrics. Once everything is open, it acknowledges the unlock instead.
+    var footer = isAll ? "notes unlocked." : "open everything.";
     setHtml(laExpand,
-      "<div class='liveact__ehead'><span>gianfranco-os</span><span>Live</span></div>" +
+      "<div class='liveact__ehead'><span>gianfranco-os</span>" +
+        "<span class='liveact__eclose' role='button' tabindex='0' aria-label='Close'>✕</span></div>" +
       "<div class='liveact__etitle'>" + (isAll ? "all explored" : "exploring") + "</div>" +
       "<div class='liveact__estate'>" + done + " of " + total + " apps visited</div>" +
       "<div class='liveact__etrack' style='--pct:" + Math.round((done / Math.max(total, 1)) * 100) + "%'><span></span></div>" +
-      rows);
+      rows +
+      "<div class='liveact__efoot'>" + footer + "</div>");
     laExpand.hidden = false;
   };
 
-  if (liveact) liveact.addEventListener("click", function () { LA.toggle(); });
+  if (liveact) liveact.addEventListener("click", function (e) { e.stopPropagation(); LA.toggle(); });
+
+  // --- expand card: never let it get stuck open blocking app content -------
+  // Robust close paths, in addition to the auto-close timer:
+  //   • Escape closes it (and stops there, so it doesn't also close an app)
+  //   • a click/tap anywhere outside the pill + card closes it
+  //   • an explicit close affordance inside the card (added in fillExpand)
+  LA.isExpanded = function () { return !!(liveact && liveact.classList.contains("liveact--expanded")); };
+  // wrap closeExpand to also clear the auto-close timer
+  var _closeExpand = LA.closeExpand.bind(LA);
+  LA.closeExpand = function () { clearTimeout(this._ct); _closeExpand(); };
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && LA.isExpanded()) {
+      e.stopPropagation();      // don't also trigger the app-close Escape handler
+      LA.closeExpand();
+      try { liveact.focus(); } catch (err) {}
+    }
+  }, true);                     // capture phase: run before the app Escape handler
+
+  document.addEventListener("click", function (e) {
+    if (!LA.isExpanded()) return;
+    if (liveact && liveact.contains(e.target)) return;   // clicks on pill/card ignored here
+    LA.closeExpand();
+  });
+
+  // explicit close affordance inside the expand card (built in fillExpand).
+  // Delegated so it survives card re-renders. Stops propagation so it does not
+  // bubble to the pill's toggle (which would immediately re-open).
+  if (laExpand) {
+    function closeFromCard(e) {
+      var t = e.target;
+      if (t && t.classList && t.classList.contains("liveact__eclose")) {
+        e.stopPropagation();
+        if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+        if (e.type === "keydown") e.preventDefault();
+        LA.closeExpand();
+        try { liveact.focus(); } catch (err) {}
+      }
+    }
+    laExpand.addEventListener("click", closeFromCard);
+    laExpand.addEventListener("keydown", closeFromCard);
+  }
 
   // -- the OS module (Platform) -------------------------------------------
   // btns spans EVERY .os-switch in the document: the device-level switch
@@ -456,7 +636,16 @@
         var raw = localStorage.getItem(KEY);
         if (raw) {
           var parsed = JSON.parse(raw);
-          _state = parsed;
+          // normalize: a partial/foreign object (old version, hand edit) must
+          // never boot the OS into a dead state — missing fields get defaults.
+          if (parsed && typeof parsed === "object") {
+            _state = {
+              visited: (parsed.visited && typeof parsed.visited === "object") ? parsed.visited : {},
+              hue: (typeof parsed.hue === "number") ? parsed.hue : null,
+              os: (parsed.os === "android" || parsed.os === "ios") ? parsed.os : "ios",
+              rewarded: !!parsed.rewarded
+            };
+          }
         } else {
           // migrate legacy platform key
           var legacy = localStorage.getItem("ask-os");
@@ -484,20 +673,25 @@
 
     function isRewarded() { return !!_state.rewarded; }
 
-    // clears the badge with a small scale-pop, then updates LA discovery state
+    // clears the badge with a small scale-pop, then updates LA discovery state.
+    // An app can have two icons (dock + grid duplicate at the tablet tier), so
+    // clear the badge on EVERY instance, not just the first match.
     function _clearBadge(id) {
-      var icon = document.querySelector('.appicon[data-app="' + id + '"]');
-      if (!icon) return;
-      var badge = icon.querySelector(".appicon__badge");
-      if (!badge) return;
-      if (!REDUCED) {
-        badge.classList.add("badge--pop");
-        badge.addEventListener("animationend", function () { badge.remove(); }, { once: true });
-      } else {
-        badge.remove();
-      }
-      // update aria-label to remove notification count
-      icon.setAttribute("aria-label", icon.querySelector(".appicon__label").textContent);
+      var icons = document.querySelectorAll('.appicon[data-app="' + id + '"]');
+      Array.prototype.forEach.call(icons, function (icon) {
+        var badge = icon.querySelector(".appicon__badge");
+        var labelEl = icon.querySelector(".appicon__label");
+        if (badge) {
+          if (!REDUCED) {
+            badge.classList.add("badge--pop");
+            badge.addEventListener("animationend", function () { badge.remove(); }, { once: true });
+          } else {
+            badge.remove();
+          }
+        }
+        // update aria-label to remove notification count
+        if (labelEl) icon.setAttribute("aria-label", labelEl.textContent);
+      });
     }
 
     function visit(id) {
@@ -522,7 +716,16 @@
 
     function getState() { return _state; }
 
-    return { load: load, visit: visit, count: count, isVisited: isVisited, isRewarded: isRewarded, getState: getState, _save: _save };
+    // Auto-peek one-shot: has the discovery card ever auto-expanded to teach the
+    // visitor it is expandable? Persisted so it happens once, ever, per browser.
+    function hasPeeked() { return !!_state.peeked; }
+    function markPeeked() {
+      if (_state.peeked) return;
+      _state.peeked = true;
+      _save();
+    }
+
+    return { load: load, visit: visit, count: count, isVisited: isVisited, isRewarded: isRewarded, getState: getState, hasPeeked: hasPeeked, markPeeked: markPeeked, _save: _save };
   })();
 
   /* ===================================================================
@@ -548,17 +751,25 @@
   var Lock = (function () {
     var SESS_KEY = "gg-unlocked";
 
-    // Inline SVG icons for the lock notification cards.
-    // Shape matches the ICON functions in messages.js (same SVG paths).
+    // Per-app notification glyphs: each notification wears its APP's real home
+    // icon (same SVG paths as index.html) in a small rounded-square tile tinted
+    // with that app's committed color — exactly like the home tiles. Keyed by
+    // app id (nt.id), not the old generic nt.icon buckets.
     function _svg(inner) {
       return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' width='16' height='16' aria-hidden='true'>" + inner + "</svg>";
     }
-    var LOCK_ICON = {
-      guild:  function () { return _svg("<path d='M17 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2'/><circle cx='9.5' cy='7' r='4'/><path d='M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'/>"); },
-      hire:   function () { return _svg("<path d='M20 6 9 17l-5-5'/>"); },
-      mentee: function () { return _svg("<path d='M23 6 13.5 15.5l-5-5L1 18'/><path d='M17 6h6v6'/>"); },
-      doc:    function () { return _svg("<path d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/><path d='M14 2v6h6'/>"); }
+    var APP_GLYPH = {
+      messages: "<path d='M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9 9 0 0 1-3.8-.8L3 21l1.9-5.2A8.5 8.5 0 0 1 4 11.5 8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z'/>",
+      maps:     "<path d='M12 21s-6.5-5.5-6.5-10.5A6.5 6.5 0 0 1 12 4a6.5 6.5 0 0 1 6.5 6.5C18.5 15.5 12 21 12 21z'/><circle cx='12' cy='10.5' r='2.3'/>",
+      ledger:   "<path d='M3 9.5 12 4l9 5.5'/><path d='M4 9.5v9M20 9.5v9M9 11v6M15 11v6'/><path d='M2.5 20.5h19'/>",
+      terminal: "<rect x='3' y='4' width='18' height='16' rx='2.5'/><path d='m7 9 3 3-3 3M13 15h4'/>",
+      settings: "<circle cx='12' cy='12' r='3.2'/><path d='M19.4 13.5a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'/>",
+      mail:     "<rect x='2.5' y='4.5' width='19' height='15' rx='2.5'/><path d='m3 6 9 6 9-6'/>",
+      notes:    "<path d='M5 3.5h14a1 1 0 0 1 1 1V21l-3-2-3 2-3-2-3 2V4.5a1 1 0 0 1 1-1z'/><path d='M8.5 8.5h7M8.5 12h7M8.5 15.5h4'/>"
     };
+    function _appIcon(id) {
+      return _svg(APP_GLYPH[id] || APP_GLYPH.messages);
+    }
 
     var _lockEl    = null;
     var _notifsEl  = null;
@@ -580,9 +791,9 @@
 
     // Build one notification card. Returns a DOM element (button — focusable).
     function _buildCard(nt) {
-      var ic = (LOCK_ICON[nt.icon] || LOCK_ICON.doc)();
+      var ic = _appIcon(nt.id);
       var card = el("button", "notif",
-        "<span class='notif__icon'>" + ic + "</span>" +
+        "<span class='notif__icon notif__icon--app' data-app='" + escapeHtml(nt.id) + "'>" + ic + "</span>" +
         "<span class='notif__main'>" +
           "<span class='notif__app'>" + escapeHtml(nt.app) + "</span>" +
           "<span class='notif__title'>" + escapeHtml(nt.title) + "</span>" +
@@ -747,7 +958,7 @@
       // Click anywhere on the lock screen (not a card) → unlock
       _lockEl.addEventListener("click", function (e) {
         // only respond to clicks on the lock screen backdrop itself
-        if (e.target === _lockEl || e.target.classList.contains("lockscreen__wall") || e.target.classList.contains("lockscreen__clock") || e.target === lockDateEl || e.target === lockTimeEl) {
+        if (e.target === _lockEl || e.target.classList.contains("lockscreen__wall") || e.target.classList.contains("lockscreen__clock") || e.target.classList.contains("lockscreen__owner") || e.target === lockDateEl || e.target === lockTimeEl) {
           unlock(null);
         }
       });
@@ -802,15 +1013,30 @@
     var current = null;        // currently open app id, or null at home
     var transitioning = false; // guard against re-entrant hashchange storms
     var hasPending = false;    // a hashchange arrived mid-transition; re-route after
+    var activeVT = null;       // the in-flight app-zoom View Transition, if any
     var homeShown = false;     // first home reveal triggers the stagger-in
     var lastFocusedIcon = null;// icon to restore focus to on close
     var wakePending = null;    // a freshly-revealed bonus icon to wake on next home show
+    var peekScheduled = false; // guards maybeAutoPeek so it schedules at most once
 
     function screenForApp(id) {
       return document.querySelector('.app-screen[data-app="' + id + '"]');
     }
+    // An app may have TWO icons: a dock instance and a grid duplicate (the
+    // duplicate is CSS-hidden on phone tiers, visible at the tablet tier — that
+    // is authentic iPadOS). For the View-Transition zoom we must morph from the
+    // instance the visitor can actually see. Prefer a VISIBLE grid instance
+    // (offsetParent guards against the display:none copy), then a visible dock
+    // instance, then any match. offsetParent is reliable here because openApp
+    // runs while the homescreen is active (not display:none).
     function iconForApp(id) {
-      return document.querySelector('.appicon[data-app="' + id + '"]');
+      var all = Array.prototype.slice.call(
+        document.querySelectorAll('.appicon[data-app="' + id + '"]'));
+      if (!all.length) return null;
+      var visible = all.filter(function (n) { return n.offsetParent !== null; });
+      var pool = visible.length ? visible : all;
+      var grid = pool.filter(function (n) { return n.closest && n.closest(".appgrid"); });
+      return (grid[0] || pool[0]);
     }
 
     // Parse the hash into a target app id, or null for home. Unknown/unregistered
@@ -853,11 +1079,36 @@
       screenEl.style.viewTransitionName = "app-zoom";
 
       var vt = document.startViewTransition(swap);
+      activeVT = vt;                       // track for route()'s drain guard
       vt.finished.catch(function () {}).then(function () {
+        if (activeVT === vt) activeVT = null;
         sharedIconEl.style.viewTransitionName = "";
         screenEl.style.viewTransitionName = "";
       });
       return vt;                           // caller can await vt.finished
+    }
+
+    // First GENUINE home show of a session auto-peeks the discovery card once
+    // (ever) so visitors learn the chip expands into a checklist / reward path.
+    // Called from showHome (the single home-reveal chokepoint) and from boot's
+    // fresh/returning paths — idempotent: hasPeeked() gates it, peekScheduled
+    // guards re-entry, and it self-marks peeked ONLY when the card actually
+    // opens (autoPeek/autoPeekStatic return true). Deep-link entries never call
+    // this (they open an app, not home), so the peek stays armed and fires the
+    // first time home is genuinely shown. Never peeks while an app is foreground.
+    function maybeAutoPeek() {
+      if (Collection.hasPeeked() || peekScheduled) return;
+      if (current || document.body.hasAttribute("data-app")) return; // app open: not home
+      peekScheduled = true;
+      // Defer so LA.discover() (which puts the LA in progress/discover mode) has
+      // run and the icon stagger has settled before the card reveals.
+      setTimeout(function () {
+        peekScheduled = false;
+        if (Collection.hasPeeked()) return;
+        if (current || document.body.hasAttribute("data-app")) return;
+        var opened = REDUCED ? LA.autoPeekStatic() : LA.autoPeek();
+        if (opened) Collection.markPeeked();       // only burn the peek if it showed
+      }, REDUCED ? 300 : 900);
     }
 
     function activeScreenEl() {
@@ -899,6 +1150,8 @@
         homeShown = true;
         staggerHomeIcons();
       }
+      // refresh the tablet discovery-progress widget (an app may have been visited)
+      updateProgressWidget();
       // a bonus app revealed while an app was foreground wakes now, on return
       if (wakePending) {
         var w = wakePending; wakePending = null;
@@ -917,6 +1170,11 @@
       lastFocusedIcon = null;
       deferFocus(restore, vt);
       current = null;
+
+      // Genuine home reveal: arm the one-shot discovery peek. Idempotent — fires
+      // at most once ever. Catches the deep-link-then-home case (boot skipped it
+      // to avoid burning the peek on a visitor heading straight into an app).
+      maybeAutoPeek();
     }
 
     // ---- open an app ---------------------------------------------------
@@ -959,12 +1217,22 @@
 
     function focusInto(screenEl, vt) {
       if (!screenEl) return;
-      var target = screenEl.querySelector(".app-head__back") ||
-                   screenEl.querySelector(".app-head__title");
-      if (!target) return;
-      // titles are not natively focusable; make them programmatically focusable
-      if (target.classList.contains("app-head__title") && !target.hasAttribute("tabindex")) {
-        target.setAttribute("tabindex", "-1");
+      // Prefer the back button (the natural "you are here / go back" landmark).
+      // Without one, focus the app's content region (.app-body) rather than the
+      // heading: a body landmark is a truer "entered the app" target for AT than
+      // an unfocusable title we'd have to fake a tabindex onto.
+      var target = screenEl.querySelector(".app-head__back");
+      if (!target) {
+        target = screenEl.querySelector(".app-body");
+        if (!target) return;
+        if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+        if (!target.hasAttribute("aria-label")) {
+          var title = screenEl.querySelector(".app-head__title");
+          var name = (title && title.textContent.trim()) ||
+                     screenEl.getAttribute("aria-label") ||
+                     screenEl.getAttribute("data-app") || "app";
+          target.setAttribute("aria-label", name);
+        }
       }
       // defer past the View Transition so focus does not fight the animation
       deferFocus(target, vt);
@@ -981,31 +1249,60 @@
       if (target) openApp(target, useTransition);
       else showHome(current, useTransition);
 
-      // let the transition settle, then drain any hash change that arrived
-      // mid-flight (re-entrant guard: we ignore intermediate churn, apply last)
-      var settle = (canMorph() ? 480 : (REDUCED ? 0 : 320));
-      setTimeout(function () {
+      // Release the guard once the transition actually settles, then drain any
+      // hash change that arrived mid-flight (we re-read the live hash on drain,
+      // so intermediate churn collapses to the last target). Keying off the real
+      // View Transition `finished` promise — rather than a fixed 480ms timer —
+      // means a slow device can't let the next app-zoom start before this one
+      // ends (which the API would resolve by SKIPPING one, dropping an
+      // animation). A short timer still backs the no-VT / fallback path.
+      function drain() {
         transitioning = false;
         if (hasPending) { hasPending = false; route(true); }
-      }, settle);
+      }
+      if (activeVT && activeVT.finished) {
+        activeVT.finished.catch(function () {}).then(drain);
+      } else {
+        setTimeout(drain, REDUCED ? 0 : 320);
+      }
     }
 
     // ---- home grid: honesty + interactivity ---------------------------
     var gridIcons = [];        // visible (registered) icons, in DOM order
     var rovingIdx = 0;
 
+    // tablet tier: the home grid duplicates the four dock apps (authentic
+    // iPadOS — dock favorites also live on the grid). Those duplicate grid
+    // icons carry .appicon--dockdup and are CSS-hidden below the tablet
+    // breakpoint. Roving-tabindex membership must skip them on phone/float so
+    // the index math stays correct (they are display:none there and can't take
+    // focus). matchMedia mirrors the CSS breakpoint deterministically — no
+    // reliance on offsetParent, which is null while the homescreen is still
+    // display:none during boot.
+    var TABLET_MQ = window.matchMedia("(min-width: 1024px)");
+
     function syncGridHonesty() {
       // Reveal only icons whose app id is in the registry; hide the rest so the
       // grid never advertises an app that has not shipped.
       var all = Array.prototype.slice.call(homescreen.querySelectorAll(".appicon"));
+      var isTablet = TABLET_MQ.matches;
       gridIcons = [];
       all.forEach(function (icon) {
         var id = icon.getAttribute("data-app");
         var def = Apps.get(id);
+        var isDockDup = icon.classList.contains("appicon--dockdup");
         // unregistered -> hidden. A bonus app (Notes) stays hidden until the
         // reward unlocks it, so the grid never advertises the reward early.
-        if (def && (!def.bonus || Collection.isRewarded())) { icon.hidden = false; gridIcons.push(icon); }
+        var registered = def && (!def.bonus || Collection.isRewarded());
+        // The dockdup's own `hidden` attribute mirrors registry honesty; the
+        // tier gating (phone vs tablet) is done purely in CSS so the attribute
+        // never fights the media query. Membership in the roving list, however,
+        // must respect the tier: a display:none dup can't be focused.
+        if (registered) { icon.hidden = false; }
         else { icon.hidden = true; }
+        if (!registered) return;
+        if (isDockDup && !isTablet) return;   // dup hidden on phone: not rovable
+        gridIcons.push(icon);
       });
     }
 
@@ -1028,7 +1325,7 @@
       // roving tabindex: arrow keys move focus across the grid; Enter/Space open
       homescreen.addEventListener("keydown", function (e) {
         if (!gridIcons.length) return;
-        var cols = 4, n = gridIcons.length, idx = rovingIdx, next = idx;
+        var cols = gridColumnCount(), n = gridIcons.length, idx = rovingIdx, next = idx;
         switch (e.key) {
           case "ArrowRight": next = Math.min(idx + 1, n - 1); break;
           case "ArrowLeft":  next = Math.max(idx - 1, 0); break;
@@ -1052,6 +1349,19 @@
     function setRoving(i) {
       rovingIdx = i;
       gridIcons.forEach(function (icon, j) { icon.setAttribute("tabindex", j === i ? "0" : "-1"); });
+    }
+
+    // Derive the grid column count from the rendered .appgrid (its
+    // grid-template-columns track list length) so arrow-key Up/Down move by the
+    // right stride on every tier — phone (4 cols), tablet (auto-fill), etc.
+    // Falls back to 4 if the grid isn't measurable yet.
+    function gridColumnCount() {
+      var grid = homescreen.querySelector(".appgrid");
+      if (!grid) return 4;
+      var tpl = getComputedStyle(grid).gridTemplateColumns;
+      if (!tpl || tpl === "none") return 4;
+      var n = tpl.trim().split(/\s+/).filter(Boolean).length;
+      return n > 0 ? n : 4;
     }
 
     function staggerHomeIcons() {
@@ -1091,6 +1401,7 @@
         if (Collection.isVisited(id)) return; // already visited: no badge
         var tile = icon.querySelector(".appicon__tile");
         if (!tile) return;
+        if (tile.querySelector(".appicon__badge")) return; // already badged (idempotent across tier changes)
         var badge = el("span", "appicon__badge");
         badge.setAttribute("aria-hidden", "true");
         var isMessages = id === "messages";
@@ -1103,6 +1414,83 @@
           ? labelText + ", 1 notification"
           : labelText + ", new");
       });
+    }
+
+    // ---- tablet home widgets: profile (opens Mail) + discovery progress ----
+    function wireHomeWidgets() {
+      var profile = homescreen.querySelector(".widget--profile");
+      if (profile && !profile._wired) {
+        profile._wired = true;
+        profile.addEventListener("click", function () {
+          GG.Shell.open(profile.getAttribute("data-app") || "mail");
+        });
+      }
+      updateProgressWidget();
+    }
+
+    // Reflect Collection discovery state into the progress widget (same source
+    // the Live Activity reads). Non-interactive; per-app mini checkmarks.
+    function updateProgressWidget() {
+      var c = Collection.count();
+      var countEl = document.getElementById("homeProgressCount");
+      var totalEl = document.getElementById("homeProgressTotal");
+      var checksEl = document.getElementById("homeProgressChecks");
+      if (countEl) countEl.textContent = c.done;
+      if (totalEl) totalEl.textContent = c.total;
+      if (checksEl) {
+        var ids = Apps.ids().filter(function (id) { var d = Apps.get(id); return d && !d.bonus; });
+        checksEl.innerHTML = "";
+        ids.forEach(function (id) {
+          var done = Collection.isVisited(id);
+          var cell = el("span", "widget__pcheck" + (done ? " widget__pcheck--done" : ""), done ? "✓" : "");
+          checksEl.appendChild(cell);
+        });
+      }
+      var wrap = document.getElementById("homeProgress");
+      if (wrap) wrap.setAttribute("aria-label", "explored " + c.done + " of " + c.total + " apps");
+
+      // phone/float-tier one-line readout: same Collection source as the LA and
+      // the tablet widget, so the three counts can never drift. Hidden on the
+      // tablet tier via CSS. States the meta-game goal until complete, then
+      // announces the reward. Filled here on every refresh (boot, each showHome).
+      var line = document.getElementById("homeProgressLine");
+      if (line) {
+        var done = c.done === c.total;
+        line.textContent = done
+          ? "all explored · notes unlocked"
+          : c.done + " of " + c.total + " explored · open everything";
+        line.classList.toggle("home-progress--done", done);
+      }
+    }
+
+    // Left-edge swipe-back gesture for a single app-screen. Touch only (touch
+    // events, matching _wireSwipe). Records the start point only when it lands in
+    // the left-edge zone (≤24px from the screen's own left edge, so it can't be
+    // triggered by a chip-row scroll that begins mid-column). On release, fires
+    // goHome when the horizontal travel exceeds ~60px and dominates the vertical.
+    function _wireEdgeBack(screen) {
+      if (!screen || screen._edgeWired) return;
+      screen._edgeWired = true;
+      var EDGE = 24, THRESH = 60;
+      var x0 = null, y0 = null;
+      screen.addEventListener("touchstart", function (e) {
+        var t = e.touches && e.touches[0];
+        if (!t) { x0 = null; return; }
+        // edge-origin: measure against the app column's live left edge
+        var left = screen.getBoundingClientRect().left;
+        if (t.clientX - left <= EDGE) { x0 = t.clientX; y0 = t.clientY; }
+        else { x0 = null; }
+      }, { passive: true });
+      screen.addEventListener("touchend", function (e) {
+        if (x0 == null) return;
+        var t = e.changedTouches && e.changedTouches[0];
+        if (t) {
+          var dx = t.clientX - x0, dy = t.clientY - y0;
+          // rightward, past threshold, predominantly horizontal
+          if (dx > THRESH && dx > Math.abs(dy)) GG.Shell.goHome();
+        }
+        x0 = null; y0 = null;
+      }, { passive: true });
     }
 
     // ---- home control: navind (click / Escape / swipe-up) -------------
@@ -1126,6 +1514,15 @@
       // each app-screen's back chevron also goes home
       Array.prototype.slice.call(document.querySelectorAll(".app-head__back"))
         .forEach(function (b) { b.addEventListener("click", function () { GG.Shell.goHome(); }); });
+
+      // left-edge swipe-back on the app layer (touch only). Mirrors the OS
+      // "swipe from the left edge to go back" gesture. Same action as navind.
+      // Guards against interfering with app-internal horizontal scrollers (chips
+      // rows): the gesture must ORIGINATE within ~24px of the app column's left
+      // edge — content scrollers are inset from that edge — and be predominantly
+      // horizontal on release. No visual tracking; a release-threshold trigger.
+      Array.prototype.slice.call(document.querySelectorAll(".app-screen"))
+        .forEach(function (screen) { _wireEdgeBack(screen); });
 
       // Escape anywhere closes the open app
       document.addEventListener("keydown", function (e) {
@@ -1155,9 +1552,30 @@
         syncGridHonesty();
         decorateBadges();
         wireGrid();
+        wireHomeWidgets();
         wireHomeControl();
 
         window.addEventListener("hashchange", function () { route(true); });
+
+        // Crossing the tablet breakpoint changes which grid icons are visible
+        // (the dock duplicates appear/disappear). Re-sync the roving set + wire
+        // any newly-shown dup, and re-badge so a dup that just appeared on the
+        // tablet grid wears its discovery dot too. Clamp roving to the new
+        // length so the index can't dangle past the end.
+        function onTierChange() {
+          syncGridHonesty();
+          wireGrid();
+          decorateBadges();
+          if (rovingIdx >= gridIcons.length) setRoving(Math.max(0, gridIcons.length - 1));
+        }
+        if (TABLET_MQ.addEventListener) TABLET_MQ.addEventListener("change", onTierChange);
+        else if (TABLET_MQ.addListener) TABLET_MQ.addListener(onTierChange);
+
+        // The discovery-card auto-peek is armed by showHome() on the first
+        // genuine home reveal (see maybeAutoPeek above): reduced motion gets a
+        // static final-state card, normal motion the spring. Deep-link entries
+        // open an app instead of home, so the peek stays armed until the visitor
+        // actually lands on the grid.
 
         // initial route: deep link opens its app with no transition, else home
         var initial = targetFromHash();
@@ -1173,16 +1591,20 @@
             var c = Collection.count();
             LA.discover(c.done, c.total);
             if (targetAppId) {
-              // tapping a notification: unlock → deep-open that app
+              // tapping a notification: unlock → deep-open that app (no peek: the
+              // visitor is heading straight into an app, not landing on the grid)
               GG.Shell.open(targetAppId);
             } else {
-              // focus the first app icon
+              // focus the first app icon; showHome() has armed the one-shot
+              // discovery peek (it fires after LA.discover puts the LA in
+              // progress mode and the icon stagger settles).
               var firstIcon = gridIcons[0];
               if (firstIcon) deferFocus(firstIcon, null);
             }
           });
         } else {
-          // returning same-session visitor: go straight home
+          // returning same-session visitor: go straight home (showHome arms the
+          // one-shot peek if it has not fired yet this browser).
           showHome(null, false);
           var ch = Collection.count();
           LA.discover(ch.done, ch.total);

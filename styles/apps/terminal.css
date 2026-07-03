@@ -129,6 +129,7 @@ body[data-os="android"] .app-screen[data-app="terminal"] .app-head {
 
 /* ---- prompt row -------------------------------------------------------- */
 .term-prompt-row {
+  position: relative;   /* anchors the transparent .term-input overlay */
   flex: 0 0 auto;
   display: flex;
   align-items: center;
@@ -141,6 +142,15 @@ body[data-os="android"] .app-screen[data-app="terminal"] .app-head {
   font-weight: 500;
   /* sticky bottom; safe-area respected */
   padding-bottom: max(0.55rem, env(safe-area-inset-bottom));
+}
+
+/* Focus cue: when the real input has focus, the whole prompt line reads as
+   the active field (the block cursor already signals "here"; this adds an
+   AT/keyboard-visible ring around the row without disturbing the phosphor look). */
+.term-prompt-row:focus-within {
+  outline: 1px solid var(--term-amber);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .term-prompt-prefix {
@@ -159,8 +169,33 @@ body[data-os="android"] .app-screen[data-app="terminal"] .app-head {
   white-space: pre;
   letter-spacing: inherit;
   min-width: 0;
-  /* not a real input; just a display span */
+  /* visual mirror of the real input; the block cursor renders the caret */
 }
+
+/* The real, focusable input home. Laid over the prompt row and made fully
+   transparent (text, caret, background, border) so the visible affordance
+   stays the phosphor display span + block cursor. It still receives focus,
+   clicks, and physical keys, and carries the accessible label. Its own
+   selection/caret never show; the display span above renders the text. */
+.term-input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: transparent;          /* hide the input's own glyphs */
+  caret-color: transparent;    /* hide the native caret; block cursor stands in */
+  font: inherit;
+  letter-spacing: inherit;
+  outline: none;               /* focus is shown on .term-prompt-row:focus-within */
+  /* keep native selection invisible so only the display span reads */
+  -webkit-text-fill-color: transparent;
+}
+.term-input::selection { background: transparent; }
+.term-input::-moz-selection { background: transparent; }
 
 /* blinking block cursor — reuses the stream-cursor concept */
 .term-cursor {
@@ -189,14 +224,18 @@ body[data-os="android"] .app-screen[data-app="terminal"] .app-head {
   flex-wrap: nowrap;
   overflow-x: auto;
   gap: 0.5rem;
-  /* extra bottom room so chips clear the navind home bar (z40) that floats
-     over the device bottom edge, plus the iOS/Android safe-area inset.
-     Mirrors the same calc used by the Messages composer. */
-  padding: 0.5rem 1rem calc(1.5rem + max(0.3rem, env(safe-area-inset-bottom)));
+  /* extra right padding parks a partial chip under the fade: the row visibly
+     half-cuts the last chip so the h-scroll affordance reads as honest, not
+     clipped mid-word by accident (same idiom as Messages' .suggest). */
+  padding: 0.5rem 2.6rem calc(1.5rem + max(0.3rem, env(safe-area-inset-bottom))) 1rem;
+  scroll-padding-inline: 1rem 2.6rem;
   border-top: 1px solid var(--term-line);
   background: var(--term-surface);
   /* hide scrollbar but keep scrollable */
   scrollbar-width: none;
+  /* stronger end fade so the cut chip reads as "more to scroll" */
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 0.6rem, #000 calc(100% - 2.8rem), transparent);
+          mask-image: linear-gradient(to right, transparent, #000 0.6rem, #000 calc(100% - 2.8rem), transparent);
 }
 .term-chips::-webkit-scrollbar { display: none; }
 
@@ -233,3 +272,106 @@ body[data-os="android"] .app-screen[data-app="terminal"] .app-head {
 
 /* ---- app-head typing indicator (optional) ------------------------------ */
 /* reuse the existing .stream-cursor CSS pattern; no new keyframe needed */
+
+/* phone tier: the tablet scaffold is inert. .term-main is display:contents so
+   scrollback + prompt row sit directly in the .app-body column flow exactly
+   as before this wrapper existed; the info pane is hidden outright. */
+.term-main { display: contents; }
+.term-info { display: none; }
+
+/* =========================================================================
+   TABLET TIER — @container device (min-width: 700px)
+   tmux-style split: scrollback (capped ~80-90ch, left) beside a static
+   framed kv panel (~18-20rem, right) that reads like a pinned session pane,
+   not a duplicate of the streamed `gian --stack` output. Phone stays
+   pixel-identical below the threshold — this block only adds rules.
+   ========================================================================= */
+@container device (min-width: 700px) {
+  .app-screen[data-app="terminal"] .app-body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 20rem);
+    grid-template-rows: 1fr auto;
+    align-items: stretch;
+    height: 100%;
+  }
+
+  .term-main {
+    display: flex;
+    flex-direction: column;
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    min-height: 0;
+    border-right: 1px solid var(--term-line);
+  }
+
+  /* cap scrollback measure so long lines stay readable, left-aligned in the
+     freed column rather than stretching edge to edge */
+  .term-scrollback {
+    max-width: 88ch;
+    width: 100%;
+  }
+  .term-prompt-row { max-width: 88ch; }
+
+  .term-chips {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    /* room freed by the split lets suggestions wrap into rows instead of
+       scrolling — no more half-cut chip, so the phone-only fade backs off */
+    flex-wrap: wrap;
+    overflow-x: visible;
+    padding: 0.6rem 1.2rem calc(1.3rem + max(0.3rem, env(safe-area-inset-bottom)));
+    -webkit-mask-image: none;
+            mask-image: none;
+  }
+
+  /* ---- info pane: tmux-style framed session summary --------------------- */
+  .term-info {
+    display: flex;
+    flex-direction: column;
+    grid-column: 2;
+    grid-row: 1;
+    min-height: 0;
+    padding: 1rem 1.1rem;
+    background: var(--term-surface);
+    border-left: 1px solid var(--term-line);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    overflow-y: auto;
+  }
+
+  .term-info__head {
+    color: var(--term-text-dim);
+    text-transform: lowercase;
+    letter-spacing: 0.02em;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.6rem;
+    border-bottom: 1px solid var(--term-line);
+  }
+
+  .term-info__kv {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    column-gap: 0.7ch;
+    row-gap: 0.5rem;
+    margin: 0;
+  }
+  .term-info__k {
+    color: var(--term-amber);
+    white-space: nowrap;
+  }
+  .term-info__k::after { content: ":"; }
+  .term-info__v {
+    margin: 0;
+    color: var(--term-text);
+    overflow-wrap: break-word;
+  }
+
+  .term-info__note {
+    margin-top: 0.9rem;
+    padding-top: 0.7rem;
+    border-top: 1px solid var(--term-line);
+    color: var(--term-text-dim);
+  }
+}

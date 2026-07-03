@@ -67,6 +67,8 @@
   var opened   = false;  // has Maps been opened at least once?
   var drawn    = false;  // has the route finished drawing?
   var activePin = null;  // currently selected pin id (card open), or null
+  var sizedOnce = false; // has the map-wrap ever been built with a real, nonzero size?
+  var pendingFirstDraw = false; // onOpen() deferred drawRoute() until real geometry lands
 
   // -------------------------------------------------------------------------
   // The map SVG — hand-authored, minimal, stylized. viewBox 0 0 100 100.
@@ -375,6 +377,40 @@
     return null;
   }
 
+  // -------------------------------------------------------------------------
+  // Card-scoped Escape handling. os.js wires a global bubble-phase "Escape
+  // closes the open app" handler on `document` once, at boot (wireHomeControl,
+  // long before any app mounts). Because both listeners live on the same
+  // target, registration order decides call order for same-phase listeners —
+  // so a handler added here later, in the bubble phase, would always fire
+  // *after* the global one and stopPropagation() would be too late.
+  // Registering in the CAPTURE phase instead guarantees this handler runs
+  // first regardless of when the global one was registered, so
+  // stopImmediatePropagation() here reliably prevents the global handler
+  // (and anything else on document) from seeing the event. Wired on card
+  // open, unwired on card close — mirrors os.js's lock-screen _wireEscape
+  // add/remove-on-dismiss pattern.
+  // -------------------------------------------------------------------------
+  var cardEscHandler = null;
+
+  function wireCardEscape() {
+    if (cardEscHandler) return; // already wired
+    cardEscHandler = function (e) {
+      if (e.key === "Escape") {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+        closeCard();
+      }
+    };
+    document.addEventListener("keydown", cardEscHandler, true);
+  }
+
+  function unwireCardEscape() {
+    if (!cardEscHandler) return;
+    document.removeEventListener("keydown", cardEscHandler, true);
+    cardEscHandler = null;
+  }
+
   function openCard(id) {
     var stop = stopById(id);
     if (!stop || !cardEl) return;
@@ -401,6 +437,11 @@
     var swapping = activePin && activePin !== id;
     activePin = id;
 
+    // card is now open (or swapping content): (re)wire the capture-phase
+    // Escape handler that closes just the card. wireCardEscape() no-ops if
+    // already wired (the swap case), so it's safe to call unconditionally.
+    wireCardEscape();
+
     // show + slide up (or swap content if a card is already open)
     if (mapWrap) mapWrap.classList.add("map-wrap--carded");  // hides the caption
     cardWrap.hidden = false;
@@ -420,6 +461,7 @@
     if (!cardEl || activePin == null) return;
     var idToBlur = activePin;
     activePin = null;
+    unwireCardEscape();
     pinEls.forEach(function (p) {
       p.classList.remove("map-pin--active");
       p.setAttribute("aria-expanded", "false");
@@ -489,6 +531,21 @@
     if (routeEl) routeEl.classList.add("map-route--done");
   }
 
+  // Replace the SVG contents + reposition pins for a newly-known container
+  // size. Shared by the ResizeObserver callback and onOpen()'s deferred-first-
+  // draw fallback so both correct the same 390x699-fallback geometry the same
+  // way. No-ops if mapWrap/routeEl aren't around yet (mount() hasn't run).
+  function rebuildGeometry(w, h) {
+    if (!mapWrap || !routeEl) return;
+    var existingSvg = mapWrap.querySelector(".map-svg");
+    if (!existingSvg) return;
+    var newSvg = makeSVG(w, h);
+    mapWrap.replaceChild(newSvg, existingSvg);
+    positionPins(w, h);
+    // restore draw state
+    if (drawn) routeEl.classList.add("map-route--done");
+  }
+
   // -------------------------------------------------------------------------
   // Build DOM (mount — called once on first open)
   // -------------------------------------------------------------------------
@@ -508,8 +565,17 @@
     // layout; the SVG route endpoints depend on the container dimensions.
     bodyEl.appendChild(mapWrap);
 
+    // On first mount the app-screen is still `display:none` (mount() runs
+    // before the opening View Transition flips it to `.screen--active` — see
+    // os.js openApp/Apps.ensure), so clientWidth/clientHeight read 0 here and
+    // the || 390 / || 699 fallbacks are hit essentially every first open, not
+    // just in some rare transitional case. Track that with sizedOnce so
+    // onOpen() knows whether it's safe to run the draw choreography against
+    // this geometry, or whether it must wait for the ResizeObserver below to
+    // report the real size once the screen becomes visible.
     var mW = mapWrap.clientWidth  || 390;
     var mH = mapWrap.clientHeight || 699;
+    sizedOnce = mapWrap.clientWidth > 0;
     var svg = makeSVG(mW, mH);
     mapWrap.appendChild(svg);
 
@@ -548,15 +614,21 @@
         if (!mapWrap || !routeEl) return;
         var w = mapWrap.clientWidth  || 390;
         var h = mapWrap.clientHeight || 699;
-        var existingSvg = mapWrap.querySelector(".map-svg");
-        if (existingSvg) {
-          var newSvg = makeSVG(w, h);
-          mapWrap.replaceChild(newSvg, existingSvg);
-          positionPins(w, h);
-          // restore draw state
-          if (drawn) {
-            routeEl.classList.add("map-route--done");
-          }
+        // Still unsized (e.g. observed while the screen is display:none, or a
+        // spurious 0-size callback mid-transition) — nothing to rebuild yet;
+        // wait for the next callback that reports a real box.
+        if (w === 0) return;
+        var wasSizedOnce = sizedOnce;
+        sizedOnce = true;
+        rebuildGeometry(w, h);
+        // This is the first time we've had real geometry, and onOpen() already
+        // ran (against the placeholder 390x699 fallback) without drawing
+        // because it saw !sizedOnce and deferred — run the draw choreography
+        // now, against correct geometry. pendingFirstDraw / drawRoute()'s own
+        // `drawn` guard keep this from ever double-drawing.
+        if (!wasSizedOnce && pendingFirstDraw) {
+          pendingFirstDraw = false;
+          drawRoute();
         }
       });
       ro.observe(mapWrap);
@@ -581,8 +653,41 @@
       }
       opened = true;
 
-      // first open: draw the route, sequence the pins
-      drawRoute();
+      // first open: draw the route, sequence the pins. If mount() ran before
+      // the app-screen had real layout (display:none pre-VT, see mount()'s
+      // sizedOnce comment) the route/pins were built against the 390x699
+      // fallback — drawing now would animate a route that visually terminates
+      // in the wrong place until the ResizeObserver's first real callback
+      // corrects it (the exact misplaced-first-frame bug on tablet). Defer:
+      // re-check on the next tick (same setTimeout-past-VT-settle idiom used
+      // below in drawRoute()'s START delay and by ledger.js's runFirstOpen);
+      // if the screen has settled to a real size by then, draw immediately.
+      // Otherwise leave pendingFirstDraw set and let the ResizeObserver's
+      // first real-size callback (in mount()) trigger the draw once the
+      // screen actually becomes visible. drawRoute()'s own `drawn` guard
+      // makes this safe even if both paths somehow fire.
+      if (sizedOnce) {
+        drawRoute();
+      } else {
+        pendingFirstDraw = true;
+        setTimeout(function () {
+          if (!pendingFirstDraw) return;   // ResizeObserver already handled it
+          pendingFirstDraw = false;
+          var w = mapWrap && mapWrap.clientWidth;
+          var h = mapWrap && mapWrap.clientHeight;
+          if (w > 0) {
+            // Real size finally available (ResizeObserver hasn't fired yet,
+            // e.g. unsupported, or its callback is merely queued behind this
+            // timeout) — correct the fallback geometry before drawing.
+            sizedOnce = true;
+            rebuildGeometry(w, h);
+          }
+          // else: still unsized after 90ms (unusual) — draw against the
+          // fallback geometry rather than hang forever; better a
+          // slightly-off first frame than a route that never appears.
+          drawRoute();
+        }, 90);
+      }
     },
 
     onClose: function () {
@@ -590,6 +695,7 @@
       // dismiss any open card so re-open lands clean on the map
       if (activePin != null) {
         activePin = null;
+        unwireCardEscape();
         if (cardEl) { cardEl.classList.remove("map-card--in"); cardEl.hidden = true; }
         if (cardWrap) cardWrap.hidden = true;
         if (mapWrap) mapWrap.classList.remove("map-wrap--carded");

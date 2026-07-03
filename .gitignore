@@ -4,3 +4,4 @@
 # os / editor cruft
 .DS_Store
 *.log
+.impeccable/

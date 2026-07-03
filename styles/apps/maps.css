@@ -425,3 +425,103 @@ body[data-os="android"] .app-screen[data-app="maps"] .map-card {
 body[data-os="android"] .app-screen[data-app="maps"] .map-card__close {
   background: oklch(0.90 0.03 235);
 }
+
+/* =========================================================================
+   TABLET (≥700px device inline-size) — real iPad-Maps idiom.
+   The canvas fills the whole pane edge-to-edge by default; tapping a pin
+   turns the place card from a bottom sheet into a floating top-left panel
+   with its own scroll, and only then does the canvas cede real width to it
+   (see .map-wrap / .map-wrap--carded below).
+   ========================================================================= */
+@container device (min-width: 700px) {
+  .app-screen[data-app="maps"] {
+    --map-panel-w: 21rem;
+    --map-panel-inset: 1rem;
+  }
+
+  /* The canvas fills the whole pane by default (iPad-Maps idiom: no card,
+     no reserved gutter). Only once a pin is tapped — .map-wrap--carded, the
+     same class JS already toggles on card open/close for the caption fade —
+     does the canvas cede real layout width to the panel. Reserving it as an
+     actual margin (not just a visual offset) shrinks .map-wrap's own content
+     box, so every existing % → px geometry read (routeD/positionPins/
+     rebuildGeometry in maps.js, all driven off mapWrap.clientWidth/
+     clientHeight) automatically recomputes the route + pins against the
+     narrower canvas the moment a card is open — no JS changes needed, and no
+     pin ever lands under the panel while it's showing. The ResizeObserver
+     already wired in maps.js fires on this box change like any other resize.
+     A transition eases the reflow so the route doesn't jump-cut on open. */
+  .map-wrap {
+    margin-left: 0;
+    transition: margin-left 0.42s var(--ease);
+  }
+  .map-wrap--carded {
+    margin-left: calc(var(--map-panel-w) + var(--map-panel-inset) * 2);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .map-wrap { transition: none; }
+  }
+
+  /* ---- card leaves the bottom-sheet flow, becomes a floating panel ----- */
+  .map-card-wrap {
+    /* no longer a full-bleed flex-end scrim host — anchor to the top-left */
+    align-items: flex-start;
+    justify-content: flex-start;
+    background: none;           /* the map stays fully visible beside the panel */
+    padding: var(--map-panel-inset);
+    pointer-events: none;       /* only the card itself (and its contents) are hit-testable */
+  }
+  .map-card-wrap > .map-card { pointer-events: auto; }
+
+  .map-card {
+    width: var(--map-panel-w);
+    max-width: var(--map-panel-w);
+    height: 100%;
+    max-height: 100%;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--map-card-line) transparent;
+    /* side panel, not a bottom sheet: fade + settle instead of slide-up */
+    transform: translateY(0) scale(0.97);
+  }
+  .map-card.map-card--in {
+    transform: translateY(0) scale(1);
+  }
+
+  /* the bottom-sheet grabber handle reads wrong on a side panel */
+  .map-card__grab { display: none; }
+
+  /* the caption shares no edge with a top-left panel; keep it visible */
+  .map-wrap--carded .map-caption { opacity: 1; }
+
+  /* ---- iOS: genuine Liquid-Glass platform chrome for the persistent panel.
+     The phone's transient bottom-sheet glass (above) reads fine for a sheet
+     that appears for seconds; a panel that sits on-screen for the whole tablet
+     session needs the real platform recipe (shared --glass-* tokens, same
+     ones the dock/widgets use) — translucent fill, a bright specular top
+     edge, a hairline stroke — so it reads as chrome, not a tinted sheet. */
+  body[data-os="ios"] .app-screen[data-app="maps"] .map-card {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(22px) saturate(1.8);
+            backdrop-filter: blur(22px) saturate(1.8);
+    border: 1px solid var(--glass-stroke);
+    border-radius: 1.5rem;
+    box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+  }
+
+  /* ---- Android: opaque tonal M3 card, floating (not a bottom-sheet shape) */
+  body[data-os="android"] .app-screen[data-app="maps"] .map-card {
+    border-radius: 1.4rem;
+    box-shadow:
+      0 0.3rem 0.7rem oklch(0.40 0.06 240 / 0.14),
+      0 1.4rem 2.6rem -0.8rem oklch(0.35 0.08 240 / 0.32);
+  }
+}
+
+@container device (min-width: 700px) and (prefers-reduced-motion: reduce) {
+  .map-card { transform: none; }
+}

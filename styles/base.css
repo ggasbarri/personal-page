@@ -15,7 +15,7 @@
 
   --text:         oklch(0.28 0.018 52);   /* warm charcoal ink */
   --text-muted:   oklch(0.46 0.020 50);
-  --text-faint:   oklch(0.60 0.018 52);
+  --text-faint:   oklch(0.55 0.018 52);
 
   /* ----------------------------------------------------- seeded accent ----
      --seed is the single hue source for the whole OS accent. Settings writes
@@ -55,6 +55,23 @@
 
   --ease:         cubic-bezier(0.16, 1, 0.3, 1);
   --col:          min(460px, 100vw);
+
+  /* ---- device tier tokens ------------------------------------------------
+     Three tiers replace the old phone→floated-phone split:
+       phone   (≤739px): full-bleed, --dev-w = --col.
+       float   (740–1023px): phone floats centered with full chrome.
+       tablet  (≥1024px): the device becomes a landscape tablet.
+     --dev-w is the single source of the device's rendered width; the stage
+     wordmark + OS switch calc their gutters off it (was hard-coded to --col).
+     Tablet dims are clamped so the chrome NEVER overflows the viewport. */
+  --dev-w:        var(--col);
+  /* gutters (≥180px each) hold the wordmark + OS switch without overflow.
+     wider windows cap at 1100px so the tablet stays a believable size. */
+  --tablet-w:     min(1100px, calc(100vw - 360px));
+  /* height clamps: fits the viewport AND stays landscape — capped to 0.75× the
+     width (never taller than a 4:3 tablet), so a narrow-tall window can't make
+     the device read square. */
+  --tablet-h:     min(760px, calc(100dvh - 48px), calc(var(--tablet-w) * 0.75));
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -90,30 +107,36 @@ a { color: inherit; }
   transition: opacity 1.2s var(--ease);
 }
 
-/* oversized faint wordmark grounding the desktop stage (hidden on phones) */
+/* oversized faint wordmark grounding the tablet stage (hidden on phones/float).
+   The left gutter is tall + narrow, so the mark reads VERTICALLY (rotated,
+   bottom-to-top) — a clean editorial device that fits the gutter without any
+   mid-letter crop. Anchored to the left edge, vertically centered. */
 .stage-mark { display: none; }
-@media (min-width: 1080px) {
+@media (min-width: 1024px) {
   .stage-mark {
     position: fixed;
     z-index: 0;
     pointer-events: none;
     top: 50%;
-    right: calc(50% + var(--col) / 2 + 1.5vw);
-    transform: translateY(-50%);
+    /* sit in the middle of the left gutter (half the gutter width from the edge) */
+    left: calc((100vw - var(--dev-w)) / 4);
+    transform: translate(-50%, -50%) rotate(-90deg);
+    transform-origin: center;
     display: flex;
-    flex-direction: column;
-    text-align: right;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.5ch;
     font-family: var(--font-display);
     font-weight: 800;
-    font-size: clamp(3.5rem, 8.5vw, 7.5rem);
-    line-height: 0.84;
-    letter-spacing: -0.04em;
-    color: oklch(0.30 0.02 50 / 0.07);
+    /* sized off viewport height (the axis the rotated text runs along), clamped
+       so the two words never exceed the device height. */
+    font-size: clamp(2.6rem, 6vh, 4.4rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+    color: oklch(0.30 0.02 50 / 0.08);
     white-space: nowrap;
   }
-}
-@media (min-width: 1320px) {
-  .stage-mark { right: calc(50% + var(--col) / 2 + 3.5vw); }
+  .stage-mark span:last-child { opacity: 0.62; }
 }
 
 /* subtle paper tooth */
@@ -168,11 +191,16 @@ body[data-mood="payoff"] .device { background: oklch(0.978 0.011 82); }
 .device {
   position: relative;
   z-index: 1;
-  width: var(--col);
+  width: var(--dev-w);
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--surface);
+  /* @container source for app CSS (later wave) — two-pane tablet layouts.
+     inline-size (not size) so it does not affect the absolute screens' block
+     sizing or the View Transition capture. */
+  container-type: inline-size;
+  container-name: device;
   box-shadow:
     0 0 0 1px var(--line),
     0 2rem 4.5rem -2rem oklch(0.4 0.03 50 / 0.28);
@@ -222,6 +250,74 @@ body[data-os="ios"] .sys--ios { display: inline-flex; }
 body[data-os="android"] .sys--android { display: inline-flex; }
 .sys-pct { font-family: var(--font-ui); font-weight: 600; font-size: 0.74rem; letter-spacing: -0.02em; color: currentColor; }
 
+/* clock + (tablet-only) date cluster at the leading edge */
+.statusbar__lead { justify-self: start; display: inline-flex; align-items: baseline; gap: 0.5rem; }
+.statusbar__date { display: none; font-family: var(--font-ui); font-size: 0.82rem; font-weight: 500; color: var(--statusbar-ink); opacity: 0.72; letter-spacing: -0.01em; }
+
+/* =========================================================================
+   TABLET STATUS BAR (≥1024px)
+   iPad has no Dynamic Island: clock + date lead-left, wifi/battery trail-right,
+   the Live Activity pill relocates into the right cluster (iPadOS-style). The
+   center island slot is emptied. Android tablet keeps clock left, icons right,
+   Live Update chip near center-right.
+   ========================================================================= */
+@media (min-width: 1024px) {
+  .statusbar {
+    grid-template-columns: auto 1fr auto auto;
+    column-gap: 0.9rem;
+    padding-inline: 1.6rem;
+  }
+  .statusbar__lead { grid-column: 1; gap: 0.6rem; }
+  /* iPadOS status bar: clock + date lead the left edge. The date sits a hair
+     lighter than the clock (regular vs semibold) so the pair reads as real
+     iPadOS chrome, not two equal-weight labels. */
+  .statusbar__date { display: inline; font-weight: 500; opacity: 0.66; }
+  body[data-os="ios"] .statusbar__date { font-weight: 400; }
+  /* the Live Activity + system glyphs pack together on the trailing edge */
+  .liveact { justify-self: end; grid-column: 3; }
+  .statusbar__sys { grid-column: 4; }
+
+  /* iPadOS Live Activity: a clean rounded pill (NOT the phone Dynamic Island).
+     Drop the TrueDepth sensor cutout + lead/trail island segments. */
+  body[data-os="ios"] .statusbar .liveact {
+    width: auto;
+    max-width: 12rem;
+    height: 1.85rem;
+    color: var(--statusbar-ink);
+  }
+  /* .statusbar prefix raises specificity above the phone Dynamic Island rules
+     in the fidelity section (which are later in source order). */
+  body[data-os="ios"] .statusbar .liveact::before { display: none; } /* no island sensor */
+  body[data-os="ios"] .statusbar .liveact__goo { display: block; }
+  body[data-os="ios"] .statusbar .liveact__bg {
+    background: color-mix(in oklch, var(--surface) 68%, transparent);
+    -webkit-backdrop-filter: blur(16px) saturate(1.6);
+            backdrop-filter: blur(16px) saturate(1.6);
+    border: 1px solid var(--glass-stroke);
+    border-radius: 1.1rem;
+  }
+  body[data-os="ios"] .statusbar .liveact__content {
+    position: relative;
+    inset: auto;
+    display: inline-flex;
+    padding: 0 0.66rem;
+    gap: 0.42rem;
+  }
+  body[data-os="ios"] .statusbar .liveact__lead,
+  body[data-os="ios"] .statusbar .liveact__trail {
+    position: static;
+    transform: none;
+    width: auto; height: auto;
+    background: none;
+    box-shadow: none;
+    color: inherit;
+  }
+  body[data-os="ios"] .statusbar .liveact__text { display: inline-flex; }
+  body[data-os="ios"] .statusbar .liveact__title { font-size: 0.76rem; }
+  body[data-os="ios"] .statusbar .liveact--progress .liveact__ring { width: 1.05rem; height: 1.05rem; }
+  body[data-os="ios"] .statusbar .liveact--progress .liveact__ringtrack { stroke: color-mix(in oklch, var(--statusbar-ink) 30%, transparent); }
+}
+
 /* story progress: a hairline that fills as the narrative advances */
 .story-progress {
   position: absolute;
@@ -258,22 +354,48 @@ body[data-os="android"] .sys--android { display: inline-flex; }
 .reveal { opacity: 0; transform: translateY(1.2rem); }
 .reveal.in { opacity: 1; transform: none; transition: opacity 0.7s var(--ease), transform 0.7s var(--ease); }
 
-/* ------------------------------------------------------------- desktop+  */
+/* =========================================================================
+   DEVICE TIERS
+   phone (≤739): full-bleed (base rules above).
+   float (740–1023): the phone floats centered, full chrome + comfortable
+     margins, stage wallpaper visible around it.
+   tablet (≥1024): the device becomes a landscape tablet (the headline). Width
+     and height are clamped so the chrome never overflows at any window size.
+   ========================================================================= */
 
-@media (min-width: 1080px) {
-  body { padding: 3vh 0; align-items: flex-start; }
+/* ---- float tier: 740–1023px -------------------------------------------- */
+@media (min-width: 740px) {
+  body { padding: 3vh 0; align-items: center; }
   .device {
-    height: min(820px, calc(100dvh - 6vh));
+    width: var(--dev-w);
+    height: min(880px, calc(100dvh - 6vh));
     min-height: min(680px, calc(100dvh - 6vh));
     margin: auto;
-    border-radius: 2.4rem;
     overflow: clip;
     max-height: none;
+    /* soft paper-cradle: a light bezel ring plus a long warm shadow */
+    box-shadow:
+      0 0 0 1px var(--line),
+      0 0 0 0.5rem oklch(0.97 0.006 86),
+      0 0 0 0.55rem var(--line),
+      0 2.5rem 5.5rem -1.5rem oklch(0.4 0.03 50 / 0.32);
   }
-  /* soft paper-cradle, a light bezel ring plus a long warm shadow */
-  .device { box-shadow: 0 0 0 1px var(--line), 0 0 0 0.5rem oklch(0.97 0.006 86), 0 0 0 0.55rem var(--line), 0 2.5rem 5.5rem -1.5rem oklch(0.4 0.03 50 / 0.32); }
   /* the per-screen scroller (.app-body) owns scrolling now, not .thread */
-  .statusbar { border-radius: 2.4rem 2.4rem 0 0; }
+  .statusbar { border-radius: var(--radius-device) var(--radius-device) 0 0; }
+}
+
+/* ---- tablet tier: ≥1024px ---------------------------------------------- */
+@media (min-width: 1024px) {
+  body { padding: 24px 0; align-items: center; }
+  :root { --dev-w: var(--tablet-w); }
+  .device {
+    width: var(--tablet-w);
+    height: var(--tablet-h);
+    min-height: 0;
+    /* landscape tablet: iPad ≈ 2.2rem, Android tablet ≈ 1.6rem (set per-OS) */
+    border-radius: var(--radius-tablet);
+  }
+  .statusbar { border-radius: var(--radius-tablet) var(--radius-tablet) 0 0; }
 }
 
 /* very small phones */
@@ -307,6 +429,11 @@ body[data-os="android"] {
   --m3-primary-container:     oklch(from var(--seed) 0.885 0.052 h);
   --m3-on-primary-container:  oklch(0.33 0.100 33);               /* fallback */
   --m3-on-primary-container:  oklch(from var(--seed) 0.33 0.100 h);
+  /* Secondary container: M3's secondary tonal palette is the same source hue
+     at much lower chroma (a muted sibling, not a re-hue) — same L as primary
+     container so it sits at an equivalent tone, chroma cut ~45%. */
+  --m3-secondary-container:   oklch(0.885 0.028 42);              /* fallback */
+  --m3-secondary-container:   oklch(from var(--seed) 0.885 0.028 h);
   --m3-surface:               oklch(0.975 0.006 70);              /* fallback */
   --m3-surface:               oklch(from var(--seed) 0.975 0.006 h);
   --m3-surface-container:     oklch(0.945 0.013 58);              /* fallback */
@@ -377,47 +504,54 @@ body[data-os="android"] .os-switch__thumb { transform: translateX(calc(100% + va
    wordmark on the left). Stacks vertically; the thumb slides top/bottom. Scoped
    to .os-switch--stage so the relocated Settings instance keeps its compact
    horizontal segmented look on desktop too. */
-@media (min-width: 1080px) {
+@media (min-width: 1024px) {
   .os-switch--stage {
-    --switch-pad: 0.24rem;
-    --switch-gap: 0rem;
-    --switch-row: 2.62rem;
+    --switch-pad: 0.3rem;
+    --switch-gap: 0.28rem;
+    --switch-row: 2.85rem;
     position: fixed;
     z-index: 6;
     top: 50%;
-    left: calc(50% + var(--col) / 2 + 2.2vw);
+    left: calc(50% + var(--dev-w) / 2 + 1.4vw);
     transform: translateY(-50%);
     margin: 0;
     grid-template-columns: 1fr;
     grid-template-rows: repeat(2, var(--switch-row));
-    min-width: 9.7rem;
+    gap: var(--switch-gap);
+    width: 9.6rem;
+    min-width: 0;
     overflow: hidden;
-    padding: 0;
+    padding: var(--switch-pad);
     background: var(--surface);
-    border-radius: 2.15rem;
+    border: 1px solid var(--line);
+    border-radius: 1.4rem;
     box-shadow: 0 0.6rem 1.6rem -0.5rem oklch(0.35 0.03 50 / 0.4);
   }
-  .os-switch--stage .os-switch__btn { width: 100%; justify-content: flex-start; padding-inline: 1rem; }
-  .os-switch--stage .os-switch__btn:focus-visible { outline-offset: -4px; }
+  .os-switch--stage .os-switch__btn {
+    width: 100%;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    padding-inline: 0.85rem;
+    border-radius: 1.05rem;
+  }
+  .os-switch--stage .os-switch__glyph { width: 15px; height: 15px; }
+  .os-switch--stage .os-switch__btn:focus-visible { outline-offset: -3px; }
+  /* a clean sliding thumb: equal-height row, slides top→bottom */
   .os-switch--stage .os-switch__thumb {
-    top: 0; left: 0; right: 0;
+    top: var(--switch-pad);
+    left: var(--switch-pad);
+    right: var(--switch-pad);
     bottom: auto;
     width: auto;
     height: var(--switch-row);
-    border: 0;
-    border-bottom: 1px solid var(--line);
-    border-radius: 2.15rem 2.15rem 1.05rem 1.05rem;
+    border: 1px solid var(--line);
+    border-radius: 1.05rem;
     transition: transform 0.42s var(--ease);
   }
   body[data-os="android"] .os-switch--stage .os-switch__thumb {
-    transform: translateY(var(--switch-row));
-    border-top: 1px solid var(--line);
-    border-bottom: 0;
-    border-radius: 1.05rem 1.05rem 2.15rem 2.15rem;
+    transform: translateY(calc(var(--switch-row) + var(--switch-gap)));
+    border-radius: 1.05rem;
   }
-}
-@media (min-width: 1320px) {
-  .os-switch--stage { left: calc(50% + var(--col) / 2 + 3.5vw); }
 }
 
 /* =========================================================================
@@ -477,10 +611,39 @@ body[data-os="android"] .os-switch__thumb { transform: translateX(calc(100% + va
 .liveact__bar { display: none; width: 2.4rem; height: 0.32rem; border-radius: 1rem; background: currentColor; opacity: 0.3; overflow: hidden; }
 .liveact__barfill { display: block; height: 100%; width: calc(var(--prog, 0) * 100%); background: var(--accent); border-radius: inherit; transition: width 0.85s var(--ease); }
 
+/* discovery-mode disclosure cue: a small chevron hinting the chip expands.
+   Only shown in discovery mode (`liveact--discover`), decorative, subtle. It
+   rotates 180deg while the card is open so the affordance reads as a toggle. */
+.liveact__disclose { display: none; align-items: center; margin-left: 0.06rem; opacity: 0.62; }
+.liveact--discover .liveact__disclose { display: inline-flex; }
+.liveact__chev { transition: transform 0.32s var(--ease); }
+.liveact--discover.liveact--expanded .liveact__chev { transform: rotate(180deg); }
+
 /* progress mode: glyph + progress replace the simple app dot */
 .liveact--progress .liveact__dot { display: none; }
 .liveact--progress .liveact__ic  { display: inline-flex; }
 .liveact--progress .liveact__sub { display: inline; }
+
+/* ---- discovery segmented arc ------------------------------------------------
+   The collapsed discovery tracker reads as a deliberate 6-tick ring that fills
+   as apps are visited — NOT a stray reload glyph. In discovery mode the arc
+   replaces the circular-arrow icon (the arrow stays for Messages story beats).
+   The count ("N/6") still rides alongside in .liveact__title. */
+.liveact__seg { display: none; align-items: center; justify-content: center; }
+.liveact--discover .liveact__seg { display: inline-flex; }
+.liveact--discover .liveact__ic  { display: none; }        /* arc supplants the arrow */
+/* discovery has no separate ring/bar — the arc IS the progress read */
+.liveact--discover .liveact__ring,
+.liveact--discover .liveact__bar { display: none !important; }
+.liveact__segg { opacity: 1; }
+.liveact__segd {
+  opacity: 0.32;
+  transition: opacity 0.4s var(--ease), stroke 0.4s var(--ease);
+}
+.liveact__segd--on {
+  opacity: 1;
+  stroke: var(--accent);
+}
 
 /* iOS Dynamic Island skin */
 body[data-os="ios"] .liveact { color: oklch(0.97 0.005 80); }
@@ -536,7 +699,24 @@ body[data-os="ios"] .liveact--pulse .liveact__blob { opacity: 1; animation: live
 }
 body[data-os="ios"] .liveact__expand { background: oklch(0.16 0.010 60); color: oklch(0.96 0.005 80); box-shadow: 0 1rem 2.4rem -0.8rem oklch(0 0 0 / 0.6); }
 body[data-os="android"] .liveact__expand { background: var(--m3-surface-container-hi); color: var(--text); border: 1px solid var(--m3-outline); box-shadow: 0 0.8rem 2rem -0.8rem oklch(0.3 0.03 50 / 0.4); }
-.liveact__ehead { font-family: var(--font-label); font-size: 0.64rem; opacity: 0.7; margin-bottom: 0.45rem; display: flex; justify-content: space-between; }
+.liveact__ehead { font-family: var(--font-label); font-size: 0.64rem; opacity: 0.7; margin-bottom: 0.45rem; display: flex; justify-content: space-between; align-items: center; }
+/* explicit close affordance in the expand card (never leave it stuck open) */
+.liveact__eclose {
+  display: inline-grid;
+  place-items: center;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: -0.2rem -0.15rem -0.2rem 0;
+  border-radius: 50%;
+  font-size: 0.7rem;
+  line-height: 1;
+  opacity: 0.75;
+  cursor: pointer;
+  background: color-mix(in oklch, currentColor 12%, transparent);
+  transition: opacity 0.2s var(--ease), background 0.2s var(--ease);
+}
+.liveact__eclose:hover { opacity: 1; background: color-mix(in oklch, currentColor 22%, transparent); }
+.liveact__eclose:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; opacity: 1; }
 .liveact__erow { display: flex; align-items: baseline; justify-content: space-between; gap: 0.7rem; font-size: 0.8rem; }
 .liveact__erow + .liveact__erow { margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid currentColor; border-color: color-mix(in oklch, currentColor 16%, transparent); }
 .liveact__ev { font-weight: 600; }
@@ -562,33 +742,67 @@ body[data-os="ios"] {
   --glass-stroke: oklch(1 0 0 / 0.55);
   --glass-hi:     oklch(1 0 0 / 0.7);
   --glass-shadow: 0 0.7rem 2rem -0.7rem oklch(0.32 0.04 255 / 0.4);
-  --radius-device: 3rem;
+  --radius-device: 3rem;   /* floating phone corner */
+  --radius-tablet: 2.2rem; /* iPad uniform corner */
 }
 body[data-os="android"] {
   --radius-device: 2rem;
+  --radius-tablet: 1.6rem; /* Android tablet corner */
 }
 
 /* ---- per-OS wallpaper behind the phone (animated crossfade) ------------- */
 .stage-os { position: fixed; inset: 0; z-index: 0; opacity: 0; pointer-events: none; transition: opacity 0.8s var(--ease); }
+/* Richer, layered stage moods — clearly cool (iOS) vs warm (Android), still
+   calm and light on warm paper. Multiple soft blooms give depth; a faint mid
+   field follows --seed so re-seeding re-tints the stage live without breaking
+   the cool/warm identity. No dark theme, no purple-teal slop. */
 .stage-os--ios {
   background:
-    radial-gradient(120vw 75vh at 74% -12%, oklch(0.85 0.07 255 / 0.55), transparent 55%),
-    radial-gradient(95vw 70vh at 8% 112%, oklch(0.87 0.06 200 / 0.5), transparent 55%),
-    linear-gradient(160deg, oklch(0.95 0.02 255), oklch(0.93 0.02 285));
+    radial-gradient(78vw 62vh at 84% -14%, oklch(0.9 0.094 250 / 0.78), transparent 58%),
+    radial-gradient(72vw 60vh at 2% 118%, oklch(0.89 0.076 208 / 0.68), transparent 56%),
+    radial-gradient(56vw 52vh at 46% 44%, oklch(from var(--seed) 0.93 0.04 calc(h + 195) / 0.32), transparent 62%),
+    linear-gradient(158deg, oklch(0.952 0.024 250), oklch(0.922 0.034 272) 54%, oklch(0.94 0.026 236));
 }
-/* Android wallpaper is the warm/clay one — it follows the seed hue (the stops
-   fan ~+12/-greek around the seed to keep the gradient's tonal spread). iOS's
-   cool-blue wallpaper above is FIXED art direction and never re-seeds.
+/* one soft, large-scale blurred shape adds depth without leaving the light
+   paper world (no dark, no glow, no purple-teal). Cool-blue for iOS. Placed on
+   a pseudo so it layers over the gradient fields. */
+.stage-os--ios::after {
+  content: "";
+  position: absolute;
+  width: 46vw; height: 46vw;
+  right: 6vw; top: 8vh;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, oklch(0.9 0.088 246 / 0.5), transparent 68%);
+  filter: blur(42px);
+}
+/* Android wallpaper is the warm/clay one — it follows the seed hue (stops fan
+   around the seed to keep the gradient's tonal spread). iOS's cool-blue
+   wallpaper above is FIXED art direction and never re-seeds.
    Fallback pair: literal clay hues first, relative (seed-following) second. */
 .stage-os--android {
   background:
-    radial-gradient(115vw 78vh at 86% -8%, oklch(0.86 0.10 45 / 0.6), transparent 55%),
-    radial-gradient(92vw 70vh at 4% 108%, oklch(0.88 0.08 75 / 0.52), transparent 55%),
-    linear-gradient(160deg, oklch(0.93 0.035 60), oklch(0.92 0.03 38));
+    radial-gradient(80vw 64vh at 88% -10%, oklch(0.88 0.122 46 / 0.76), transparent 56%),
+    radial-gradient(74vw 60vh at 0% 112%, oklch(0.89 0.1 78 / 0.66), transparent 56%),
+    radial-gradient(56vw 50vh at 44% 42%, oklch(0.92 0.066 30 / 0.36), transparent 62%),
+    linear-gradient(158deg, oklch(0.932 0.044 60), oklch(0.914 0.038 40) 54%, oklch(0.928 0.04 24));
   background:
-    radial-gradient(115vw 78vh at 86% -8%, oklch(from var(--seed) 0.86 0.10 calc(h + 12) / 0.6), transparent 55%),
-    radial-gradient(92vw 70vh at 4% 108%, oklch(from var(--seed) 0.88 0.08 calc(h + 42) / 0.52), transparent 55%),
-    linear-gradient(160deg, oklch(from var(--seed) 0.93 0.035 calc(h + 27)), oklch(from var(--seed) 0.92 0.03 calc(h + 5)));
+    radial-gradient(80vw 64vh at 88% -10%, oklch(from var(--seed) 0.88 0.122 calc(h + 13) / 0.76), transparent 56%),
+    radial-gradient(74vw 60vh at 0% 112%, oklch(from var(--seed) 0.89 0.1 calc(h + 45) / 0.66), transparent 56%),
+    radial-gradient(56vw 50vh at 44% 42%, oklch(from var(--seed) 0.92 0.066 calc(h - 3) / 0.36), transparent 62%),
+    linear-gradient(158deg, oklch(from var(--seed) 0.932 0.044 calc(h + 27)), oklch(from var(--seed) 0.914 0.038 calc(h + 7)) 54%, oklch(from var(--seed) 0.928 0.04 calc(h - 9)));
+}
+/* Android soft depth shape — warm/clay, seed-following (literal fallback then
+   relative), staying light. Anchored bottom-left to counter the iOS shape's
+   top-right so the two moods stay visibly distinct. */
+.stage-os--android::after {
+  content: "";
+  position: absolute;
+  width: 48vw; height: 48vw;
+  left: 4vw; bottom: 6vh;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 50%, oklch(0.89 0.108 52 / 0.5), transparent 68%);
+  background: radial-gradient(circle at 50% 50%, oklch(from var(--seed) 0.89 0.108 calc(h + 19) / 0.5), transparent 68%);
+  filter: blur(44px);
 }
 body[data-os="ios"] .stage-os--ios { opacity: 1; }
 body[data-os="android"] .stage-os--android { opacity: 1; }
@@ -597,9 +811,13 @@ body[data-os="android"] .stage-os--android { opacity: 1; }
 
 /* ---- device: platform corner radius + smooth morph on switch ----------- */
 .device { transition: background-color 1.3s var(--ease), border-radius 0.6s var(--ease); }
-@media (min-width: 1080px) {
+@media (min-width: 740px) {
   .device { border-radius: var(--radius-device); }
   .statusbar { border-radius: var(--radius-device) var(--radius-device) 0 0; }
+}
+@media (min-width: 1024px) {
+  .device { border-radius: var(--radius-tablet); }
+  .statusbar { border-radius: var(--radius-tablet) var(--radius-tablet) 0 0; }
 }
 
 /* ---- gesture nav indicator: iOS home bar / Android handle ----------------
@@ -695,16 +913,39 @@ body[data-os="ios"] .liveact__trail {
   width: 2.32rem;
 }
 body[data-os="ios"] .liveact__trail[hidden] { display: none !important; }
+/* iOS: seat the disclosure chevron in the blank camera zone, just inboard of
+   the trailing pill (content is absolutely positioned, so place it explicitly). */
+body[data-os="ios"] .liveact--discover .liveact__disclose {
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;         /* trailing ring pill is hidden in discovery: sit near the edge */
+  transform: translateY(-50%);
+  margin: 0;
+}
+body[data-os="ios"] .liveact--discover.liveact--expanded .liveact__chev { transform: rotate(180deg); }
 body[data-os="ios"] .liveact--progress .liveact__ic {
   display: inline-flex;
   width: 0.92rem;
   height: 0.92rem;
 }
+/* discovery wins over progress at equal os-scoped specificity: arc, not arrow */
+body[data-os="ios"] .liveact--discover .liveact__ic { display: none; }
 body[data-os="ios"] .liveact--progress .liveact__ring {
   display: block;
   width: 1.08rem;
   height: 1.08rem;
 }
+/* iOS island, discovery mode: the segmented arc rides in the LEAD pill and IS
+   the progress read, so the trailing ring pill is redundant — hide it and let
+   the leading-only compact Live Activity carry the tracker (a valid island
+   layout). The count stays in the pill's aria-label. */
+body[data-os="ios"] .liveact--discover .liveact__seg {
+  display: inline-flex;
+  width: 1.02rem;
+  height: 1.02rem;
+}
+body[data-os="ios"] .liveact--discover .liveact__seg svg { width: 100%; height: 100%; }
+body[data-os="ios"] .liveact--discover .liveact__trail { display: none !important; }
 body[data-os="ios"] .liveact--wake::before,
 body[data-os="ios"] .liveact--wake .liveact__lead,
 body[data-os="ios"] .liveact--wake .liveact__trail {
@@ -742,11 +983,24 @@ body[data-os="android"] .liveact__ic {
   width: 0.82rem;
   height: 0.82rem;
 }
+/* Android Live-Update chip, discovery mode: the segmented arc leads the count;
+   the flat bar is dropped (the arc carries the progress read). */
+body[data-os="android"] .liveact--discover .liveact__seg {
+  width: 0.92rem;
+  height: 0.92rem;
+}
+body[data-os="android"] .liveact--discover .liveact__seg svg { width: 100%; height: 100%; }
 body[data-os="android"] .liveact__bar {
   width: 1.42rem;
   height: 0.23rem;
 }
 body[data-os="android"] .liveact__trail[hidden] { display: none !important; }
+/* Android: the Live Update chip flows in flex, so the caret sits after the bar.
+   Give the discovery chip a hair more width so title + bar + caret fit. */
+body[data-os="android"] .liveact--discover { max-width: 8.4rem; }
+/* the discovery count / "one to go" nudge needs room the story short label doesn't */
+body[data-os="android"] .liveact--discover .liveact__title { max-width: 4.6rem; }
+body[data-os="android"] .liveact__disclose { margin-left: 0.02rem; }
 
 /* iOS expanded island reads as dark liquid glass */
 body[data-os="ios"] .liveact__expand {
@@ -799,6 +1053,16 @@ body[data-os="android"] .liveact__expand {
   border-radius: 50%;
   transform: translateY(-50%);
   background: oklch(0.975 0.006 86);
+}
+/* checklist footer: a dry nudge toward the reward, quieter than the rows and
+   set off by a hairline. Uses only the existing label font + currentColor. */
+.liveact__efoot {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid color-mix(in oklch, currentColor 16%, transparent);
+  font-family: var(--font-label);
+  font-size: 0.72rem;
+  opacity: 0.6;
 }
 
 /* ---- notifications: glass (iOS) with a specular top edge ---------------- */

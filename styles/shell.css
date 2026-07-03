@@ -20,9 +20,13 @@
   height: 100dvh;
   overflow: hidden;
 }
-@media (min-width: 1080px) {
-  /* desktop float keeps its base.css height (min(820px, ...)) — do not force dvh */
-  .device { height: min(820px, calc(100dvh - 6vh)); }
+@media (min-width: 740px) {
+  /* float tier keeps its base.css height — do not force dvh */
+  .device { height: min(880px, calc(100dvh - 6vh)); }
+}
+@media (min-width: 1024px) {
+  /* tablet tier: landscape height from base.css --tablet-h */
+  .device { height: var(--tablet-h); }
 }
 
 /* statusbar promoted to top chrome above both screens */
@@ -83,6 +87,45 @@ html.js .app-screen.screen--active { display: flex; }
   padding-top: calc(env(safe-area-inset-top) + 3.4rem);
   overflow: hidden;
 }
+/* the tablet widgets are a tablet-tier feature; hidden on phone/float */
+.home-widgets { display: none; }
+
+/* ---- phone/float discovery readout ------------------------------------
+   A quiet, persistent one-line progress affordance sitting between the app
+   grid and the dock. It states the meta-game goal ("open everything") and the
+   live count, so a visitor who never expands the Live Activity still learns
+   there is something to complete. Styled like OS-quiet metadata: --font-label,
+   lowercase, faint-but-AA ink over the wallpaper. One element for both skins;
+   only the body font-weight differs per OS (inherited, no fork).
+
+   Contrast: --text-muted (oklch L≈0.46) over the lightest wallpaper stop
+   (L≈0.96 iOS / L≈0.95 Android) clears WCAG AA for this ~12.5px label.
+   Empty until JS fills it (see updateProgressWidget); the home screen only
+   renders with JS, so there is no static/no-JS text to maintain here. */
+.home-progress {
+  flex: 0 0 auto;
+  position: relative;
+  z-index: 1;
+  margin: 0 0.7rem 0.55rem;
+  text-align: center;
+  font-family: var(--font-label);
+  font-size: 0.78rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  color: var(--text-muted);
+  text-transform: lowercase;
+  /* empty until JS fills it: collapse the reserved row so it never pushes the
+     dock down before boot writes the count */
+  min-height: 1.1em;
+}
+.home-progress:empty { margin: 0; min-height: 0; }
+/* iOS labels read a hair lighter (SpringBoard caption weight); Android keeps
+   the M3 label weight. One element, weight follows the platform only. */
+body[data-os="ios"] .home-progress { font-weight: 400; }
+/* the completion state ("all explored · notes unlocked") gets a faint accent
+   nudge so the reward reads as an arrival, not just another count line. */
+.home-progress.home-progress--done { color: var(--accent); }
 
 /* soft per-OS wallpaper inside the device, echoing the .stage-os palettes */
 .homescreen__wall {
@@ -93,37 +136,235 @@ html.js .app-screen.screen--active { display: flex; }
 }
 body[data-os="ios"] .homescreen__wall {
   background:
-    radial-gradient(120% 60% at 78% -8%, oklch(0.86 0.07 255 / 0.6), transparent 60%),
-    radial-gradient(110% 60% at 6% 108%, oklch(0.88 0.06 200 / 0.5), transparent 60%),
-    linear-gradient(165deg, oklch(0.96 0.018 255), oklch(0.94 0.02 285));
+    radial-gradient(115% 58% at 80% -8%, oklch(0.88 0.096 250 / 0.72), transparent 62%),
+    radial-gradient(105% 58% at 4% 110%, oklch(0.89 0.078 206 / 0.62), transparent 60%),
+    radial-gradient(90% 50% at 50% 46%, oklch(from var(--seed) 0.92 0.042 calc(h + 195) / 0.3), transparent 64%),
+    linear-gradient(165deg, oklch(0.956 0.024 250), oklch(0.93 0.034 274) 56%, oklch(0.948 0.026 236));
+}
+/* soft depth shape inside the device wall — clipped by .homescreen overflow.
+   Cool-blue for iOS; light, no glow. Countered warm on Android below. */
+.homescreen__wall::after,
+.lockscreen__wall::after {
+  content: "";
+  position: absolute;
+  width: 62%; aspect-ratio: 1;
+  right: -6%; top: -8%;
+  border-radius: 50%;
+  filter: blur(38px);
+  pointer-events: none;
+}
+body[data-os="ios"] .homescreen__wall::after,
+body[data-os="ios"] .lockscreen__wall::after {
+  background: radial-gradient(circle at 50% 50%, oklch(0.9 0.088 246 / 0.42), transparent 68%);
 }
 /* Android homescreen wallpaper follows the seed hue (warm/clay family). iOS's
    above is fixed cool-blue art direction. Fallback pair: literal clay first,
    relative (seed-following) second so non-supporting browsers keep clay. */
 body[data-os="android"] .homescreen__wall {
   background:
-    radial-gradient(120% 60% at 84% -6%, oklch(0.88 0.10 45 / 0.55), transparent 60%),
-    radial-gradient(110% 60% at 4% 106%, oklch(0.90 0.08 75 / 0.5), transparent 60%),
-    linear-gradient(165deg, oklch(0.95 0.03 60), oklch(0.93 0.028 38));
+    radial-gradient(118% 58% at 86% -6%, oklch(0.89 0.122 47 / 0.68), transparent 60%),
+    radial-gradient(108% 58% at 2% 108%, oklch(0.9 0.1 80 / 0.6), transparent 60%),
+    radial-gradient(90% 50% at 48% 44%, oklch(0.92 0.066 30 / 0.34), transparent 64%),
+    linear-gradient(165deg, oklch(0.948 0.04 60), oklch(0.925 0.038 40) 56%, oklch(0.938 0.038 24));
   background:
-    radial-gradient(120% 60% at 84% -6%, oklch(from var(--seed) 0.88 0.10 calc(h + 12) / 0.55), transparent 60%),
-    radial-gradient(110% 60% at 4% 106%, oklch(from var(--seed) 0.90 0.08 calc(h + 42) / 0.5), transparent 60%),
-    linear-gradient(165deg, oklch(from var(--seed) 0.95 0.03 calc(h + 27)), oklch(from var(--seed) 0.93 0.028 calc(h + 5)));
+    radial-gradient(118% 58% at 86% -6%, oklch(from var(--seed) 0.89 0.122 calc(h + 14) / 0.68), transparent 60%),
+    radial-gradient(108% 58% at 2% 108%, oklch(from var(--seed) 0.9 0.1 calc(h + 47) / 0.6), transparent 60%),
+    radial-gradient(90% 50% at 48% 44%, oklch(from var(--seed) 0.92 0.066 calc(h - 3) / 0.34), transparent 64%),
+    linear-gradient(165deg, oklch(from var(--seed) 0.948 0.04 calc(h + 27)), oklch(from var(--seed) 0.925 0.038 calc(h + 7)) 56%, oklch(from var(--seed) 0.938 0.038 calc(h - 9)));
+}
+/* Android device-wall depth shape: warm, seed-following, anchored bottom-left
+   (mirrors the iOS shape's top-right) so the moods stay distinct. */
+body[data-os="android"] .homescreen__wall::after,
+body[data-os="android"] .lockscreen__wall::after {
+  right: auto; top: auto;
+  left: -8%; bottom: -8%;
+  background: radial-gradient(circle at 50% 50%, oklch(0.89 0.11 52 / 0.42), transparent 68%);
+  background: radial-gradient(circle at 50% 50%, oklch(from var(--seed) 0.89 0.11 calc(h + 19) / 0.42), transparent 68%);
 }
 
-/* the grid sits above the wallpaper, centered, generous spacing */
+/* the grid sits above the wallpaper. On the phone tier it grows to fill the
+   space above the dock (real-phone feel, no 60-70% dead space). */
 .appgrid {
   position: relative;
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem 0.8rem;
+  gap: 1.7rem 0.8rem;
   align-content: start;
-  padding: 1.4rem 1.5rem max(1.4rem, env(safe-area-inset-bottom));
+  flex: 1 1 auto;
+  /* generous top breathing room so the two lonely phone-grid icons (Maps +
+     Ledger, before the reward lands) don't hug the status bar awkwardly. The
+     tablet tier overrides this padding in its own block. */
+  padding: 3.4rem 1.5rem 1rem;
 }
 @media (max-width: 360px) {
-  .appgrid { gap: 1.2rem 0.5rem; padding-inline: 1.1rem; }
+  .appgrid { gap: 1.3rem 0.5rem; padding-inline: 1.1rem; }
 }
+
+/* dock-duplicate grid icons: the four dock favorites are also placed in the
+   grid markup so the TABLET home grid can show all apps (authentic iPadOS).
+   On phone/float tiers those apps live only in the dock, so the grid copies are
+   hidden here and revealed at the tablet tier below. The `hidden` attribute
+   (registry honesty, toggled by JS) still wins when an app is unregistered. */
+.appgrid .appicon--dockdup { display: none; } /* .appgrid scope out-specifies the later .appicon base rule */
+
+/* =========================================================================
+   DOCK — iOS Liquid Glass bar / Android tonal pill. Holds the utility apps.
+   ========================================================================= */
+.dock {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0.7rem max(0.7rem, env(safe-area-inset-bottom));
+  padding: 0.7rem 0.6rem;
+  border-radius: 1.7rem;
+}
+.dock .appicon { flex: 0 1 4.6rem; }
+.dock .appicon__label { display: none; }  /* dock icons are label-less, like a real dock */
+.dock .appicon__tile { max-width: 3.5rem; }
+
+/* iOS: translucent Liquid Glass slab */
+body[data-os="ios"] .dock {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(22px) saturate(1.8);
+          backdrop-filter: blur(22px) saturate(1.8);
+  border: 1px solid var(--glass-stroke);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+}
+/* Android: opaque tonal pill, a hair of elevation */
+body[data-os="android"] .dock {
+  background: color-mix(in oklch, var(--m3-surface-container) 94%, transparent);
+  border-radius: 2rem;
+  box-shadow: 0 0.4rem 1.1rem -0.5rem oklch(0.4 0.04 50 / 0.4);
+}
+
+/* =========================================================================
+   TABLET HOME (iPadOS-style): widgets top-left, grid to the right, dock
+   centered at the bottom. Enabled at the tablet tier only (≥1024px).
+   ========================================================================= */
+@media (min-width: 1024px) {
+  /* .screen--active forces display:flex (2-class specificity); match it so the
+     tablet grid layout wins. */
+  html.js .homescreen.screen--active,
+  .homescreen {
+    display: grid;
+    grid-template-columns: minmax(15rem, 20rem) 1fr;
+    grid-template-rows: 1fr auto;
+    gap: 1.6rem;
+    align-items: start;
+    padding: calc(env(safe-area-inset-top) + 3.9rem) 2.4rem 1.6rem;
+  }
+  .home-widgets {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    grid-column: 1;
+    grid-row: 1;
+    position: relative;
+    z-index: 1;
+  }
+  /* the persistent progress card (.widget--progress) covers this tier; hide the
+     phone-tier one-line readout to avoid a duplicate count. */
+  .home-progress { display: none; }
+  .appgrid {
+    grid-column: 2;
+    grid-row: 1;
+    align-content: start;
+    grid-template-columns: repeat(auto-fill, minmax(5.2rem, 1fr));
+    gap: 2rem 1rem;
+    padding: 0.3rem 0.5rem;
+  }
+  /* tablet: the dock duplicates join the grid (all apps visible). :not([hidden])
+     keeps registry honesty — an unregistered dup stays hidden via its attribute
+     (the [hidden] rule alone would otherwise be out-specified by this reveal). */
+  .appgrid .appicon--dockdup:not([hidden]) { display: flex; }
+  .dock {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-self: center;
+    justify-content: center;
+    gap: 1.4rem;
+    margin: 0;
+    padding: 0.7rem 1.1rem;
+  }
+  .dock .appicon { flex: 0 0 auto; }
+  .dock .appicon__tile { max-width: 3.7rem; }
+}
+
+/* =========================================================================
+   HOME WIDGETS (tablet): profile card + discovery-progress card.
+   ========================================================================= */
+.widget {
+  position: relative;
+  display: flex;
+  text-align: left;
+  border: none;
+  font: inherit;
+  color: var(--text);
+  background: color-mix(in oklch, var(--surface) 78%, transparent);
+  border-radius: 1.5rem;
+  -webkit-tap-highlight-color: transparent;
+}
+body[data-os="ios"] .widget {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(20px) saturate(1.7);
+          backdrop-filter: blur(20px) saturate(1.7);
+  border: 1px solid var(--glass-stroke);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 var(--glass-hi);
+}
+body[data-os="android"] .widget {
+  background: color-mix(in oklch, var(--m3-surface-container) 92%, transparent);
+  box-shadow: 0 0.4rem 1.1rem -0.5rem oklch(0.4 0.04 50 / 0.35);
+}
+
+.widget--profile {
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.15rem;
+  cursor: pointer;
+  transition: transform 0.3s var(--ease);
+}
+.widget--profile:hover { transform: translateY(-0.12rem); }
+.widget--profile:active { transform: scale(0.985); }
+.widget--profile:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 3px; }
+.widget__ava {
+  width: 3.4rem;
+  height: 3.4rem;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--line);
+}
+.widget__ava img { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+.widget__id { display: flex; flex-direction: column; gap: 0.1rem; }
+.widget__name { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; letter-spacing: -0.01em; }
+.widget__place { font-size: 0.85rem; color: var(--text-muted); }
+.widget__line { margin-top: 0.35rem; font-family: var(--font-label); font-size: 0.78rem; color: var(--text-faint); }
+
+.widget--progress {
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.05rem 1.15rem;
+}
+.widget__phead { font-family: var(--font-label); font-size: 0.72rem; letter-spacing: 0.02em; color: var(--text-faint); }
+.widget__pcount { font-size: 0.98rem; color: var(--text-muted); }
+.widget__pcount strong { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; color: var(--text); }
+.widget__pchecks { display: inline-flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+.widget__pcheck {
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 0.5rem;
+  display: grid;
+  place-items: center;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--surface-3);
+  color: var(--text-faint);
+}
+.widget__pcheck--done { background: var(--accent); color: var(--accent-ink); }
 
 /* ------------------------------------------------------------- app icons */
 .appicon {
@@ -147,25 +388,45 @@ body[data-os="android"] .homescreen__wall {
   width: 100%;
   max-width: 3.8rem;
   aspect-ratio: 1;
-  color: var(--accent-ink);
-  background: linear-gradient(155deg, var(--accent), var(--accent-strong));
-  /* tile drop-shadow tints to the accent: clay literal fallback, seed-following second */
-  box-shadow: 0 0.5rem 1.2rem -0.5rem oklch(0.4 0.08 33 / 0.55);
-  box-shadow: 0 0.5rem 1.2rem -0.5rem oklch(from var(--seed) 0.4 0.08 h / 0.55);
+  /* per-app fill (--tile / --tile-2), defaulting to the seed accent (Messages).
+     Declared here so the tile is PAINTED from first frame — the .pop entrance
+     only animates opacity/transform, never leaving a blank tile. */
+  --tile:   var(--accent);
+  --tile-2: var(--accent-strong);
+  --tile-ink: var(--accent-ink);
+  color: var(--tile-ink);
+  background: linear-gradient(155deg, var(--tile), var(--tile-2));
+  box-shadow: 0 0.5rem 1.2rem -0.5rem oklch(0.4 0.08 33 / 0.5);
   transition: transform 0.4s var(--ease), box-shadow 0.4s var(--ease);
 }
 .appicon__tile svg { width: 54%; height: 54%; }
+
+/* ---- per-app committed icon colors (reuse each app's palette hue) --------
+   Glyphs stay light (--tile-ink). These are FIXED (not seed-derived) so the
+   icon family reads like a real home screen. Messages keeps the seed accent
+   (default above). Values mirror the committed tokens in styles/apps/*.css. */
+.appicon[data-app="maps"] .appicon__tile     { --tile: oklch(0.56 0.13 240); --tile-2: oklch(0.48 0.13 244); }
+.appicon[data-app="ledger"] .appicon__tile   { --tile: oklch(0.52 0.12 155); --tile-2: oklch(0.44 0.12 156); }
+.appicon[data-app="terminal"] .appicon__tile { --tile: oklch(0.28 0.03 150); --tile-2: oklch(0.2 0.025 150); --tile-ink: oklch(0.86 0.11 150); }
+.appicon[data-app="mail"] .appicon__tile     { --tile: oklch(0.58 0.1 235);  --tile-2: oklch(0.5 0.1 237); }
+.appicon[data-app="notes"] .appicon__tile    { --tile: oklch(0.78 0.12 88);  --tile-2: oklch(0.7 0.12 82);  --tile-ink: oklch(0.3 0.04 80); }
+.appicon[data-app="settings"] .appicon__tile { --tile: oklch(0.62 0.012 260); --tile-2: oklch(0.52 0.012 260); }
 
 /* iOS: squircle-ish rounded square (~23% radius), label sentence case below */
 body[data-os="ios"] .appicon__tile { border-radius: 23%; }
 body[data-os="ios"] .appicon__label { text-transform: none; }
 
-/* Android Material You: circular icon container, M3-tinted */
+/* Android Material You: circular icon container. Keeps each app's committed
+   color (per-app --tile) with a light glyph, so the icon family reads on both
+   skins. Messages (default) uses the M3 primary container to stay on-seed. */
 body[data-os="android"] .appicon__tile {
   border-radius: 50%;
-  color: var(--m3-on-primary-container);
-  background: var(--m3-primary-container);
   box-shadow: 0 0.3rem 0.9rem -0.4rem oklch(0.4 0.04 50 / 0.4);
+}
+body[data-os="android"] .appicon[data-app="messages"] .appicon__tile {
+  --tile: var(--m3-primary-container);
+  --tile-2: var(--m3-primary-container);
+  --tile-ink: var(--m3-on-primary-container);
 }
 body[data-os="android"] .appicon__label { text-transform: none; }
 
@@ -187,7 +448,7 @@ body[data-os="ios"] .appicon__label { font-weight: 500; }
 
 /* pressed state: gentle depress, ease-out, no bounce */
 .appicon:active .appicon__tile { transform: scale(0.94); }
-.appicon:hover .appicon__tile { transform: translateY(-0.12rem); box-shadow: 0 0.8rem 1.6rem -0.5rem oklch(0.4 0.08 33 / 0.5); box-shadow: 0 0.8rem 1.6rem -0.5rem oklch(from var(--seed) 0.4 0.08 h / 0.5); }
+.appicon:hover .appicon__tile { transform: translateY(-0.12rem); box-shadow: 0 0.8rem 1.6rem -0.5rem oklch(0.4 0.05 60 / 0.42); }
 body[data-os="android"] .appicon:hover .appicon__tile { box-shadow: 0 0.6rem 1.3rem -0.4rem oklch(0.4 0.04 50 / 0.45); }
 .appicon:focus-visible { outline: none; }
 .appicon:focus-visible .appicon__tile { outline: 2.5px solid var(--accent-line); outline-offset: 4px; }
@@ -401,9 +662,9 @@ body:not([data-app]) .navind span { opacity: 0.25; }
        Platform group (flows naturally in its row, styled in settings.css).
    Both share the .os-switch__btn wiring and stay in sync via Platform.apply().
    ========================================================================= */
-@media (max-width: 1079px) {
-  /* the stage control is a desktop affordance; on phones it is hidden and the
-     switch is discoverable in Settings instead. */
+@media (max-width: 1023px) {
+  /* the stage control is a tablet-tier affordance; on phone/float tiers it is
+     hidden and the switch is discoverable in Settings instead. */
   .os-switch--stage { display: none; }
 }
 
@@ -449,19 +710,22 @@ body:not([data-app]) .navind span { opacity: 0.25; }
 }
 body[data-os="ios"] .lockscreen__wall {
   background:
-    radial-gradient(120% 60% at 78% -8%, oklch(0.86 0.07 255 / 0.6), transparent 60%),
-    radial-gradient(110% 60% at 6% 108%, oklch(0.88 0.06 200 / 0.5), transparent 60%),
-    linear-gradient(165deg, oklch(0.96 0.018 255), oklch(0.94 0.02 285));
+    radial-gradient(115% 58% at 80% -8%, oklch(0.88 0.096 250 / 0.72), transparent 62%),
+    radial-gradient(105% 58% at 4% 110%, oklch(0.89 0.078 206 / 0.62), transparent 60%),
+    radial-gradient(90% 50% at 50% 46%, oklch(from var(--seed) 0.92 0.042 calc(h + 195) / 0.3), transparent 64%),
+    linear-gradient(165deg, oklch(0.956 0.024 250), oklch(0.93 0.034 274) 56%, oklch(0.948 0.026 236));
 }
 body[data-os="android"] .lockscreen__wall {
   background:
-    radial-gradient(120% 60% at 84% -6%, oklch(0.88 0.10 45 / 0.55), transparent 60%),
-    radial-gradient(110% 60% at 4% 106%, oklch(0.90 0.08 75 / 0.5), transparent 60%),
-    linear-gradient(165deg, oklch(0.95 0.03 60), oklch(0.93 0.028 38));
+    radial-gradient(118% 58% at 86% -6%, oklch(0.89 0.122 47 / 0.68), transparent 60%),
+    radial-gradient(108% 58% at 2% 108%, oklch(0.9 0.1 80 / 0.6), transparent 60%),
+    radial-gradient(90% 50% at 48% 44%, oklch(0.92 0.066 30 / 0.34), transparent 64%),
+    linear-gradient(165deg, oklch(0.948 0.04 60), oklch(0.925 0.038 40) 56%, oklch(0.938 0.038 24));
   background:
-    radial-gradient(120% 60% at 84% -6%, oklch(from var(--seed) 0.88 0.10 calc(h + 12) / 0.55), transparent 60%),
-    radial-gradient(110% 60% at 4% 106%, oklch(from var(--seed) 0.90 0.08 calc(h + 42) / 0.5), transparent 60%),
-    linear-gradient(165deg, oklch(from var(--seed) 0.95 0.03 calc(h + 27)), oklch(from var(--seed) 0.93 0.028 calc(h + 5)));
+    radial-gradient(118% 58% at 86% -6%, oklch(from var(--seed) 0.89 0.122 calc(h + 14) / 0.68), transparent 60%),
+    radial-gradient(108% 58% at 2% 108%, oklch(from var(--seed) 0.9 0.1 calc(h + 47) / 0.6), transparent 60%),
+    radial-gradient(90% 50% at 48% 44%, oklch(from var(--seed) 0.92 0.066 calc(h - 3) / 0.34), transparent 64%),
+    linear-gradient(165deg, oklch(from var(--seed) 0.948 0.04 calc(h + 27)), oklch(from var(--seed) 0.925 0.038 calc(h + 7)) 56%, oklch(from var(--seed) 0.938 0.038 calc(h - 9)));
 }
 
 /* ---- clock ------------------------------------------------------------ */
@@ -506,6 +770,24 @@ body[data-os="android"] .lockscreen__time {
 body[data-os="ios"] .lockscreen__date { font-weight: 400; font-size: 0.95rem; }
 body[data-os="android"] .lockscreen__date { font-size: 1.02rem; }
 
+/* ---- owner identity line ----------------------------------------------
+   A quiet lock-screen owner name (like iOS lock-screen owner text). Small,
+   in the lock's own typography, muted-but-legible on the wallpaper. Tracks
+   the clock's per-OS alignment (centered iOS / left Android). Name only. */
+.lockscreen__owner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin: -1.4rem 0 2rem;      /* pull up under the clock, keep gap to notifs */
+  font-family: var(--font-ui);
+  font-weight: 500;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+  color: color-mix(in oklch, var(--statusbar-ink, var(--text-muted)) 82%, transparent);
+}
+body[data-os="ios"] .lockscreen__owner { text-align: center; font-weight: 400; }
+body[data-os="android"] .lockscreen__owner { text-align: left; }
+
 /* ---- notification stack ----------------------------------------------- */
 .lockscreen__notifs {
   position: relative;
@@ -543,6 +825,30 @@ body[data-os="android"] .lockscreen__date { font-size: 1.02rem; }
   transform: none;
   transition: opacity 0.5s var(--ease), transform 0.55s var(--ease);
 }
+
+/* lock notification icons wear each app's real glyph in its committed color,
+   as a small rounded-square tile — exactly like the home tiles. Prefixed with
+   .notif to outweigh messages.css .notif__icon (same class count, later file). */
+.notif .notif__icon--app {
+  --tile: var(--accent);
+  --tile-2: var(--accent-strong);
+  --tile-ink: var(--accent-ink);
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.6rem;
+  color: var(--tile-ink);
+  background: linear-gradient(155deg, var(--tile), var(--tile-2));
+}
+.notif .notif__icon--app svg { width: 60%; height: 60%; }
+.notif .notif__icon--app[data-app="maps"]     { --tile: oklch(0.56 0.13 240); --tile-2: oklch(0.48 0.13 244); }
+.notif .notif__icon--app[data-app="ledger"]   { --tile: oklch(0.52 0.12 155); --tile-2: oklch(0.44 0.12 156); }
+.notif .notif__icon--app[data-app="terminal"] { --tile: oklch(0.28 0.03 150); --tile-2: oklch(0.2 0.025 150); --tile-ink: oklch(0.86 0.11 150); }
+.notif .notif__icon--app[data-app="mail"]     { --tile: oklch(0.58 0.1 235);  --tile-2: oklch(0.5 0.1 237); }
+.notif .notif__icon--app[data-app="notes"]    { --tile: oklch(0.78 0.12 88);  --tile-2: oklch(0.7 0.12 82);  --tile-ink: oklch(0.3 0.04 80); }
+.notif .notif__icon--app[data-app="settings"] { --tile: oklch(0.62 0.012 260); --tile-2: oklch(0.52 0.012 260); }
+body[data-os="android"] .notif .notif__icon--app[data-app="messages"] { --tile: var(--m3-primary-container); --tile-2: var(--m3-primary-container); --tile-ink: var(--m3-on-primary-container); }
 
 /* "all explored" quiet message shown when no unvisited apps remain */
 .lockscreen__allvisited {
@@ -635,6 +941,53 @@ body[data-os="android"] .lockscreen__unlock-label::before {
 
 /* body[data-locked]: guard LA while lock is active (keep it dormant visually) */
 body[data-locked] .liveact { pointer-events: none; opacity: 0.6; }
+
+/* =========================================================================
+   TABLET LOCK (≥1024px): landscape iPadOS layout — big clock on the left,
+   notification stack in a right column. Phone/float tiers are unchanged.
+   ========================================================================= */
+@media (min-width: 1024px) {
+  .lockscreen {
+    display: grid;
+    grid-template-columns: 1fr minmax(20rem, 26rem);
+    grid-template-rows: 1fr auto auto;
+    align-items: center;
+    column-gap: 3rem;
+    padding: calc(env(safe-area-inset-top) + 4rem) 3rem 2.4rem;
+  }
+  .lockscreen__clock {
+    grid-column: 1;
+    grid-row: 1;
+    align-items: flex-start;
+    text-align: left;
+    margin-bottom: 0;
+    align-self: end;
+  }
+  /* owner sits just under the big left clock; notifs span the right column */
+  .lockscreen__owner {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+    margin: 0.6rem 0 0;
+    text-align: left;
+  }
+  /* iPad clock reads big and left even on the iOS skin (no centered phone clock) */
+  body[data-os="ios"] .lockscreen__clock { align-items: flex-start; text-align: left; }
+  .lockscreen__time { font-size: clamp(5rem, 13vw, 8rem); }
+  .lockscreen__notifs {
+    grid-column: 2;
+    grid-row: 1 / 3;          /* span the clock + owner rows on the left */
+    align-self: center;
+    flex: 0 1 auto;
+    max-height: 78%;
+    overflow: hidden;
+  }
+  .lockscreen__unlock {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    position: static;
+  }
+}
 
 /* =========================================================================
    reduced motion: no VT, no stagger, instant toggles

@@ -38,6 +38,92 @@
       var asked = {};            // id -> true once a prompt has been answered
       var busy  = false;         // a stream is in progress
 
+      /* ------------------------------------------------- tablet split view ---
+         On the tablet tier the app reads as a real iPad/tablet Messages: a
+         conversation sidebar on the left, the chat thread + composer on the
+         right. The split is built here (JS-only edit; index.html untouched) but
+         is inert on the phone tier — CSS hides .msg-sidebar and unwraps the
+         pane below @container device 700px, so the phone experience is
+         pixel-identical to before. Purely additive DOM: #thread and #composer
+         keep their ids and are only re-parented into a .msg-pane wrapper, so
+         every existing query (thread, suggestEl, progressFill, all the beat
+         features) still resolves. */
+      var unreadDot = null;      // the sidebar row's unread dot, cleared on thread start
+      function buildSplitView() {
+        var appBody = thread && thread.parentNode;               // the .app-body scroller
+        var composer = document.getElementById("composer");
+        if (!appBody || !composer) return;
+        if (appBody.querySelector(".msg-sidebar")) return;       // idempotent
+
+        // Sidebar: a single pinned conversation ("Gian"). The only conversation,
+        // so the row is permanently selected — clicking it is a harmless no-op
+        // (re-selects self), never a dead end.
+        var sidebar = el("aside", "msg-sidebar");
+        sidebar.setAttribute("aria-label", "Conversations");
+        var list = el("div", "msg-convos", "");
+        list.setAttribute("role", "list");
+        var row = el("button", "msg-convo msg-convo--active",
+          "<span class='msg-convo__ava'>" +
+            "<img src='assets/gianfranco.jpg' alt='' width='96' height='96' loading='lazy'>" +
+            "<span class='msg-convo__dot' aria-hidden='true'></span>" +
+          "</span>" +
+          "<span class='msg-convo__main'>" +
+            "<span class='msg-convo__top'><span class='msg-convo__name'>Gian</span>" +
+              "<span class='msg-convo__time'>now</span></span>" +
+            "<span class='msg-convo__preview'>who are you?</span>" +
+          "</span>");
+        row.type = "button";
+        row.setAttribute("role", "listitem");
+        row.setAttribute("aria-current", "true");
+        row.setAttribute("aria-label", "Gian, conversation");
+        // only conversation: selection never moves, so a click just keeps focus here
+        row.addEventListener("click", function () { row.focus(); });
+        list.appendChild(row);
+
+        var head = el("div", "msg-sidebar__head", "<span class='msg-sidebar__title'>Messages</span>");
+        sidebar.appendChild(head);
+        sidebar.appendChild(list);
+        unreadDot = row.querySelector(".msg-convo__dot");
+
+        // Right pane wraps thread + composer so it can scroll independently of
+        // the fixed sidebar on tablet. On phone the CSS keeps .msg-pane display
+        // contents-like (it inherits the .app-body flow), so nothing shifts.
+        var pane = el("div", "msg-pane");
+        appBody.insertBefore(sidebar, thread);
+        appBody.insertBefore(pane, thread);
+        pane.appendChild(thread);
+        pane.appendChild(composer);
+      }
+
+      // Clear the sidebar unread dot once the conversation has started (the
+      // thread begins streaming). Idempotent; safe when the sidebar is hidden.
+      function clearUnread() {
+        if (unreadDot) { unreadDot.classList.add("msg-convo__dot--clear"); }
+      }
+
+      /* ------------------------------------------- tap-to-complete (H7) ---
+         While a typewriter/stream animation runs, a tap on the thread fast-
+         forwards it to its final state: full text, pops landed, in one beat.
+         `skip` is a live { on: boolean } signal (see GG.Util.delay/typeInto/
+         streamText) shared by reference into whichever animation is in
+         flight; flipping it is picked up by that animation's own loop on its
+         next tick, so this never touches the DOM directly and can't race or
+         double-render. A fresh signal is created per beat so a tap can never
+         reach into a *future* beat — see armSkip()/disarmSkip(). */
+      var skip = null;
+      function armSkip() {
+        skip = { on: false };
+        thread.classList.add("thread--skippable"); // quiet cursor:pointer cue, no visible button
+        return skip;
+      }
+      function disarmSkip() {
+        skip = null;
+        thread.classList.remove("thread--skippable");
+      }
+      thread.addEventListener("click", function () {
+        if (skip && !skip.on) skip.on = true;
+      });
+
       /* ------------------------------------------------- compose a Q&A turn */
       function makeUserMsg(text) {
         var msg = el("div", "msg msg--out");
@@ -85,7 +171,12 @@
         var cta = el("button", "next-cta",
           escapeHtml(hook) + "<span class='next-cta__go' aria-hidden='true'>→</span>");
         cta.type = "button";
-        cta.addEventListener("click", function () {
+        cta.addEventListener("click", function (e) {
+          // Stop this click from bubbling to the thread's tap-to-complete
+          // listener: ask() below arms a *fresh* skip signal for the next
+          // beat synchronously, and without this the same click would arm
+          // then immediately skip that brand-new beat's typing indicator.
+          e.stopPropagation();
           cta.disabled = true;
           markChip(nextId);
           // The button becomes the question: morph it into the user bubble.
@@ -261,20 +352,23 @@
           thread.appendChild(inWrap);
           scrollInto(inWrap);
 
-          return delay(640).then(function () {
+          var s = armSkip(); // tap-to-complete signal for this beat only
+
+          return delay(640, s).then(function () {
             var bubble = el("div", "bubble bubble--in", prompt.html);
             inWrap.replaceChild(bubble, typing);
             var kick = chapterLabel(prompt);
             if (kick) inWrap.insertBefore(el("span", "kicker", kick), bubble);
-            return streamText(bubble, inWrap);
+            return streamText(bubble, inWrap, s);
           }).then(function () {
-            inWrap.appendChild(answerMeta("from my work"));
+            inWrap.appendChild(answerMeta(prompt.meta || "from my work"));
             onBeatReveal(prompt, inWrap);
             if (prompt.next && prompt.hook) appendNextCTA(inWrap, prompt.next, prompt.hook);
             // contact is the last story beat: there is no next chat beat, so the
             // dopamine pull becomes an invitation to explore the rest of the OS.
             else if (prompt.id === "contact") appendExploreCTA(inWrap);
             busy = false;
+            disarmSkip(); // this beat is done: a further tap must not reach the next one
           });
         }
 
@@ -363,6 +457,7 @@
         var facts = document.getElementById("facts");
 
         Platform.hero(); // wake the Live Activity: the app comes alive
+        clearUnread();   // the conversation is now open: clear the sidebar unread dot
 
         if (REDUCED) {
           observe(hero); observe(facts);
@@ -384,19 +479,25 @@
           thread.insertBefore(u, hero);
           scrollInto(u);
 
-          typeInto(ubub, data.hero)
-            .then(function () { return delay(360); })
+          // The hero boot is its own self-typing/streaming sequence (it runs
+          // before any prompt is asked, so ask()'s own busy/skip bookkeeping
+          // doesn't cover it) — arm the same tap-to-complete signal around it.
+          busy = true;
+          var s = armSkip();
+
+          typeInto(ubub, data.hero, s)
+            .then(function () { return delay(360, s); })
             .then(function () {
               var t = el("div", "msg msg--in");
               t.appendChild(typingBubble());
               thread.insertBefore(t, hero);
               scrollInto(t);
 
-              return delay(760).then(function () {
+              return delay(760, s).then(function () {
                 t.remove();
                 hero.style.display = "";
                 hero.classList.add("in");
-                return streamText(hero.querySelector(".bubble"), hero);
+                return streamText(hero.querySelector(".bubble"), hero, s);
               });
             })
             .then(function () {
@@ -404,6 +505,8 @@
               observe(facts);
               setMood("hook");
               markStory("hero");
+              busy = false;
+              disarmSkip();
               setTimeout(function () {
                 if (data.heroNext) appendNextCTA(facts, data.heroNext.next, data.heroNext.hook);
               }, 700);
@@ -416,6 +519,7 @@
       this._renderChips = renderChips;
       this._initChipDrag = initChipDrag;
 
+      buildSplitView();
       renderChips();
       initChipDrag();
     },

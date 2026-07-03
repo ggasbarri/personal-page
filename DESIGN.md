@@ -19,7 +19,7 @@
 
 --text:         oklch(0.28 0.018 52)   /* warm charcoal ink, primary */
 --text-muted:   oklch(0.46 0.020 50)   /* secondary */
---text-faint:   oklch(0.60 0.018 52)   /* metadata */
+--text-faint:   oklch(0.55 0.018 52)   /* metadata */
 
 --mint:         oklch(0.58 0.135 150)  /* tiny: "online" status dot only */
 ```
@@ -49,7 +49,7 @@ Reflex-reject list respected (no Inter / DM Sans / Space Grotesk / IBM Plex / Ge
 
 - **Display — Bricolage Grotesque** (700/800). Characterful grotesque for the hero name, the big "People also ask"-style section breaks, and oversize numbers. Allowed to break out past the app column at section moments.
 - **UI / body — Schibsted Grotesk** (400/500/600). Friendly, slightly warm grotesque for the chat thread, answers, labels, buttons. This is the workhorse.
-- **Labels — Schibsted Grotesk** (`--font-label`), lowercase, lightly tracked. The small UI labels (chapter kickers, panel keys, tile orgs, kit rows) are sans, not mono. Lowercase throughout, matching the quiet "ask gianfranco" voice. Using mono for labels was part of the AI-slop tell and was removed.
+- **Labels — Schibsted Grotesk** (`--font-label`), lowercase, lightly tracked. The small UI labels (chapter kickers, panel keys, tile orgs, kit rows) are sans, not mono. Lowercase throughout, matching the quiet "ask gianfranco" voice. Using mono for labels was part of the AI-slop tell and was removed. Per-app genre exceptions are deliberate: Ledger's uppercase banking-row headers and Settings' platform-accurate iOS table headers.
 - **Mono — Geist Mono** (400/500). Kept *only* where it is literally true: the code-module chips in the agent diagram (`auth`, `listings`, ...). Nowhere decorative. (The status-bar clock moved *off* mono onto a system-style sans, weight per platform, so it reads like a real OS clock.)
 
 Scale: fluid `clamp()`, ≥1.25 ratio between steps. Body ~16.5px, line-length capped ~60ch inside the app column.
@@ -66,11 +66,24 @@ The **nav indicator** (iOS home bar / Android handle) lives at device level and 
 
 ## Layout
 
-- A centered **app column**, max-width ~460px, is the phone screen. It sits on the warm-paper `--stage` with a soft light bezel and shadow (a "paper-cradle"), plus a faint paper-tooth grain. No glow.
-- A sticky, **per-OS status bar** at top: clock (system sans) left, the **Live Activity** center, platform-specific signal/wifi/battery glyphs right. In the **Messages** app, a hairline story-progress bar sits beneath the status bar; Focus mode adds a moon glyph. In other apps the status bar is shared chrome.
-- **Messages app:** the body is a **chat thread** — the assistant's streamed answers (left, `--surface-2` bubbles) and the visitor's questions (right, clay-red bubbles). Chips + per-answer "continue" button drive navigation; no free-text input. Knowledge panel and answers render as in-thread cards.
-- **Other apps** each own their screen entirely (Maps SVG canvas, Ledger transaction list, Terminal scrollback, Settings panels, Mail composer, Notes card).
-- Desktop grounds the floating phone with one oversize, very-low-contrast **wordmark** off the left gutter, the **platform selector** off the right gutter, and a **per-OS wallpaper** that crossfades on switch. Mobile goes full-bleed.
+### Device tiers
+
+The device chrome matches the viewport; `--dev-w` is the single width source.
+
+- **Phone** (≤739px): full-bleed phone, the original ~460px app column (`--col`).
+- **Floating phone** (740–1023px): the same phone floats centered with full bezel, corner radius, and shadow on the wallpaper stage.
+- **Tablet** (≥1024px): the device becomes a **landscape tablet** (up to 1100×760, clamped to never overflow; landscape aspect enforced). iOS drops the Dynamic Island for iPadOS status chrome (clock + date left, glyphs + Live Activity pill right); Android keeps the Live Update chip. Home gains iPadOS-style **widgets** (profile card, discovery-progress card), the full app grid (dock favorites duplicated, authentic iPadOS), and a centered dock. Apps switch to split-view layouts via `@container device (min-width: 700px)` queries (`container-type: inline-size` on `.device`), so phone rendering is untouched below the threshold.
+
+A **dock** (iOS Liquid-Glass slab / Android tonal pill) holds Messages, Mail, Terminal, Settings on all tiers; on phone tiers those apps live only in the dock (iPhone-authentic), on tablet they also appear in the grid.
+
+### Shell
+
+- The phone column sits on the warm-paper `--stage` with a soft light bezel and shadow (a "paper-cradle"), plus a faint paper-tooth grain. No glow.
+- A sticky, **per-OS status bar** at top: clock (system sans) left, the **Live Activity** center (phone) or right cluster (tablet), platform-specific signal/wifi/battery glyphs right. The collapsed discovery Live Activity is a **segmented 6-tick arc** plus an "N/6" count (no reload-arrow connotations); the expand card closes via ✕, Escape, or click-outside. In the **Messages** app, a hairline story-progress bar sits beneath the status bar; Focus mode adds a moon glyph.
+- **Messages:** chat thread (streamed answers left, clay-red questions right; chips + "continue" drive navigation; no free-text input). Tablet: iPad-Messages split view — conversation sidebar + thread pane capped ~43rem.
+- **Other apps** own their screens; on tablet each uses its platform's split-view idiom: Maps (full-bleed canvas + floating glass side panel), Ledger (sticky balance rail + transactions pane), Terminal (~88ch scrollback + tmux-style kv info pane), Settings (sidebar + detail pane), Mail (mailbox rail + compose sheet), Notes (notes list + reading column).
+- **App icons** carry per-app committed colors (Maps blue, Ledger green, Terminal phosphor-dark, Mail sky, Notes yellow, Settings gray; Messages keeps the seed accent) — fixed, not seed-derived, so the home grid reads like a real springboard. Lock-screen notifications reuse the same glyph + color per app.
+- Desktop grounds the device with one very-low-contrast vertical **wordmark** in the left gutter (rotated, never clipped), the **platform selector** (vertical segmented control, sliding thumb) in the right gutter, and a **per-OS wallpaper** that crossfades on switch. Mobile goes full-bleed.
 
 Cards used only where they're the right affordance. No nested cards. No identical icon-title-text grid.
 

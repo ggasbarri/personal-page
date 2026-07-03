@@ -21,6 +21,14 @@
   padding: 1.3rem 1.15rem calc(2.4rem + env(safe-area-inset-bottom));
 }
 
+/* ---- tablet split-view scaffold (built in settings.js) -----------------
+   Phone tier: inert. The sidebar never renders and the pane is a transparent
+   wrapper, so #settingsList sits directly in .app-body exactly as before —
+   every section stacked, all visible. See TABLET SPLIT VIEW below for the
+   @container device layout that activates these. */
+.settings-sidebar { display: none; }
+.settings-pane { display: contents; }
+
 /* a settings group: a labelled cluster of rows */
 .settings-group { display: flex; flex-direction: column; gap: 0.55rem; }
 .settings-group__h {
@@ -270,9 +278,105 @@ body[data-os="android"] .settings-group__h {
 }
 
 /* =========================================================================
+   TABLET SPLIT VIEW (iPad-Settings)
+
+   Built in settings.js (buildSplitView): a .settings-sidebar (section list)
+   plus a .settings-pane wrapping the existing #settingsList. Both are inert
+   on phone (see the scaffold rules near .settings__list above) — the sidebar
+   is display:none and the pane is display:contents, so #settingsList sits in
+   the .app-body flow unchanged and every section stays visible, stacked,
+   exactly as before this wave.
+
+   At @container device 700px .app-body becomes a two-column split: a fixed
+   sidebar of section rows (Appearance, Platform, Accessibility, General) and
+   a scrolling detail pane showing only the selected section — settings.js
+   toggles .settings-group--active, this file hides the rest. Selection swap
+   is instant (a display toggle, not a transition), which is reduced-motion
+   safe for free.
+
+   Container queries key off .device (container-type: inline-size, set in
+   base.css), so the breakpoint follows the device box, not the viewport.
+   ========================================================================= */
+@container device (min-width: 700px) {
+  .settings .app-body {
+    flex-direction: row;
+    overflow: hidden;
+    align-items: stretch;
+  }
+
+  /* ---- section sidebar --------------------------------------------------- */
+  .settings-sidebar {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 20rem;
+    min-width: 0;
+    padding: 1.3rem 0.7rem calc(1.3rem + env(safe-area-inset-bottom));
+    border-right: 1px solid var(--line-soft);
+    overflow-y: auto;
+    scrollbar-width: none;
+    background: color-mix(in oklch, var(--surface) 96%, var(--surface-2));
+  }
+  .settings-sidebar::-webkit-scrollbar { display: none; }
+  .settings-sidebar__list { display: flex; flex-direction: column; gap: 0.15rem; }
+
+  .settings-sidebar__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.85rem 0.9rem;
+    min-height: 3rem;
+    border: none;
+    background: none;
+    font: inherit;
+    text-align: left;
+    color: var(--text);
+    border-radius: 0.9rem;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.2s var(--ease);
+  }
+  .settings-sidebar__row:hover { background: color-mix(in oklch, var(--surface-2) 70%, transparent); }
+  .settings-sidebar__row:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+  .settings-sidebar__row-label { font-size: 0.98rem; font-weight: 600; }
+  .settings-sidebar__row-chev { color: var(--text-faint); flex: 0 0 auto; }
+
+  /* selected row: iOS flat tinted row / Android tonal container — matches the
+     Messages sidebar's per-OS selected-row treatment. */
+  body[data-os="ios"] .settings-sidebar__row[aria-current="true"] { background: var(--accent-soft); }
+  body[data-os="android"] .settings-sidebar__row[aria-current="true"] {
+    background: var(--m3-secondary-container, var(--m3-primary-container));
+    border-radius: 1.4rem;
+  }
+
+  /* ---- detail pane: only the selected section shows ---------------------- */
+  .settings-pane {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+  .settings__list {
+    max-width: 34rem;
+    margin: 0 auto;
+    padding: 1.5rem 1.6rem calc(2.4rem + env(safe-area-inset-bottom));
+  }
+
+  /* the pane still holds every .settings-group in the DOM (idempotent JS
+     move); only the one marked active by settings.js paints here. */
+  .settings-group { display: none; }
+  .settings-group--active { display: flex; }
+}
+
+/* =========================================================================
    reduced motion: the slider thumb + chips rest static (no transitions). The
    slider stays fully operable (it is a native range — value changes are not
    animations). About chevron snaps instead of rotating with a transition.
+   Section swap on tablet is a display toggle already, not a transition, so
+   it needs no extra reduced-motion handling here.
    ========================================================================= */
 @media (prefers-reduced-motion: reduce) {
   .hue-slider::-webkit-slider-thumb,
