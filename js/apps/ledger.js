@@ -108,9 +108,7 @@
     acctSub.textContent = account.sub;
     headerCard.appendChild(acctSub);
 
-    bodyEl.appendChild(headerCard);
-
-    // ---- savings-goal progress bar ----------------------------------------
+    // ---- savings-goal progress bar (lives inside the account card) --------
     var goalSection = document.createElement("div");
     goalSection.className = "ldg-goal";
 
@@ -145,7 +143,9 @@
 
     goalSection.appendChild(goalLabel);
     goalSection.appendChild(barTrack);
-    bodyEl.appendChild(goalSection);
+    headerCard.appendChild(goalSection);
+
+    bodyEl.appendChild(headerCard);
 
     // ---- transaction list --------------------------------------------------
     var listSection = document.createElement("section");

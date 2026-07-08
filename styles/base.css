@@ -442,8 +442,22 @@ body[data-os="android"] {
   --m3-surface-container-hi:  oklch(from var(--seed) 0.915 0.016 h);
   --m3-outline:               oklch(0.78 0.020 58);               /* fallback */
   --m3-outline:               oklch(from var(--seed) 0.78 0.020 h);
+
+  /* Android wears Roboto for UI + labels — the single strongest "different
+     OS" signal there is. Display (Bricolage) stays brand on both platforms. */
+  --font-ui:    "Roboto", system-ui, sans-serif;
+  --font-label: "Roboto", system-ui, sans-serif;
 }
 body[data-os="android"] .device { background: oklch(0.972 0.009 64); }
+
+/* Android status bar: flat Material surface — no iOS glass blur, no hairline.
+   Keeps the per-app --statusbar-bg tints (Maps blue, Ledger green, Terminal
+   dark); only the treatment changes. */
+body[data-os="android"] .statusbar {
+  -webkit-backdrop-filter: none;
+          backdrop-filter: none;
+  border-bottom-color: transparent;
+}
 
 /* ------------------------------------------------------------- os-switch */
 .os-switch {

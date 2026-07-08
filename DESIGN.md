@@ -51,6 +51,7 @@ Reflex-reject list respected (no Inter / DM Sans / Space Grotesk / IBM Plex / Ge
 - **UI / body — Schibsted Grotesk** (400/500/600). Friendly, slightly warm grotesque for the chat thread, answers, labels, buttons. This is the workhorse.
 - **Labels — Schibsted Grotesk** (`--font-label`), lowercase, lightly tracked. The small UI labels (chapter kickers, panel keys, tile orgs, kit rows) are sans, not mono. Lowercase throughout, matching the quiet "ask gianfranco" voice. Using mono for labels was part of the AI-slop tell and was removed. Per-app genre exceptions are deliberate: Ledger's uppercase banking-row headers and Settings' platform-accurate iOS table headers.
 - **Mono — Geist Mono** (400/500). Kept *only* where it is literally true: the code-module chips in the agent diagram (`auth`, `listings`, ...). Nowhere decorative. (The status-bar clock moved *off* mono onto a system-style sans, weight per platform, so it reads like a real OS clock.)
+- **Android exception — Roboto** (400/500/600/700). When the simulated platform is Android, `--font-ui` and `--font-label` swap to Roboto (`body[data-os="android"]` in base.css) — the single strongest "different OS" signal there is; it's platform truth, not a brand choice. Display (Bricolage) stays brand on both platforms.
 
 Scale: fluid `clamp()`, ≥1.25 ratio between steps. Body ~16.5px, line-length capped ~60ch inside the app column.
 

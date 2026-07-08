@@ -560,13 +560,21 @@ body[data-os="ios"] .app-head::after {
   grid-column: 3;
 }
 
-/* Android: left-aligned title beside an arrow (Material top app bar) */
-body[data-os="android"] .app-head { padding-bottom: 0.7rem; }
+/* Android: M3 top app bar — taller, left-aligned Roboto title at title-large
+   size, flat surface (no iOS glass), no hairline. Reads unmistakably Material
+   next to the iOS centered-title glass bar. */
+body[data-os="android"] .app-head {
+  padding-top: calc(env(safe-area-inset-top) + 3.3rem);
+  padding-bottom: 0.9rem;
+  backdrop-filter: none;
+  border-bottom-color: transparent;
+}
 body[data-os="android"] .app-head__title {
   justify-self: start;
   font-family: var(--font-ui);
-  font-weight: 600;
-  font-size: 1.05rem;
+  font-weight: 500;
+  font-size: 1.28rem;
+  letter-spacing: 0;
 }
 
 /* story progress hairline now lives under the app-head */

@@ -60,58 +60,36 @@ body[data-app="ledger"] {
   .app-screen[data-app="ledger"] .app-body {
     display: grid;
     grid-template-columns: minmax(18rem, 24rem) minmax(0, 1fr);
-    /* explicit rows: header / goal / 1fr absorber / footer. The movements list
-       spans across the 1fr track, so its content height can't inflate the two
-       content-sized rail rows (which previously opened a dead gap in the rail). */
-    grid-template-rows: auto auto 1fr auto;
+    /* rows: rail card + 1fr absorber / footer. The movements list spans the
+       1fr track, so its content height can't inflate the rail row. */
+    grid-template-rows: auto 1fr auto;
     align-content: start;
     align-items: start;
     column-gap: 1.4rem;
     padding: 1.1rem 1.3rem 1.3rem;
   }
 
-  /* rail: header card + degree progress. A single sticky wrapper would need a
-     JS-added element, so instead both pieces stick independently — the header
-     pins first, the goal card pins directly under it. --ldg-rail-head-h
-     reserves a deterministic header height (min-height, so a 1- or 2-line
-     account sub never changes the box) and the goal card's sticky offset is
-     derived from that same variable plus the header's own top offset and the
-     gap between them, so the two numbers can't drift out of sync. */
-  .app-screen[data-app="ledger"] {
-    --ldg-rail-head-top: 0.2rem;
-    --ldg-rail-head-h: 10.4rem;
-    --ldg-rail-head-gap: 0.55rem;
-  }
-
+  /* rail: one card — account header with the completion section inside it —
+     pinned while the movements pane scrolls */
   .app-screen[data-app="ledger"] .ldg-header {
     grid-column: 1;
     position: sticky;
-    top: var(--ldg-rail-head-top);
+    top: 0.2rem;
     margin: 0;
-    align-self: start;
-    min-height: var(--ldg-rail-head-h);
-    box-sizing: border-box;
-  }
-
-  .app-screen[data-app="ledger"] .ldg-goal {
-    grid-column: 1;
-    position: sticky;
-    top: calc(var(--ldg-rail-head-top) + var(--ldg-rail-head-h) + var(--ldg-rail-head-gap));
-    margin: var(--ldg-rail-head-gap) 0 0;
     align-self: start;
   }
 
   /* pane: transaction list, capped width for readable row length */
   .app-screen[data-app="ledger"] .ldg-movements {
     grid-column: 2;
-    grid-row: 1 / 4;   /* crosses the 1fr absorber row: content can't inflate the rail rows */
+    grid-row: 1 / 3;   /* crosses the 1fr absorber row: content can't inflate the rail row */
     margin: 0;
     max-width: 46rem;
   }
 
   .app-screen[data-app="ledger"] .ldg-footer {
     grid-column: 2;
-    grid-row: 4;
+    grid-row: 3;
     max-width: 46rem;
     margin-left: 0;
     margin-right: 0;
@@ -246,21 +224,12 @@ body[data-os="android"] .app-screen[data-app="ledger"] .ldg-header {
 /* =========================================================================
    SAVINGS-GOAL PROGRESS BAR
    ========================================================================= */
+/* Lives inside the account header card (one rail card, not two stacked
+   cards) — no surface of its own, just a quiet section under the balance. */
 .ldg-goal {
-  padding: 0.9rem 1.4rem 0.95rem;
-  margin: 0.55rem 0.9rem 0;
-  background: var(--ldg-surface-card);
-  border-radius: 1rem;
-}
-
-body[data-os="ios"] .app-screen[data-app="ledger"] .ldg-goal {
-  border-radius: 1.1rem;
-  box-shadow: inset 0 1px 0 oklch(1 0 0 / 0.5);
-}
-
-body[data-os="android"] .app-screen[data-app="ledger"] .ldg-goal {
-  background: oklch(0.94 0.016 158);
-  border-radius: 0.85rem;
+  margin: 1.05rem 0 0;
+  padding: 0.85rem 0 0;
+  border-top: 1px solid var(--ldg-line);
 }
 
 .ldg-goal__meta {

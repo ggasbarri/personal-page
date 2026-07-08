@@ -32,7 +32,7 @@ window.APP_DATA = {
     notifications: [
       { id: "messages", app: "Messages", icon: "doc",    title: "Gian · 1 new message",          body: "who are you?",                       time: "now" },
       { id: "maps",     app: "Maps",     icon: "mentee", title: "a ≈7,000 km route",             body: "Valencia → Aveiro",                  time: "1h"  },
-      { id: "ledger",   app: "Ledger",   icon: "hire",   title: "new transaction",               body: "Matemáticas Financieras  +10.0",     time: "2h"  },
+      { id: "ledger",   app: "Ledger",   icon: "hire",   title: "new transaction",               body: "financial mathematics  +10.0",       time: "2h"  },
       { id: "terminal", app: "Terminal", icon: "doc",    title: "1 job finished",                body: "gian --stack  exited 0",             time: "3h"  },
       { id: "settings", app: "Settings", icon: "guild",  title: "new wallpapers available",      body: "re-seed the whole OS",               time: "1d"  },
       { id: "mail",     app: "Mail",     icon: "doc",    title: "draft saved",                   body: "to: hey@ggasbarri.com",              time: "1d"  },
@@ -68,10 +68,11 @@ window.APP_DATA = {
     ]
   },
 
-  /* Ledger — the Economics degree rendered as a banking app. Courses are
+  /* Ledger — the Economics degree rendered as a banking app. Subjects are
      transactions, the degree completion is a savings goal. Content is real;
-     the joke is structural. Grades shown: only the 2-4 standout ones, as
-     required (never the full list). Pending entries are in-progress courses.
+     the joke is structural. Labels are broad English subject areas — never
+     official course titles. Grades shown: only the standout ones (never the
+     full list). Pending entries are in-progress subjects.
      Voice: lowercase notes, dry, accurate. */
   ledger: {
     account: {
@@ -84,16 +85,16 @@ window.APP_DATA = {
       total: 24
     },
     transactions: [
-      { label: "Fallos del Mercado",   value: null,  note: "market failures (fitting)",            pending: true  },
-      { label: "Finanzas I",           value: null,  note: null,                                   pending: true  },
-      { label: "Macroeconomía II",     value: null,  note: null,                                   pending: true  },
-      { label: "Matemáticas Financieras", value: 10.0, note: "compound interest, literally",        pending: false },
-      { label: "Historia de la Economía I", value: 9.9, note: null,                                pending: false },
-      { label: "Microeconomía II",     value: 9.8,  note: null,                                   pending: false },
-      { label: "Estadística II",       value: 9.5,  note: null,                                   pending: false },
-      { label: "Teoría de Juegos",     value: null,  note: "useful at work, suspiciously",         pending: false },
-      { label: "Derecho Mercantil",    value: null,  note: null,                                   pending: false },
-      { label: "Contabilidad de Costes", value: null, note: null,                                  pending: false }
+      { label: "Market failures",       value: null,  note: "fitting",                             pending: true  },
+      { label: "Corporate finance",     value: null,  note: null,                                  pending: true  },
+      { label: "Macroeconomics",        value: null,  note: null,                                  pending: true  },
+      { label: "Financial mathematics", value: 10.0,  note: "compound interest, literally",        pending: false },
+      { label: "Economic history",      value: 9.9,   note: null,                                  pending: false },
+      { label: "Microeconomics",        value: 9.8,   note: null,                                  pending: false },
+      { label: "Statistics",            value: 9.5,   note: null,                                  pending: false },
+      { label: "Game theory",           value: null,  note: "useful at work, suspiciously",        pending: false },
+      { label: "Business law",          value: null,  note: null,                                  pending: false },
+      { label: "Cost accounting",       value: null,  note: null,                                  pending: false }
     ],
     footer: "interest compounds. so does understanding."
   },

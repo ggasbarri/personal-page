@@ -112,30 +112,47 @@
     "M -5 32 C 25 24, 60 28, 105 20"
   ];
 
-  // The route arc. A single cubic bezier sweeping up-right across the ocean,
-  // bowed slightly toward the top so it reads as an Atlantic crossing. Start
-  // and end are converted from CSS-% pin positions to SVG viewBox coords via
-  // the xMidYMid-slice transform, so the bezier visually terminates at the pins.
-  // cW / cH are the container pixel dimensions at build time.
-  function routeD(cW, cH) {
-    var s = stops[0], e = stops[stops.length - 1];
+  // Shared slice-transform geometry for a given container size. Everything
+  // that must stay aligned across aspect ratios (route endpoints, control
+  // points, land offsets, labels, the place dot) derives from this one object.
+  //
+  // Control points are NOT fixed viewBox coords (they used to be, which made
+  // the arc overshoot the last pin and hook back down on wide containers where
+  // the slice transform moves the endpoints). They sit at thirds of the
+  // start→end chord, pushed perpendicular toward the top of the map, so the
+  // arc bows like a great circle and terminates cleanly at both pins at any
+  // aspect ratio.
+  function geometry(cW, cH) {
     var VBW = 100, VBH = 100;
     // xMidYMid slice: the larger scale fills the container, the other axis crops
     var scale = Math.max(cW / VBW, cH / VBH);   // px per vb unit
-    var scaledW = VBW * scale, scaledH = VBH * scale;
-    var cropX = (scaledW - cW) / 2;              // px cropped from each horizontal side
-    var cropY = (scaledH - cH) / 2;              // px cropped from each vertical side (usually 0)
+    var cropX = (VBW * scale - cW) / 2;          // px cropped from each horizontal side
+    var cropY = (VBH * scale - cH) / 2;          // px cropped from each vertical side
     // convert CSS-% → SVG viewBox coord
     function toVbX(frac) { return (frac * cW + cropX) / scale; }
     function toVbY(frac) { return (frac * cH + cropY) / scale; }
+    var s = stops[0], e = stops[stops.length - 1];
     var sx = toVbX(s ? s.x : 0.155), sy = toVbY(s ? s.y : 0.80);
     var ex = toVbX(e ? e.x : 0.83),  ey = toVbY(e ? e.y : 0.245);
-    // fixed control points bow the arc upward (lower y) for a gentle great-circle feel
-    var c1x = 33, c1y = 50;
-    var c2x = 66, c2y = 24;
-    return "M " + sx.toFixed(2) + " " + sy.toFixed(2) +
-           " C " + c1x + " " + c1y + ", " + c2x + " " + c2y +
-           ", " + ex.toFixed(2) + " " + ey.toFixed(2);
+    var dx = ex - sx, dy = ey - sy;
+    var len = Math.sqrt(dx * dx + dy * dy) || 1;
+    var px = dy / len, py = -dx / len;           // unit perpendicular to the chord
+    if (py > 0) { px = -px; py = -py; }          // always bow upward (smaller y)
+    var bow = len * 0.16;
+    return {
+      scale: scale, cropX: cropX, cropY: cropY,
+      toVbX: toVbX, toVbY: toVbY,
+      sx: sx, sy: sy, ex: ex, ey: ey,
+      c1x: sx + dx / 3 + px * bow,     c1y: sy + dy / 3 + py * bow,
+      c2x: sx + dx * 2 / 3 + px * bow, c2y: sy + dy * 2 / 3 + py * bow
+    };
+  }
+
+  function routeD(g) {
+    return "M " + g.sx.toFixed(2) + " " + g.sy.toFixed(2) +
+           " C " + g.c1x.toFixed(2) + " " + g.c1y.toFixed(2) +
+           ", " + g.c2x.toFixed(2) + " " + g.c2y.toFixed(2) +
+           ", " + g.ex.toFixed(2) + " " + g.ey.toFixed(2);
   }
 
   // Middle stops have no fixed geography (no city claim), so their pins sit
@@ -147,22 +164,15 @@
   }
 
   function positionPins(cW, cH) {
-    var VBW = 100, VBH = 100;
-    var scale = Math.max(cW / VBW, cH / VBH);
-    var cropX = (VBW * scale - cW) / 2;
-    var cropY = (VBH * scale - cH) / 2;
-    function toVbX(frac) { return (frac * cW + cropX) / scale; }
-    function toVbY(frac) { return (frac * cH + cropY) / scale; }
-    var s = stops[0], e = stops[stops.length - 1];
-    var sx = toVbX(s.x), sy = toVbY(s.y), ex = toVbX(e.x), ey = toVbY(e.y);
+    var g = geometry(cW, cH);
     var n = stops.length;
     pinEls.forEach(function (pin, i) {
       var fx = stops[i].x, fy = stops[i].y;
       if (i > 0 && i < n - 1) {
         var t = i / (n - 1);
-        // control points must match routeD()
-        fx = (bez(t, sx, 33, 66, ex) * scale - cropX) / cW;
-        fy = (bez(t, sy, 50, 24, ey) * scale - cropY) / cH;
+        // sample the same cubic the route uses, convert back to CSS fractions
+        fx = (bez(t, g.sx, g.c1x, g.c2x, g.ex) * g.scale - g.cropX) / cW;
+        fy = (bez(t, g.sy, g.c1y, g.c2y, g.ey) * g.scale - g.cropY) / cH;
       }
       pin.style.left = (fx * 100) + "%";
       pin.style.top = (fy * 100) + "%";
@@ -173,6 +183,14 @@
   // cW/cH are the map-wrap pixel dimensions; they drive the slice transform
   // so the route endpoints land exactly on the pins.
   function makeSVG(cW, cH) {
+    var g = geometry(cW, cH);
+    // The slice transform multiplies user units by g.scale on screen. Sizes
+    // that must read constant (stroke widths, label text, the place dot) are
+    // therefore authored in px and divided by g.scale — otherwise a wide
+    // desktop container (scale ≈ 3× the phone's) renders a ~20px route line
+    // and ~30px labels.
+    var pxu = function (px) { return px / g.scale; };
+
     var svg = document.createElementNS(SVGNS, "svg");
     svg.setAttribute("class", "map-svg");
     svg.setAttribute("viewBox", "0 0 100 100");
@@ -186,81 +204,78 @@
     GRATICULE.forEach(function (d) {
       var p = document.createElementNS(SVGNS, "path");
       p.setAttribute("d", d);
+      p.style.strokeWidth = pxu(2.4).toFixed(3);
       grat.appendChild(p);
     });
     svg.appendChild(grat);
 
-    // landmasses
+    // Landmasses. The blob paths were authored against the square viewBox,
+    // where the endpoint pins sit at the anchors below. On other aspect
+    // ratios the slice transform moves the pins, so each landmass is
+    // translated by its endpoint's displacement — the coasts follow the pins
+    // and Valencia/Aveiro never float in open ocean.
+    var VE_ANCHOR = { x: 15.5, y: 80 };
+    var IB_ANCHOR = { x: 83,  y: 24.5 };
     var land = document.createElementNS(SVGNS, "g");
     land.setAttribute("class", "map-land");
-    [VE_PATH, IB_PATH].forEach(function (d) {
+    [
+      { d: VE_PATH, dx: g.sx - VE_ANCHOR.x, dy: g.sy - VE_ANCHOR.y },
+      { d: IB_PATH, dx: g.ex - IB_ANCHOR.x, dy: g.ey - IB_ANCHOR.y }
+    ].forEach(function (m) {
       var p = document.createElementNS(SVGNS, "path");
-      p.setAttribute("d", d);
+      p.setAttribute("d", m.d);
+      p.setAttribute("transform", "translate(" + m.dx.toFixed(2) + " " + m.dy.toFixed(2) + ")");
+      p.style.strokeWidth = pxu(2.6).toFixed(3);
       land.appendChild(p);
     });
     svg.appendChild(land);
 
     // a small dot marker on the Iberia landmass near the final pin
-    // Its position also needs the slice-corrected SVG coords
     var last = stops[stops.length - 1];
-    var VBW = 100, VBH = 100;
-    var scale = Math.max(cW / VBW, cH / VBH);
-    var scaledW = VBW * scale, scaledH = VBH * scale;
-    var cropX = (scaledW - cW) / 2;
-    var cropY = (scaledH - cH) / 2;
-    function toVbX(frac) { return (frac * cW + cropX) / scale; }
-    function toVbY(frac) { return (frac * cH + cropY) / scale; }
-
     if (last) {
       var dot = document.createElementNS(SVGNS, "circle");
       dot.setAttribute("class", "map-place-dot");
-      dot.setAttribute("cx", toVbX(last.x).toFixed(2));
-      dot.setAttribute("cy", toVbY(last.y).toFixed(2));
-      dot.setAttribute("r", "0.9");
+      dot.setAttribute("cx", g.ex.toFixed(2));
+      dot.setAttribute("cy", g.ey.toFixed(2));
+      dot.setAttribute("r", pxu(6).toFixed(3));
       svg.appendChild(dot);
     }
 
     // the route path — drawn last so it sits above land
     routeEl = document.createElementNS(SVGNS, "path");
     routeEl.setAttribute("class", "map-route");
-    routeEl.setAttribute("d", routeD(cW, cH));
+    routeEl.setAttribute("d", routeD(g));
     routeEl.setAttribute("fill", "none");
     routeEl.setAttribute("pathLength", "1");   // normalize for dasharray draw
+    routeEl.style.strokeWidth = pxu(7.5).toFixed(3);
     svg.appendChild(routeEl);
 
     // ---- always-visible endpoint labels (first and last stop only) --------
     // Tiny muted text next to the endpoint pins; aria-hidden (pins have labels).
-    // "Valencia" label: right of the carabobo pin (near left edge).
-    // "Aveiro" label:   left/below the olx pin (near right edge).
-    // Font-size in vb units chosen so it reads as ~10-11px at 390px viewport.
-    // At 390px wide with the slice transform, 1 vb unit ≈ scale px; we pick a
-    // size that stays legible but doesn't dominate.
-    var LABEL_FS = 1.6;   // viewBox units; ~11px once the slice scale (≈7 px/unit) applies
+    // Offsets are in px (via pxu) so the labels clear the 24px HTML pins at
+    // every container size instead of hugging/overlapping them on desktop.
+    var LABEL_FS = pxu(11.5);
     var labelGroup = document.createElementNS(SVGNS, "g");
     labelGroup.setAttribute("class", "map-endpoint-labels");
     labelGroup.setAttribute("aria-hidden", "true");
 
     var first = stops[0];
     if (first) {
-      // "Valencia" — right of pin, vertically centered at pin y, slight upward offset
-      var lx = toVbX(first.x) + 1.6;
-      var ly = toVbY(first.y) - 1.2;
+      // "Valencia" — right of pin, baseline just above the pin
       var t1 = document.createElementNS(SVGNS, "text");
-      t1.setAttribute("x", lx.toFixed(2));
-      t1.setAttribute("y", ly.toFixed(2));
-      t1.setAttribute("font-size", LABEL_FS);
+      t1.setAttribute("x", (g.sx + pxu(16)).toFixed(2));
+      t1.setAttribute("y", (g.sy - pxu(10)).toFixed(2));
+      t1.setAttribute("font-size", LABEL_FS.toFixed(3));
       t1.setAttribute("class", "map-label map-label--start");
       t1.textContent = "Valencia";
       labelGroup.appendChild(t1);
     }
     if (last) {
       // "Aveiro" — above-right of the today pin, clear of the incoming route
-      var ax = toVbX(last.x) + 1.4;
-      var ay = toVbY(last.y) - 1.6;
       var t2 = document.createElementNS(SVGNS, "text");
-      t2.setAttribute("x", ax.toFixed(2));
-      t2.setAttribute("y", ay.toFixed(2));
-      t2.setAttribute("font-size", LABEL_FS);
+      t2.setAttribute("x", (g.ex + pxu(16)).toFixed(2));
+      t2.setAttribute("y", (g.ey - pxu(12)).toFixed(2));
+      t2.setAttribute("font-size", LABEL_FS.toFixed(3));
       t2.setAttribute("class", "map-label map-label--start");
       t2.textContent = "Aveiro";
       labelGroup.appendChild(t2);
