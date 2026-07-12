@@ -77,6 +77,25 @@
     });
   }
 
+  /* ------------------------------------------- per-app mini icon tiles ----
+     Each app's real home-tile glyph (same SVG paths as index.html), shared by
+     the lock-screen notifications, the Live Activity checklist, and the home
+     progress widget, so every small surface wears the same icon family. The
+     committed tile colors live in shell.css under `.minitile[data-app]`. */
+  var APP_GLYPH = {
+    messages: "<path d='M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9 9 0 0 1-3.8-.8L3 21l1.9-5.2A8.5 8.5 0 0 1 4 11.5 8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z'/>",
+    maps:     "<path d='M12 21s-6.5-5.5-6.5-10.5A6.5 6.5 0 0 1 12 4a6.5 6.5 0 0 1 6.5 6.5C18.5 15.5 12 21 12 21z'/><circle cx='12' cy='10.5' r='2.3'/>",
+    ledger:   "<path d='M3 9.5 12 4l9 5.5'/><path d='M4 9.5v9M20 9.5v9M9 11v6M15 11v6'/><path d='M2.5 20.5h19'/>",
+    terminal: "<rect x='3' y='4' width='18' height='16' rx='2.5'/><path d='m7 9 3 3-3 3M13 15h4'/>",
+    settings: "<circle cx='12' cy='12' r='3.2'/><path d='M19.4 13.5a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'/>",
+    mail:     "<rect x='2.5' y='4.5' width='19' height='15' rx='2.5'/><path d='m3 6 9 6 9-6'/>",
+    notes:    "<path d='M5 3.5h14a1 1 0 0 1 1 1V21l-3-2-3 2-3-2-3 2V4.5a1 1 0 0 1 1-1z'/><path d='M8.5 8.5h7M8.5 12h7M8.5 15.5h4'/>"
+  };
+  function appIconSvg(id) {
+    return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' width='16' height='16' aria-hidden='true'>" +
+      (APP_GLYPH[id] || APP_GLYPH.messages) + "</svg>";
+  }
+
   /* -------------------------------------------------- count-up animation */
   function animateCount(node) {
     var target = parseFloat(node.getAttribute("data-count"));
@@ -376,7 +395,9 @@
     // show expanded "all explored" state
     var c = Collection.count();
     this._discoverState = { done: c.done, total: c.total };
-    this.work({ progress: 1, short: "all explored", label: "explored", state: "all explored", expand: true });
+    // pill: count + label ("6/6 explored"), same grammar as discover(); the
+    // pulse, full arc, and expand card carry the completion moment.
+    this.work({ progress: 1, short: c.done + "/" + c.total, label: "explored", state: "all explored", expand: true });
     this.setSeg(c.done, c.total);
     this.setDiscoverCue(true);
     liveact.setAttribute("aria-label",
@@ -433,26 +454,43 @@
   var _origFillExpand = LA.fillExpand.bind(LA);
   LA.fillExpand = function () {
     if (!this._discoverState) { _origFillExpand(); return; }
-    var ids = Apps.ids();
     var done = this._discoverState.done, total = this._discoverState.total;
     var isAll = done === total && total > 0;
+    // Base apps only, matching the "N of 6" math everywhere else. The Notes
+    // reward is not a row: it is the footer payoff once everything is open.
+    var ids = Apps.ids().filter(function (id) {
+      var def = Apps.get(id);
+      return def && !def.bonus;
+    });
+    var check = "<svg viewBox='0 0 24 24' width='10' height='10' fill='none' stroke='currentColor' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='M4.5 12.8l4.8 4.7L19.5 6.5'/></svg>";
     var rows = ids.map(function (id) {
       var def = Apps.get(id);
       var name = def && def.label ? def.label : id;
       var visited = Collection.isVisited(id);
-      return "<div class='liveact__erow'><span class='liveact__ev'>" + escapeHtml(name) + "</span><span class='liveact__es liveact__es--" + (visited ? "done" : "todo") + "'>" + (visited ? "✓" : "·") + "</span></div>";
+      return "<div class='liveact__erow" + (visited ? " liveact__erow--done" : "") + "'>" +
+        "<span class='minitile liveact__etile' data-app='" + escapeHtml(id) + "' aria-hidden='true'>" + appIconSvg(id) + "</span>" +
+        "<span class='liveact__ev'>" + escapeHtml(name) + "</span>" +
+        (visited ? "<span class='liveact__echeck' aria-hidden='true'>" + check + "</span>" : "") +
+        "</div>";
     }).join("");
-    // Footer hints the reward without spoiling it: dry, lowercase, no punctuation
-    // theatrics. Once everything is open, it acknowledges the unlock instead.
-    var footer = isAll ? "notes unlocked." : "open everything.";
+    // Footer hints the reward without spoiling it: dry, lowercase, no
+    // punctuation theatrics. Once everything is open it becomes the payoff, a
+    // real button that launches Notes (delegated handler below).
+    var footer = isAll
+      ? "<button type='button' class='liveact__enotes' data-open-app='notes' aria-label='Open Notes'>" +
+          "<span class='minitile liveact__etile' data-app='notes' aria-hidden='true'>" + appIconSvg("notes") + "</span>" +
+          "<span class='liveact__ev'>notes unlocked</span>" +
+          "<svg class='liveact__echev' viewBox='0 0 24 24' width='12' height='12' fill='none' stroke='currentColor' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round' aria-hidden='true'><path d='m9 5.5 6.5 6.5L9 18.5'/></svg>" +
+        "</button>"
+      : "<div class='liveact__efoot'>open everything.</div>";
     setHtml(laExpand,
       "<div class='liveact__ehead'><span>gianfranco-os</span>" +
         "<span class='liveact__eclose' role='button' tabindex='0' aria-label='Close'>✕</span></div>" +
       "<div class='liveact__etitle'>" + (isAll ? "all explored" : "exploring") + "</div>" +
       "<div class='liveact__estate'>" + done + " of " + total + " apps visited</div>" +
-      "<div class='liveact__etrack' style='--pct:" + Math.round((done / Math.max(total, 1)) * 100) + "%'><span></span></div>" +
-      rows +
-      "<div class='liveact__efoot'>" + footer + "</div>");
+      "<div class='liveact__etrack" + (isAll ? " liveact__etrack--full" : "") + "' style='--pct:" + Math.round((done / Math.max(total, 1)) * 100) + "%'><span></span></div>" +
+      "<div class='liveact__elist'>" + rows + "</div>" +
+      footer);
     laExpand.hidden = false;
   };
 
@@ -498,6 +536,15 @@
     }
     laExpand.addEventListener("click", closeFromCard);
     laExpand.addEventListener("keydown", closeFromCard);
+    // the completion footer is a real <button data-open-app>: close the card,
+    // then launch the app. stopPropagation keeps the pill from re-toggling.
+    laExpand.addEventListener("click", function (e) {
+      var btn = e.target && e.target.closest ? e.target.closest("[data-open-app]") : null;
+      if (!btn || !laExpand.contains(btn)) return;
+      e.stopPropagation();
+      LA.closeExpand();
+      if (window.GG && GG.Shell) GG.Shell.open(btn.getAttribute("data-open-app"));
+    });
   }
 
   // -- the OS module (Platform) -------------------------------------------
@@ -744,32 +791,12 @@
      Focus is trapped to unlock button + notif cards while shown.
      On unlock, focus moves to the first app icon.
 
-     The small ICON map from messages.js is NOT available here (different
-     file). We duplicate the four needed SVGs inline as a local lock-icon
-     map. This keeps os.js self-contained and avoids cross-file coupling.
+     Notification cards reuse the shared per-app mini-icon tiles
+     (appIconSvg + .minitile committed colors), same family as the home
+     tiles, the LA checklist, and the progress widget.
      =================================================================== */
   var Lock = (function () {
     var SESS_KEY = "gg-unlocked";
-
-    // Per-app notification glyphs: each notification wears its APP's real home
-    // icon (same SVG paths as index.html) in a small rounded-square tile tinted
-    // with that app's committed color — exactly like the home tiles. Keyed by
-    // app id (nt.id), not the old generic nt.icon buckets.
-    function _svg(inner) {
-      return "<svg viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' width='16' height='16' aria-hidden='true'>" + inner + "</svg>";
-    }
-    var APP_GLYPH = {
-      messages: "<path d='M21 11.5a8.38 8.38 0 0 1-8.5 8.5 9 9 0 0 1-3.8-.8L3 21l1.9-5.2A8.5 8.5 0 0 1 4 11.5 8.38 8.38 0 0 1 12.5 3 8.38 8.38 0 0 1 21 11.5z'/>",
-      maps:     "<path d='M12 21s-6.5-5.5-6.5-10.5A6.5 6.5 0 0 1 12 4a6.5 6.5 0 0 1 6.5 6.5C18.5 15.5 12 21 12 21z'/><circle cx='12' cy='10.5' r='2.3'/>",
-      ledger:   "<path d='M3 9.5 12 4l9 5.5'/><path d='M4 9.5v9M20 9.5v9M9 11v6M15 11v6'/><path d='M2.5 20.5h19'/>",
-      terminal: "<rect x='3' y='4' width='18' height='16' rx='2.5'/><path d='m7 9 3 3-3 3M13 15h4'/>",
-      settings: "<circle cx='12' cy='12' r='3.2'/><path d='M19.4 13.5a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1.08 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z'/>",
-      mail:     "<rect x='2.5' y='4.5' width='19' height='15' rx='2.5'/><path d='m3 6 9 6 9-6'/>",
-      notes:    "<path d='M5 3.5h14a1 1 0 0 1 1 1V21l-3-2-3 2-3-2-3 2V4.5a1 1 0 0 1 1-1z'/><path d='M8.5 8.5h7M8.5 12h7M8.5 15.5h4'/>"
-    };
-    function _appIcon(id) {
-      return _svg(APP_GLYPH[id] || APP_GLYPH.messages);
-    }
 
     var _lockEl    = null;
     var _notifsEl  = null;
@@ -791,9 +818,9 @@
 
     // Build one notification card. Returns a DOM element (button — focusable).
     function _buildCard(nt) {
-      var ic = _appIcon(nt.id);
+      var ic = appIconSvg(nt.id);
       var card = el("button", "notif",
-        "<span class='notif__icon notif__icon--app' data-app='" + escapeHtml(nt.id) + "'>" + ic + "</span>" +
+        "<span class='minitile notif__icon notif__icon--app' data-app='" + escapeHtml(nt.id) + "'>" + ic + "</span>" +
         "<span class='notif__main'>" +
           "<span class='notif__app'>" + escapeHtml(nt.app) + "</span>" +
           "<span class='notif__title'>" + escapeHtml(nt.title) + "</span>" +
@@ -1442,10 +1469,14 @@
         checksEl.innerHTML = "";
         ids.forEach(function (id) {
           var done = Collection.isVisited(id);
-          var cell = el("span", "widget__pcheck" + (done ? " widget__pcheck--done" : ""), done ? "✓" : "");
+          var cell = el("span", "minitile widget__pcheck" + (done ? " widget__pcheck--done" : ""), appIconSvg(id));
+          cell.setAttribute("data-app", id);
           checksEl.appendChild(cell);
         });
       }
+      // completion foot: the reward acknowledgement, hidden until all 6
+      var foot = document.getElementById("homeProgressFoot");
+      if (foot) foot.hidden = !(c.done === c.total && c.total > 0);
       var wrap = document.getElementById("homeProgress");
       if (wrap) wrap.setAttribute("aria-label", "explored " + c.done + " of " + c.total + " apps");
 

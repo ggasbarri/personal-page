@@ -731,10 +731,60 @@ body[data-os="android"] .liveact__expand { background: var(--m3-surface-containe
 }
 .liveact__eclose:hover { opacity: 1; background: color-mix(in oklch, currentColor 22%, transparent); }
 .liveact__eclose:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; opacity: 1; }
-.liveact__erow { display: flex; align-items: baseline; justify-content: space-between; gap: 0.7rem; font-size: 0.8rem; }
-.liveact__erow + .liveact__erow { margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px solid currentColor; border-color: color-mix(in oklch, currentColor 16%, transparent); }
-.liveact__ev { font-weight: 600; }
-.liveact__es { opacity: 0.7; font-family: var(--font-label); font-size: 0.7rem; }
+/* discovery checklist rows: each app wears its real mini tile (shared
+   .minitile family). Visited rows sit in full color with a small check;
+   unvisited ones wait in grayscale — no hairline-per-row noise. */
+.liveact__elist { display: flex; flex-direction: column; gap: 0.12rem; margin: 0 -0.2rem; }
+.liveact__erow {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.24rem 0.2rem;
+  font-size: 0.8rem;
+}
+.liveact__etile { width: 1.45rem; height: 1.45rem; }
+.liveact__etile svg { width: 58%; height: 58%; }
+.liveact__ev {
+  font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.liveact__erow:not(.liveact__erow--done) .liveact__etile { filter: grayscale(1); opacity: 0.38; }
+.liveact__erow:not(.liveact__erow--done) .liveact__ev { opacity: 0.55; font-weight: 500; }
+.liveact__echeck {
+  margin-left: auto;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 50%;
+  background: color-mix(in oklch, currentColor 13%, transparent);
+}
+/* completion payoff: a real button that launches Notes from the card */
+.liveact__enotes {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  margin-top: 0.55rem;
+  padding: 0.42rem 0.5rem;
+  border: none;
+  border-radius: 0.85rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: inherit;
+  text-align: left;
+  background: color-mix(in oklch, currentColor 9%, transparent);
+  cursor: pointer;
+  transition: background 0.2s var(--ease);
+}
+.liveact__enotes:hover { background: color-mix(in oklch, currentColor 15%, transparent); }
+.liveact__enotes:active { background: color-mix(in oklch, currentColor 19%, transparent); }
+.liveact__enotes:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+.liveact__echev { margin-left: auto; flex: 0 0 auto; opacity: 0.6; }
 
 /* Focus / Do Not Disturb (setback) */
 body.is-focus .mood-dim { opacity: 1; }
@@ -1068,6 +1118,8 @@ body[data-os="android"] .liveact__expand {
   transform: translateY(-50%);
   background: oklch(0.975 0.006 86);
 }
+/* at 6/6 the goal marker has been reached: no stray dot on a full bar */
+.liveact__etrack--full::after { display: none; }
 /* checklist footer: a dry nudge toward the reward, quieter than the rows and
    set off by a hairline. Uses only the existing label font + currentColor. */
 .liveact__efoot {

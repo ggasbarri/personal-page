@@ -351,20 +351,27 @@ body[data-os="android"] .widget {
 .widget__phead { font-family: var(--font-label); font-size: 0.72rem; letter-spacing: 0.02em; color: var(--text-faint); }
 .widget__pcount { font-size: 0.98rem; color: var(--text-muted); }
 .widget__pcount strong { font-family: var(--font-display); font-weight: 700; font-size: 1.5rem; color: var(--text); }
-.widget__pchecks { display: inline-flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+/* per-app mini tiles (shared .minitile family): visited apps sit in their
+   committed color, unvisited ones wait as neutral ghosts — the widget reads
+   as the home grid filling itself in. */
+.widget__pchecks { display: inline-flex; flex-wrap: wrap; gap: 0.45rem; margin-top: 0.55rem; }
 .widget__pcheck {
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: 0.5rem;
-  display: grid;
-  place-items: center;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--accent-ink);
+  width: 1.75rem;
+  height: 1.75rem;
+}
+.widget__pcheck:not(.widget__pcheck--done) {
   background: var(--surface-3);
   color: var(--text-faint);
 }
-.widget__pcheck--done { background: var(--accent); color: var(--accent-ink); }
+.widget__pfoot {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-label);
+  font-size: 0.74rem;
+  color: var(--accent);
+}
+.widget__pfoot[hidden] { display: none; }
 
 /* ------------------------------------------------------------- app icons */
 .appicon {
@@ -676,10 +683,6 @@ body:not([data-app]) .navind span { opacity: 0.25; }
   .os-switch--stage { display: none; }
 }
 
-/* LA discover checklist: done rows slightly muted, todo dot lighter */
-.liveact__es--done { color: var(--accent); }
-.liveact__es--todo { opacity: 0.45; }
-
 /* =========================================================================
    LOCK SCREEN — Phase 8
    z70: above homescreen (10), app-screen (30), navind (40), statusbar (50),
@@ -834,29 +837,45 @@ body[data-os="android"] .lockscreen__owner { text-align: left; }
   transition: opacity 0.5s var(--ease), transform 0.55s var(--ease);
 }
 
-/* lock notification icons wear each app's real glyph in its committed color,
-   as a small rounded-square tile — exactly like the home tiles. Prefixed with
-   .notif to outweigh messages.css .notif__icon (same class count, later file). */
-.notif .notif__icon--app {
+/* ---- shared mini app tile ------------------------------------------------
+   One glyph-on-committed-color tile family for every small surface: lock
+   notifications, the Live Activity checklist, and the home progress widget.
+   Each surface sets its own size; the shape follows the platform (squircle
+   vs circle) exactly like the home tiles. Colors mirror .appicon__tile. */
+.minitile {
   --tile: var(--accent);
   --tile-2: var(--accent-strong);
   --tile-ink: var(--accent-ink);
   display: grid;
   place-items: center;
-  width: 2rem;
-  height: 2rem;
-  border-radius: 0.6rem;
+  flex: 0 0 auto;
   color: var(--tile-ink);
   background: linear-gradient(155deg, var(--tile), var(--tile-2));
 }
+.minitile svg { width: 60%; height: 60%; }
+body[data-os="ios"] .minitile     { border-radius: 26%; }
+body[data-os="android"] .minitile { border-radius: 50%; }
+.minitile[data-app="maps"]     { --tile: oklch(0.56 0.13 240); --tile-2: oklch(0.48 0.13 244); }
+.minitile[data-app="ledger"]   { --tile: oklch(0.52 0.12 155); --tile-2: oklch(0.44 0.12 156); }
+.minitile[data-app="terminal"] { --tile: oklch(0.28 0.03 150); --tile-2: oklch(0.2 0.025 150); --tile-ink: oklch(0.86 0.11 150); }
+.minitile[data-app="mail"]     { --tile: oklch(0.58 0.1 235);  --tile-2: oklch(0.5 0.1 237); }
+.minitile[data-app="notes"]    { --tile: oklch(0.78 0.12 88);  --tile-2: oklch(0.7 0.12 82);  --tile-ink: oklch(0.3 0.04 80); }
+.minitile[data-app="settings"] { --tile: oklch(0.62 0.012 260); --tile-2: oklch(0.52 0.012 260); }
+body[data-os="android"] .minitile[data-app="messages"] { --tile: var(--m3-primary-container); --tile-2: var(--m3-primary-container); --tile-ink: var(--m3-on-primary-container); }
+
+/* lock notification icons: the notif-sized cut of the shared tile. The
+   background/color re-assertion at three classes outweighs messages.css
+   `body[data-os="android"] .notif__icon` (later file, lower specificity),
+   so the committed tile colors survive on both platforms. */
+.notif .notif__icon--app {
+  width: 2rem;
+  height: 2rem;
+}
+.notif .minitile.notif__icon--app {
+  background: linear-gradient(155deg, var(--tile), var(--tile-2));
+  color: var(--tile-ink);
+}
 .notif .notif__icon--app svg { width: 60%; height: 60%; }
-.notif .notif__icon--app[data-app="maps"]     { --tile: oklch(0.56 0.13 240); --tile-2: oklch(0.48 0.13 244); }
-.notif .notif__icon--app[data-app="ledger"]   { --tile: oklch(0.52 0.12 155); --tile-2: oklch(0.44 0.12 156); }
-.notif .notif__icon--app[data-app="terminal"] { --tile: oklch(0.28 0.03 150); --tile-2: oklch(0.2 0.025 150); --tile-ink: oklch(0.86 0.11 150); }
-.notif .notif__icon--app[data-app="mail"]     { --tile: oklch(0.58 0.1 235);  --tile-2: oklch(0.5 0.1 237); }
-.notif .notif__icon--app[data-app="notes"]    { --tile: oklch(0.78 0.12 88);  --tile-2: oklch(0.7 0.12 82);  --tile-ink: oklch(0.3 0.04 80); }
-.notif .notif__icon--app[data-app="settings"] { --tile: oklch(0.62 0.012 260); --tile-2: oklch(0.52 0.012 260); }
-body[data-os="android"] .notif .notif__icon--app[data-app="messages"] { --tile: var(--m3-primary-container); --tile-2: var(--m3-primary-container); --tile-ink: var(--m3-on-primary-container); }
 
 /* "all explored" quiet message shown when no unvisited apps remain */
 .lockscreen__allvisited {
